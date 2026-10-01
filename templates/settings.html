@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Settings — MultiWorkAgent{% endblock %}
+{% block content %}
+<h1 class="page-title">Settings</h1>
+<p class="page-sub">Account, security, agent behavior, notifications.</p>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Account & team</h2>
+    {% if current_user %}
+    <p class="meta-row">Signed in as {{ current_user.email }}{% if account_role_label %} · {{ account_role_label }}{% endif %}</p>
+    {% endif %}
+    <p class="meta-row">Roles: Owner (full access), Operator (run agent & edit data), Viewer (read-only).</p>
+    {% if team_members %}
+    <table class="data-table">
+      <thead>
+        <tr><th>Member</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+      {% for member in team_members %}
+      <tr><td>{{ member.name }}<span class="meta-row"> · {{ member.email }}</span></td><td>{{ member.role_label }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No team members.</p>
+    {% endif %}
+    <p class="meta-row">Inviting teammates is coming soon.</p>
+  </section>
+  <section class="card">
+    <h2>Appearance</h2>
+    <p class="meta-row">Saved to your account (syncs across browsers). Device follows system light or dark.</p>
+    <div class="theme-segmented" data-theme-picker data-theme-sync="server" role="radiogroup" aria-label="Theme">
+      <button type="button" class="theme-segmented-option" role="radio" data-theme-value="light" aria-checked="false">Light</button>
+      <button type="button" class="theme-segmented-option" role="radio" data-theme-value="dark" aria-checked="false">Dark</button>
+      <button type="button" class="theme-segmented-option" role="radio" data-theme-value="device" aria-checked="false">Device</button>
+    </div>
+  </section>
+  <section class="card">
+    <h2>Security</h2>
+    <p>API keys · 2FA · session list · per-business secrets</p>
+    <button type="button" class="btn">Manage API keys</button>
+  </section>
+  <section class="card" id="settings-agent-card">
+    <h2>Agent behavior</h2>
+    <p class="meta-row">Controls run confirmation defaults for your user on this account.</p>
+    <ul class="settings-list">
+      <li>
+        <label class="settings-toggle">
+          <input type="checkbox" id="settings-agent-auto-approve" data-agent-pref="auto_approve_enabled" {% if settings_agent.auto_approve_enabled %}checked{% endif %}>
+          Auto-approve low-risk runs under threshold
+        </label>
+      </li>
+      <li>
+        <label class="settings-field" for="settings-agent-threshold">
+          Auto-approve threshold (run units, 0–1)
+          <input type="number" id="settings-agent-threshold" class="settings-number" data-agent-pref="auto_approve_max_run_units" min="0" max="1" step="0.05" value="{{ settings_agent.auto_approve_max_run_units }}">
+        </label>
+      </li>
+      <li>
+        <label class="settings-toggle">
+          <input type="checkbox" id="settings-agent-caching" data-agent-pref="prompt_caching_enabled" {% if settings_agent.prompt_caching_enabled %}checked{% endif %}>
+          Prompt caching for static system docs
+        </label>
+      </li>
+    </ul>
+  </section>
+  <section class="card" id="settings-notifications-card">
+    <h2>Notifications</h2>
+    <p class="meta-row">In-app alerts (header bell). Changes save automatically.</p>
+    <ul class="settings-list settings-notifications-list">
+      <li><label class="settings-toggle"><input type="checkbox" data-notify-pref="run_done" {% if notification_prefs.run_done %}checked{% endif %}> Run completed</label></li>
+      <li><label class="settings-toggle"><input type="checkbox" data-notify-pref="run_failed" {% if notification_prefs.run_failed %}checked{% endif %}> Run failed</label></li>
+      <li><label class="settings-toggle"><input type="checkbox" data-notify-pref="quota_warn" {% if notification_prefs.quota_warn %}checked{% endif %}> Quota 80%</label></li>
+      <li><label class="settings-toggle"><input type="checkbox" data-notify-pref="quota_exhausted" {% if notification_prefs.quota_exhausted %}checked{% endif %}> Quota 100% / exhausted</label></li>
+      <li><label class="settings-toggle"><input type="checkbox" data-notify-pref="daily_breaker" {% if notification_prefs.daily_breaker %}checked{% endif %}> Daily circuit breaker</label></li>
+      <li><label class="settings-toggle"><input type="checkbox" data-notify-pref="payment_issue" {% if notification_prefs.payment_issue %}checked{% endif %}> Square payment issues</label></li>
+    </ul>
+  </section>
+</div>
+
+{% if account_role == 'owner' %}
+<section class="card settings-danger-zone">
+  <h2>Danger zone</h2>
+  <p class="meta-row">Irreversible actions for this account. Only the owner can use these controls.</p>
+  <div class="settings-danger-actions">
+    <div class="settings-danger-item">
+      <div>
+        <h3 class="settings-danger-title">Delete all data</h3>
+        <p class="meta-row">Removes businesses, chats, runs, integrations, databases, billing history, and notifications. Your account login stays active.</p>
+      </div>
+      <button type="button" class="btn btn-danger" id="settings-delete-all-data">Delete all data</button>
+    </div>
+    <div class="settings-danger-item">
+      <div>
+        <h3 class="settings-danger-title">Delete account</h3>
+        <p class="meta-row">Permanently deletes your account, team membership, and all associated data. You will be signed out.</p>
+      </div>
+      <button type="button" class="btn btn-danger" id="settings-delete-account">Delete account</button>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='settings.js') }}"></script>
+{% endblock %}

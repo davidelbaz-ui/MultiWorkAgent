@@ -1,0 +1,32 @@
+{% macro oauth_icon_src(slug) -%}
+{%- if slug == 'google' -%}
+{{- url_for('static', filename='icons/oauth-google.svg') -}}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro auth_oauth_buttons(next_url='', show_divider=true) %}
+{% set providers = oauth_providers if oauth_providers else [] %}
+{% if providers %}
+<div class="auth-oauth">
+  {% for p in providers %}
+  <a
+    class="btn auth-oauth-btn auth-oauth-btn--{{ p.slug }}{% if not p.configured %} auth-oauth-btn--unconfigured{% endif %}"
+    href="{{ url_for('login_oauth_start', provider=p.slug, next=next_url) }}"
+  >
+    <img
+      class="auth-oauth-icon"
+      src="{{ oauth_icon_src(p.slug) }}"
+      alt=""
+      width="20"
+      height="20"
+      decoding="async"
+    >
+    <span class="auth-oauth-label">Continue with {{ p.display_name }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% if show_divider %}
+<p class="auth-oauth-divider"><span>or use email</span></p>
+{% endif %}
+{% endif %}
+{% endmacro %}

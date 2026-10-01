@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Businesses — MultiWorkAgent{% endblock %}
+{% block content %}
+<h1 class="page-title">Businesses</h1>
+<p class="page-sub">Manage workspaces, credentials, and agent scope per entity.</p>
+<button type="button" class="btn btn-primary btn-with-icon" id="add-business-btn" style="margin-bottom: 1.25rem;">
+  <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+  Add business
+</button>
+{% if businesses %}
+<div class="business-grid">
+  {% for b in businesses %}
+  <article class="business-card" data-business-id="{{ b.id }}">
+    <div class="business-card-header">
+      <div>
+        <div class="business-name">{{ b.name }}</div>
+        <div class="meta-row business-industry">{{ b.industry }}</div>
+      </div>
+      <span class="badge {% if b.health == 'healthy' %}ok{% else %}warn{% endif %}">{{ b.health }}</span>
+    </div>
+    <div class="meta-row">Last activity {{ b.last_activity }}</div>
+    <div class="card-actions">
+      <a class="btn btn-primary" href="{{ url_for('business_workspace', business_id=b.id) }}">Open workspace</a>
+      <a class="btn" href="{{ url_for('agent', business=b.id) }}">Ask agent</a>
+    </div>
+    <div class="card-actions card-actions--manage">
+      <button type="button" class="btn btn-sm business-edit-name-btn" data-business-id="{{ b.id }}" data-business-name="{{ b.name }}">Rename</button>
+      <button type="button" class="btn btn-sm business-edit-industry-btn" data-business-id="{{ b.id }}" data-business-industry="{{ b.industry_raw }}">Industry</button>
+      <button type="button" class="btn btn-sm business-archive-btn" data-business-id="{{ b.id }}" data-business-name="{{ b.name }}">Archive</button>
+      <button type="button" class="btn btn-sm btn-danger business-delete-btn" data-business-id="{{ b.id }}" data-business-name="{{ b.name }}">Delete</button>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p class="empty-state">You have no businesses. Create one to get started.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='businesses.js') }}"></script>
+{% endblock %}

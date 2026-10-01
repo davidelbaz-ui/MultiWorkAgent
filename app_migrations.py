@@ -1,0 +1,503 @@
+"""Versioned schema migrations for storage/app.sqlite.
+
+Add new schema changes as the next integer version in MIGRATIONS (do not renumber).
+Each step must be safe on databases that partially applied older init logic.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+from collections.abc import Callable
+from datetime import datetime, timezone
+
+MigrationFn = Callable[[sqlite3.Connection], None]
+
+APP_SCHEMA_VERSION = 16
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (name,),
+    ).fetchone()
+    return row is not None
+
+
+def _column_names(conn: sqlite3.Connection, table: str) -> set[str]:
+    if not _table_exists(conn, table):
+        return set()
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+
+def _ensure_migrations_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version INTEGER PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            applied_at TEXT NOT NULL
+        )
+        """
+    )
+
+
+def migration_001_core_accounts_businesses(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS accounts (
+            id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS businesses (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            industry TEXT NOT NULL DEFAULT '',
+            health TEXT NOT NULL DEFAULT 'healthy',
+            last_activity TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_businesses_account
+            ON businesses (account_id, updated_at DESC);
+        """
+    )
+
+
+def migration_002_business_archived_at(conn: sqlite3.Connection) -> None:
+    if "archived_at" not in _column_names(conn, "businesses"):
+        conn.execute("ALTER TABLE businesses ADD COLUMN archived_at TEXT")
+
+
+def migration_003_auth_users_and_members(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            password_hash TEXT NOT NULL,
+            display_name TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS account_members (
+            account_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role TEXT NOT NULL CHECK (role IN ('owner', 'operator', 'viewer')),
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (account_id, user_id),
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_account_members_user
+            ON account_members (user_id);
+        """
+    )
+
+
+def migration_004_agent_runs(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS agent_runs (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            user_id TEXT,
+            business_id TEXT,
+            thread_id TEXT NOT NULL,
+            run_type TEXT NOT NULL DEFAULT 'chat',
+            status TEXT NOT NULL,
+            error_code TEXT,
+            summary TEXT NOT NULL DEFAULT '',
+            input_tokens INTEGER NOT NULL DEFAULT 0,
+            output_tokens INTEGER NOT NULL DEFAULT 0,
+            run_units REAL NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (business_id) REFERENCES businesses (id) ON DELETE SET NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_account_created
+            ON agent_runs (account_id, created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_business_created
+            ON agent_runs (account_id, business_id, created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_thread_created
+            ON agent_runs (account_id, thread_id, created_at DESC);
+        """
+    )
+
+
+def migration_005_agent_run_lifecycle(conn: sqlite3.Connection) -> None:
+    if "completed_at" not in _column_names(conn, "agent_runs"):
+        conn.execute("ALTER TABLE agent_runs ADD COLUMN completed_at TEXT")
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_account_status
+            ON agent_runs (account_id, status)
+        """
+    )
+
+
+def migration_006_agent_run_tool_calls(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS agent_run_tool_calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL,
+            account_id TEXT NOT NULL,
+            seq INTEGER NOT NULL,
+            tool_name TEXT NOT NULL,
+            input_json TEXT NOT NULL DEFAULT '{}',
+            output_json TEXT,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (run_id) REFERENCES agent_runs (id) ON DELETE CASCADE,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_agent_run_tool_calls_run
+            ON agent_run_tool_calls (run_id, seq);
+        """
+    )
+
+
+def migration_007_integration_connections(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS integration_connections (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            business_id TEXT NOT NULL,
+            provider_slug TEXT NOT NULL,
+            provider_name TEXT NOT NULL,
+            auth_type TEXT NOT NULL CHECK (auth_type IN ('api_key', 'oauth')),
+            status TEXT NOT NULL CHECK (status IN ('connected', 'pending', 'error')),
+            secret_ciphertext TEXT,
+            credential_hint TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (business_id) REFERENCES businesses (id) ON DELETE CASCADE,
+            UNIQUE (business_id, provider_slug)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_integration_connections_account
+            ON integration_connections (account_id, updated_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_integration_connections_business
+            ON integration_connections (business_id, updated_at DESC);
+        """
+    )
+
+
+def migration_008_integration_oauth_states(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS integration_oauth_states (
+            state_token TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            business_id TEXT NOT NULL,
+            provider_slug TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (business_id) REFERENCES businesses (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_integration_oauth_states_created
+            ON integration_oauth_states (created_at);
+        """
+    )
+
+
+def migration_009_database_connections(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS database_connections (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            business_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            engine TEXT NOT NULL,
+            host TEXT NOT NULL DEFAULT '',
+            port INTEGER,
+            database_name TEXT NOT NULL,
+            username TEXT NOT NULL DEFAULT '',
+            access_mode TEXT NOT NULL DEFAULT 'read'
+                CHECK (access_mode IN ('read', 'read_write')),
+            status TEXT NOT NULL DEFAULT 'connected',
+            secret_ciphertext TEXT NOT NULL,
+            connection_hint TEXT NOT NULL DEFAULT '',
+            schema_json TEXT,
+            schema_synced_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (business_id) REFERENCES businesses (id) ON DELETE CASCADE,
+            UNIQUE (business_id, name)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_database_connections_account
+            ON database_connections (account_id, updated_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_database_connections_business
+            ON database_connections (business_id, updated_at DESC);
+        """
+    )
+
+
+def migration_010_account_subscriptions(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS account_subscriptions (
+            account_id TEXT PRIMARY KEY,
+            plan_tier TEXT NOT NULL DEFAULT 'none'
+                CHECK (plan_tier IN ('none', 'starter', 'pro')),
+            status TEXT NOT NULL DEFAULT 'inactive'
+                CHECK (status IN ('inactive', 'pending', 'active', 'past_due', 'canceled')),
+            monthly_quota INTEGER NOT NULL DEFAULT 0,
+            top_up_balance_runs INTEGER NOT NULL DEFAULT 0,
+            current_period_start TEXT,
+            current_period_end TEXT,
+            square_customer_id TEXT,
+            square_subscription_id TEXT,
+            cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_account_subscriptions_square_customer
+            ON account_subscriptions (square_customer_id);
+
+        CREATE INDEX IF NOT EXISTS idx_account_subscriptions_square_subscription
+            ON account_subscriptions (square_subscription_id);
+
+        CREATE TABLE IF NOT EXISTS square_webhook_events (
+            event_id TEXT PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            account_id TEXT,
+            received_at TEXT NOT NULL,
+            processed_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_square_webhook_events_received
+            ON square_webhook_events (received_at DESC);
+        """
+    )
+
+
+def migration_011_usage_metering(conn: sqlite3.Connection) -> None:
+    if "plan_runs_consumed" not in _column_names(conn, "account_subscriptions"):
+        conn.execute(
+            """
+            ALTER TABLE account_subscriptions
+            ADD COLUMN plan_runs_consumed REAL NOT NULL DEFAULT 0
+            """
+        )
+    if "usage_metered_at" not in _column_names(conn, "agent_runs"):
+        conn.execute("ALTER TABLE agent_runs ADD COLUMN usage_metered_at TEXT")
+
+
+def migration_012_billing_invoices(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS billing_invoices (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            square_invoice_id TEXT NOT NULL UNIQUE,
+            invoice_number TEXT,
+            status TEXT NOT NULL,
+            amount_cents INTEGER NOT NULL DEFAULT 0,
+            currency TEXT NOT NULL DEFAULT 'USD',
+            invoice_date TEXT NOT NULL,
+            pdf_url TEXT,
+            public_url TEXT,
+            description TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_billing_invoices_account_date
+            ON billing_invoices (account_id, invoice_date DESC);
+        """
+    )
+
+
+def migration_013_notifications(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS account_notification_prefs (
+            account_id TEXT PRIMARY KEY,
+            run_done INTEGER NOT NULL DEFAULT 1,
+            run_failed INTEGER NOT NULL DEFAULT 1,
+            quota_warn INTEGER NOT NULL DEFAULT 1,
+            quota_exhausted INTEGER NOT NULL DEFAULT 1,
+            daily_breaker INTEGER NOT NULL DEFAULT 1,
+            payment_issue INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS account_notifications (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            href TEXT,
+            dedupe_key TEXT,
+            read_at TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_account_notifications_account_created
+            ON account_notifications (account_id, created_at DESC);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_account_notifications_dedupe
+            ON account_notifications (account_id, dedupe_key)
+            WHERE dedupe_key IS NOT NULL;
+        """
+    )
+
+
+def migration_014_user_settings(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS user_settings (
+            user_id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            theme TEXT NOT NULL DEFAULT 'device'
+                CHECK (theme IN ('light', 'dark', 'device')),
+            agent_auto_approve_enabled INTEGER NOT NULL DEFAULT 1,
+            agent_auto_approve_max_run_units REAL NOT NULL DEFAULT 0.25,
+            agent_prompt_caching_enabled INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_user_settings_account
+            ON user_settings (account_id);
+        """
+    )
+
+
+def migration_016_account_chat_workspaces(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS account_chat_workspaces (
+            account_id TEXT NOT NULL,
+            scope_key TEXT NOT NULL,
+            workspace_id TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (account_id, scope_key),
+            UNIQUE (workspace_id),
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_account_chat_workspaces_account
+            ON account_chat_workspaces (account_id);
+        """
+    )
+
+
+def migration_015_login_oauth_identities(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS user_auth_identities (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            provider TEXT NOT NULL CHECK (provider IN ('google', 'microsoft')),
+            provider_subject TEXT NOT NULL,
+            email_at_link TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            UNIQUE (provider, provider_subject)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_user_auth_identities_user
+            ON user_auth_identities (user_id);
+
+        CREATE TABLE IF NOT EXISTS login_oauth_states (
+            state_token TEXT PRIMARY KEY,
+            provider TEXT NOT NULL,
+            next_url TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+
+
+MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
+    (1, "core_accounts_businesses", migration_001_core_accounts_businesses),
+    (2, "business_archived_at", migration_002_business_archived_at),
+    (3, "auth_users_and_members", migration_003_auth_users_and_members),
+    (4, "agent_runs", migration_004_agent_runs),
+    (5, "agent_run_lifecycle", migration_005_agent_run_lifecycle),
+    (6, "agent_run_tool_calls", migration_006_agent_run_tool_calls),
+    (7, "integration_connections", migration_007_integration_connections),
+    (8, "integration_oauth_states", migration_008_integration_oauth_states),
+    (9, "database_connections", migration_009_database_connections),
+    (10, "account_subscriptions", migration_010_account_subscriptions),
+    (11, "usage_metering", migration_011_usage_metering),
+    (12, "billing_invoices", migration_012_billing_invoices),
+    (13, "notifications", migration_013_notifications),
+    (14, "user_settings", migration_014_user_settings),
+    (15, "login_oauth_identities", migration_015_login_oauth_identities),
+    (16, "account_chat_workspaces", migration_016_account_chat_workspaces),
+]
+
+
+def applied_versions(conn: sqlite3.Connection) -> set[int]:
+    _ensure_migrations_table(conn)
+    rows = conn.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall()
+    return {int(row[0]) for row in rows}
+
+
+def current_schema_version(conn: sqlite3.Connection) -> int:
+    applied = applied_versions(conn)
+    return max(applied) if applied else 0
+
+
+def run_migrations(conn: sqlite3.Connection) -> int:
+    """Apply pending migrations. Returns the schema version after running."""
+    _ensure_migrations_table(conn)
+    done = applied_versions(conn)
+
+    for version, name, apply in MIGRATIONS:
+        if version in done:
+            continue
+        apply(conn)
+        conn.execute(
+            """
+            INSERT INTO schema_migrations (version, name, applied_at)
+            VALUES (?, ?, ?)
+            """,
+            (version, name, _utc_now()),
+        )
+        done.add(version)
+
+    if len(MIGRATIONS) != len(done):
+        missing = {v for v, _, _ in MIGRATIONS} - done
+        raise RuntimeError(f"app database migrations incomplete: missing {sorted(missing)}")
+
+    latest = MIGRATIONS[-1][0]
+    if latest != APP_SCHEMA_VERSION:
+        raise RuntimeError(
+            f"APP_SCHEMA_VERSION ({APP_SCHEMA_VERSION}) must match latest migration ({latest})"
+        )
+    return latest

@@ -1,0 +1,30 @@
+{% extends "auth_base.html" %}
+{% from "_auth_oauth.html" import auth_oauth_buttons with context %}
+{% block title %}Sign in — MultiWorkAgent{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <h1 class="auth-title">Sign in</h1>
+  <p class="auth-sub">Sign in with Google, or use your email and password.</p>
+  {% if error %}
+  <p class="auth-error" role="alert">{{ error }}</p>
+  {% endif %}
+  {{ auth_oauth_buttons(next_url) }}
+  <form class="auth-form" method="post" action="{{ url_for('login', next=next_url) }}">
+    {% if next_url %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
+    <label class="auth-label">
+      <span>Email</span>
+      <input class="auth-input" type="email" name="email" autocomplete="email" required>
+    </label>
+    <label class="auth-label">
+      <span>Password</span>
+      <input class="auth-input" type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="btn btn-primary auth-submit">Sign in</button>
+  </form>
+  <p class="auth-footer">
+    No account yet? <a href="{{ url_for('signup') }}">Create one</a>
+  </p>
+</section>
+{% endblock %}

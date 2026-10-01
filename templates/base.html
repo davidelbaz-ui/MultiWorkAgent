@@ -1,0 +1,132 @@
+{% from "_nav_icon.html" import nav_icon %}
+{% from "_brand.html" import brand_lockup %}
+{% from "_favicon.html" import favicon_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MultiWorkAgent{% endblock %}</title>
+  {{ favicon_tags() }}
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="app-shell">
+    <header class="topbar">
+      {{ brand_lockup(href=url_for('index'), size='sm', class='topbar-brand') }}
+      <div class="topbar-workspace">
+        <div class="business-switcher" data-business-switcher>
+          <button type="button" class="business-switcher-trigger" aria-label="Switch business" aria-expanded="false" aria-haspopup="listbox" id="business-switcher-trigger">
+            <span class="business-switcher-label">{{ business_switcher_label }}</span>
+            <span class="business-switcher-chevron" aria-hidden="true"></span>
+          </button>
+          <ul class="business-switcher-menu" role="listbox" aria-labelledby="business-switcher-trigger" id="business-switcher-menu" hidden>
+            <li class="business-switcher-option {% if not selected_business_id %}is-selected{% endif %}" role="option" aria-selected="{% if not selected_business_id %}true{% else %}false{% endif %}" tabindex="{% if not selected_business_id %}0{% else %}-1{% endif %}" data-value="all">All businesses</li>
+            {% for b in businesses %}
+            <li class="business-switcher-option {% if selected_business_id == b.id %}is-selected{% endif %}" role="option" aria-selected="{% if selected_business_id == b.id %}true{% else %}false{% endif %}" tabindex="{% if selected_business_id == b.id %}0{% else %}-1{% endif %}" data-value="{{ b.id }}">{{ b.name }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="global-search-column" id="global-search-column">
+          <div class="global-search-wrap global-search-pill global-search-field-wrap" id="global-search-wrap">
+            <input type="text" id="global-search" class="global-search" placeholder="Search…" aria-label="Search" autocomplete="off" aria-controls="global-search-results" aria-expanded="false" aria-autocomplete="list">
+            <button type="button" class="global-search-clear" id="global-search-clear" aria-label="Clear search" aria-hidden="true" tabindex="-1">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M8 8l8 8M16 8l-8 8"/>
+              </svg>
+            </button>
+            <span class="global-search-shortcut" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+          </div>
+          <div class="global-search-results ui-motion-fade" id="global-search-results" role="listbox" aria-label="Search results" hidden>
+            <p class="global-search-status" id="global-search-status" hidden></p>
+            <ul class="global-search-results-list" id="global-search-results-list"></ul>
+          </div>
+        </div>
+        {% set pct = (usage_used / usage_quota * 100) if usage_quota else 0 %}
+        <a href="{{ url_for('billing') }}" class="usage-chip {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}">
+          {% if plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
+        </a>
+      </div>
+      <div class="topbar-actions">
+        <div class="notifications-menu" data-notifications-menu>
+          <button type="button" class="icon-btn notifications-trigger" id="notifications-trigger" aria-label="Notifications" aria-expanded="false" aria-haspopup="menu">
+            <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M8 10.5a4 4 0 0 1 8 0c0 4.2 1.4 5.8 1.5 6H6.5c.1-.2 1.5-1.8 1.5-6"/>
+              <path d="M10.5 18.5a1.75 1.75 0 0 0 3 0"/>
+            </svg>
+            <span class="notifications-badge" id="notifications-badge" hidden aria-hidden="true">0</span>
+          </button>
+          <div class="notifications-panel" id="notifications-panel" role="menu" hidden>
+            <div class="notifications-panel-head">
+              <span class="notifications-panel-title">Notifications</span>
+              <button type="button" class="btn btn-sm" id="notifications-mark-all">Mark all read</button>
+            </div>
+            <ul class="notifications-list" id="notifications-list" role="list"></ul>
+            <p class="empty-state notifications-empty" id="notifications-empty" hidden>No notifications yet.</p>
+          </div>
+        </div>
+        <div class="account-menu" data-account-menu>
+          <button type="button" class="avatar account-menu-trigger" id="account-menu-trigger" aria-label="Account menu" aria-expanded="false" aria-haspopup="menu">
+            {% if current_user %}
+            {{ current_user.name[:1]|upper }}
+            {% else %}
+            ?
+            {% endif %}
+          </button>
+          <div class="account-menu-panel" id="account-menu-panel" role="menu" hidden>
+            {% if current_user %}
+            <div class="account-menu-head">
+              <span class="account-menu-name">{{ current_user.name }}</span>
+              <span class="account-menu-email">{{ current_user.email }}</span>
+              {% if account_role_label %}
+              <span class="account-menu-role">{{ account_role_label }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+            <a class="account-menu-item" role="menuitem" href="{{ url_for('settings') }}">Settings</a>
+            <form class="account-menu-logout" method="post" action="{{ url_for('logout') }}">
+              <button type="submit" class="account-menu-item account-menu-item--button" role="menuitem">Sign out</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      {% for item in nav %}
+      <a href="{{ item.href }}" class="nav-link {% if active_nav == item.id %}active{% endif %}">
+        <span class="nav-icon">{{ nav_icon(item.icon) }}</span>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+      {% endfor %}
+    </aside>
+
+    <main class="main {% block main_class %}{% endblock %}">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+
+  <div class="app-dialog-root" id="app-dialog-root" hidden aria-hidden="true">
+    <div class="app-dialog-backdrop" id="app-dialog-backdrop" tabindex="-1"></div>
+    <div class="app-dialog" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title" id="app-dialog">
+      <h2 class="app-dialog-title" id="app-dialog-title"></h2>
+      <p class="app-dialog-message" id="app-dialog-message" hidden></p>
+      <div class="app-dialog-field" id="app-dialog-field" hidden>
+        <label class="app-dialog-label" id="app-dialog-label" for="app-dialog-input"></label>
+        <input type="text" class="app-dialog-input" id="app-dialog-input" autocomplete="off">
+      </div>
+      <div class="app-dialog-actions">
+        <button type="button" class="btn" id="app-dialog-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="app-dialog-confirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='ui-motion.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,89 @@
+{% from "_brand.html" import brand_lockup %}
+{% from "_favicon.html" import favicon_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MultiWorkAgent — one AI control surface for all your businesses, integrations, databases, and agent runs.">
+  <title>MultiWorkAgent — Run every business from one place</title>
+  {{ favicon_tags() }}
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="start-page">
+  <header class="start-header">
+    {{ brand_lockup(href=url_for('index'), size='md') }}
+    <nav class="start-nav" aria-label="Account">
+      <a class="start-nav-link" href="{{ url_for('login') }}">Sign in</a>
+      <a class="btn btn-primary" href="{{ url_for('signup') }}">Sign up now</a>
+    </nav>
+  </header>
+
+  <main class="start-main">
+    <section class="start-hero">
+      <div class="start-hero-copy">
+        <p class="start-eyebrow">Multi-business operations agent</p>
+        <h1 class="start-title">One agent. Every business. One dashboard.</h1>
+        <p class="start-lead">
+          MultiWorkAgent is your control surface for running work across many companies—chat with an AI operator,
+          connect integrations and databases per business, and meter every action in clear execution runs.
+        </p>
+        <div class="start-hero-actions">
+          <a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}">Sign up now</a>
+          <a class="btn btn-lg" href="{{ url_for('login') }}">Sign in</a>
+        </div>
+        <p class="meta-row start-hero-note">Starter plans from $19/mo · Scoped credentials · No shared secrets across businesses</p>
+      </div>
+      <div class="start-hero-visual" aria-hidden="true">
+        <div class="start-hero-card">
+          {{ brand_lockup(size='lg', show_text=false, class='start-hero-mark') }}
+          <ul class="start-hero-stats">
+            <li><strong>109+</strong> integration providers</li>
+            <li><strong>Per-business</strong> DB &amp; OAuth connections</li>
+            <li><strong>Runs</strong> you can see, limit, and bill</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="start-section">
+      <h2 class="start-section-title">What it does for you</h2>
+      <div class="start-grid-3">
+        <article class="start-feature-card">
+          <h3>Orchestrate many businesses</h3>
+          <p>Switch workspaces in one click. Each business keeps its own integrations, database links, and agent chat context—never mixed.</p>
+        </article>
+        <article class="start-feature-card">
+          <h3>Agent that executes, not just chats</h3>
+          <p>Send tasks, attach files, and inspect runs with token usage, tool calls, and limits—concurrency and daily caps stay visible.</p>
+        </article>
+        <article class="start-feature-card">
+          <h3>Connect real systems</h3>
+          <p>GitHub, Google Workspace, WooCommerce, CRMs, databases, and more—credentials encrypted and scoped so the agent acts on behalf of one business at a time.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="start-section start-section-muted">
+      <h2 class="start-section-title">How it works</h2>
+      <ol class="start-steps">
+        <li><strong>Create an account</strong> and add your first business workspace.</li>
+        <li><strong>Connect data &amp; integrations</strong> for that business (OAuth, API keys, databases).</li>
+        <li><strong>Run the agent</strong>—messages become metered execution runs with a full inspector and billing alignment.</li>
+      </ol>
+    </section>
+
+    <section class="start-cta">
+      <h2 class="start-cta-title">Ready to manage smarter?</h2>
+      <p class="start-cta-sub">Create your account in minutes. Upgrade when you need more runs.</p>
+      <a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}">Sign up now</a>
+    </section>
+  </main>
+
+  <footer class="start-footer">
+    {{ brand_lockup(href=url_for('index'), size='sm') }}
+    <p class="meta-row">&copy; MultiWorkAgent</p>
+  </footer>
+</body>
+</html>

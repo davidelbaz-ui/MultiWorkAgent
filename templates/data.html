@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Data & integrations — MultiWorkAgent{% endblock %}
+{% block content %}
+<h1 class="page-title">Data & integrations</h1>
+<p class="page-sub">
+  Connect systems per business so the agent can read, update, and automate.
+  <strong>{{ integration_total }}</strong> supported providers.
+</p>
+{% if request.args.get('oauth') == 'connected' %}
+<p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Integration connected successfully.</p>
+{% elif request.args.get('oauth') == 'error' %}
+<p class="integration-oauth-flash integration-oauth-flash--err" role="alert">OAuth failed: {{ request.args.get('oauth_message', 'Unknown error') }}</p>
+{% endif %}
+{% if selected_business %}
+<p class="meta-row integration-scope-note">Connections target: <strong>{{ selected_business.name }}</strong> (change via header switcher).</p>
+{% else %}
+<p class="meta-row integration-scope-note">Select a <strong>single business</strong> in the header before connecting a provider.</p>
+{% endif %}
+<p class="meta-row integration-scope-note">
+  All <strong>{{ oauth_definitions }}</strong> catalog providers have OAuth env slots;
+  <strong>{{ oauth_configured }}</strong> have keys set on this server.
+  <strong>{{ oauth_urls_wired }}</strong> have authorize/token URLs wired — see <code>integration_oauth_registry.py</code> and <code>.env.example</code>.
+</p>
+
+<section class="card integration-connections-card">
+  <h2>Connected integrations</h2>
+  {% if integration_connections %}
+  <ul class="integration-connections-list" id="integration-connections-list">
+    {% for c in integration_connections %}
+    <li class="integration-connection-row" data-connection-id="{{ c.id }}" data-business-id="{{ c.business_id }}">
+      <div>
+        <span class="integration-connection-name">{{ c.provider_name }}</span>
+        <span class="meta-row">{{ c.business_name }} · {{ c.auth_type }} · {{ c.status }}{% if c.credential_hint %} · {{ c.credential_hint }}{% endif %}</span>
+      </div>
+      <button type="button" class="btn btn-sm integration-disconnect-btn" data-connection-id="{{ c.id }}" data-business-id="{{ c.business_id }}" data-provider-name="{{ c.provider_name }}">Disconnect</button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty-state" id="integration-connections-empty">No integrations connected{% if selected_business %} for {{ selected_business.name }}{% endif %}.</p>
+  {% endif %}
+</section>
+
+<div class="grid-2">
+  <section class="card integration-connections-card" id="database-connections-card">
+    <div class="integration-catalog-head">
+      <h2>Databases</h2>
+      <button
+        type="button"
+        class="btn btn-sm"
+        id="database-add-btn"
+        data-selected-business-id="{{ selected_business_id or '' }}"
+      >Add database</button>
+    </div>
+    <p class="meta-row integration-scope-note">SQLite (file path), PostgreSQL, and MySQL. Schema is cached on connect and via sync.</p>
+    {% if connected_databases %}
+    <ul class="integration-connections-list" id="database-connections-list">
+      {% for db in connected_databases %}
+      <li class="integration-connection-row database-connection-row" data-connection-id="{{ db.id }}" data-business-id="{{ db.business_id }}">
+        <div>
+          <span class="integration-connection-name">{{ db.name }}</span>
+          <span class="meta-row">{{ db.business_name }} · {{ db.engine }} · {{ db.access }} · {{ db.last_query }}{% if db.connection_hint %} · {{ db.connection_hint }}{% endif %}</span>
+        </div>
+        <div class="database-connection-actions">
+          <button type="button" class="btn btn-sm database-schema-btn" data-connection-id="{{ db.id }}" data-business-id="{{ db.business_id }}" data-name="{{ db.name }}">Schema</button>
+          <button type="button" class="btn btn-sm database-sync-btn" data-connection-id="{{ db.id }}" data-business-id="{{ db.business_id }}">Sync</button>
+          <button type="button" class="btn btn-sm database-disconnect-btn" data-connection-id="{{ db.id }}" data-business-id="{{ db.business_id }}" data-name="{{ db.name }}">Remove</button>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="empty-state" id="database-connections-empty">No database connections{% if selected_business %} for {{ selected_business.name }}{% endif %}.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Agent access model</h2>
+    <p>Each connection is scoped to one business. The agent uses OAuth or API keys with explicit read/write scopes.</p>
+    <ul class="settings-list">
+      <li>Destructive changes require run confirmation</li>
+      <li>Tool calls appear in the agent run inspector</li>
+      <li>Credentials stored separately from chat history</li>
+    </ul>
+  </section>
+</div>
+
+<section class="card integration-catalog-card">
+  <div class="integration-catalog-head">
+    <h2>Integration catalog</h2>
+    <div class="integration-search-wrap">
+      <input type="text" id="integration-search" class="integration-search" placeholder="Search providers…" aria-label="Search integrations" autocomplete="off" role="search">
+      <button type="button" class="integration-search-clear" id="integration-search-clear" aria-label="Clear search" aria-hidden="true" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M8 8l8 8M16 8l-8 8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <p class="meta-row integration-catalog-intro">Connect from a business workspace. OAuth and API key flows vary by provider.</p>
+
+  <div
+    id="integration-catalog"
+    data-selected-business-id="{{ selected_business_id or '' }}"
+  >
+    {% for category in integration_categories %}
+    <section class="integration-category" data-category-id="{{ category.id }}">
+      <h3 class="integration-category-title">{{ category.label }}</h3>
+      <div class="integration-grid">
+        {% for item in category.integrations %}
+        <button type="button" class="integration-tile" data-name="{{ item.name|lower }}" data-slug="{{ item.slug }}" data-oauth-available="{{ 'true' if item.oauth_available else 'false' }}" data-oauth-configured="{{ 'true' if item.oauth_configured else 'false' }}" title="Connect {{ item.name }}">
+          {{ item.name }}
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+  <p class="empty-state ui-motion-fade" id="integration-no-results" hidden>No providers match your search.</p>
+</section>
+
+<section class="card" style="margin-top: 1.25rem;">
+  <h2>Knowledge & files</h2>
+  <p class="empty-state">No files uploaded.</p>
+  <button type="button" class="btn">Upload files</button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='integrations.js') }}"></script>
+<script src="{{ url_for('static', filename='databases.js') }}"></script>
+{% endblock %}

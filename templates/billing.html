@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Billing & usage — MultiWorkAgent{% endblock %}
+{% block content %}
+<div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}">
+<h1 class="page-title">Billing & usage</h1>
+<p class="page-sub">AI Service Subscription System · Square payments</p>
+{% if request.args.get('checkout') == 'done' %}
+<p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Checkout complete — your subscription will update when Square confirms payment.</p>
+{% endif %}
+<p class="meta-row integration-scope-note" id="billing-mode-note" hidden>Billing dev mock is on (<code>BILLING_DEV_MOCK</code> / <code>SQUARE_MOCK</code>). Subscribe activates plans locally without Square.</p>
+{% if billing_mode == 'unconfigured' %}
+<p class="meta-row integration-scope-note">Square is not configured. Set server env vars for live checkout, or enable mock mode for local testing.</p>
+{% endif %}
+
+<section class="card" style="margin-bottom: 1.25rem;">
+  <h2>Current plan{% if plan %} — {{ plan }}{% endif %}</h2>
+  {% if subscription_status == 'pending' %}
+  <p class="meta-row">Checkout in progress — waiting for Square confirmation.</p>
+  {% endif %}
+  {% if cancel_at_period_end and plan %}
+  <p class="meta-row">Cancellation scheduled at end of billing period.</p>
+  {% endif %}
+  {% if plan and usage_quota %}
+  <div class="progress-bar"><div class="progress-fill" style="width: {{ (usage_used / usage_quota * 100)|int }}%;"></div></div>
+  <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used · Top-up balance: <strong>{{ top_up_balance }}</strong> runs</p>
+  {% if billing_period_end %}
+  <p class="meta-row">Billing period ends {{ billing_period_end }}</p>
+  {% endif %}
+  {% else %}
+  <p class="empty-state">No active subscription. Choose a plan below.</p>
+  {% endif %}
+  <p class="meta-row">Plan runs are used first, then top-up credits. Unused top-up rolls over.</p>
+  {% if plan and subscription_status == 'active' and account_role == 'owner' %}
+  <button type="button" class="btn btn-sm" id="billing-cancel-subscription">Cancel at period end</button>
+  {% endif %}
+</section>
+
+<div class="pricing-grid" style="margin-bottom: 1.25rem;">
+  <div class="price-card {% if plan == 'Starter' %}featured{% endif %}">
+    <h3>Starter{% if plan == 'Starter' %} (current){% endif %}</h3>
+    <div class="price">$19<span style="font-size:1rem;font-weight:400;">/mo</span></div>
+    <p>50 runs/mo · solopreneurs & small teams</p>
+    <button type="button" class="btn btn-primary" data-billing-plan="starter" {% if plan == 'Starter' %}disabled{% endif %}>Subscribe</button>
+  </div>
+  <div class="price-card {% if plan == 'Pro' %}featured{% endif %}">
+    <h3>Pro{% if plan == 'Pro' %} (current){% endif %}</h3>
+    <div class="price">$49<span style="font-size:1rem;font-weight:400;">/mo</span></div>
+    <p>200 runs/mo · agencies & startups</p>
+    <button type="button" class="btn btn-primary" data-billing-plan="pro" {% if plan == 'Pro' %}disabled{% endif %}>Subscribe</button>
+  </div>
+  <div class="price-card">
+    <h3>Credit top-up</h3>
+    <div class="price">$10</div>
+    <p>+65 execution runs · pay-as-you-go</p>
+    <button type="button" class="btn" data-billing-plan="topup" {% if not plan %}disabled{% endif %}>Purchase</button>
+  </div>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Execution run definition</h2>
+    <p>1 Standard Execution Run = up to <strong>30,000 input</strong> + <strong>2,000 output</strong> tokens.</p>
+    <p>All agent work is metered in standard runs (1.0× when fully utilized; partial units when usage is lower).</p>
+    <p class="meta-row">~$0.12 API cost ceiling per run (informational)</p>
+  </section>
+  <section class="card">
+    <h2>Limits</h2>
+    <p>Concurrent runs: <strong>{{ concurrent }} / {{ concurrent_max }}</strong></p>
+    {% if runs_limit_free_tier %}
+    <p>Free tier runs: <strong>{{ runs_today }} / {{ runs_daily_max }}</strong> this month</p>
+    {% else %}
+    <p>Daily breaker: <strong>{{ runs_today }} / {{ runs_daily_max }}</strong> in 24h</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card" style="margin-top: 1.25rem;">
+  <div class="integration-catalog-head">
+    <h2>Invoices (Square)</h2>
+    {% if billing_mode == 'square' and account_role == 'owner' %}
+    <button type="button" class="btn btn-sm" id="billing-sync-invoices">Sync from Square</button>
+    {% endif %}
+  </div>
+  {% if invoices %}
+  <table class="data-table">
+    <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead>
+    <tbody>
+      {% for inv in invoices %}
+      <tr>
+        <td>{{ inv.date }}</td>
+        <td>{{ inv.description or inv.invoice_number }}</td>
+        <td>{{ inv.amount }}</td>
+        <td>{{ inv.status }}</td>
+        <td>{% if inv.pdf_url %}<a href="{{ inv.pdf_url }}" target="_blank" rel="noopener noreferrer">View</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-state">No invoices yet{% if billing_mode == 'square' %} — sync from Square or complete checkout{% elif billing_mode == 'mock' %} — subscribe in mock mode to generate a sample invoice{% endif %}.</p>
+  {% endif %}
+</section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='billing.js') }}"></script>
+{% endblock %}

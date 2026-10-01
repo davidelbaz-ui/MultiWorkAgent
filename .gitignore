@@ -1,0 +1,14 @@
+storage/agent_chat.sqlite
+storage/app.sqlite
+db.sqlite
+*.sqlite
+storage/chat_files/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.log

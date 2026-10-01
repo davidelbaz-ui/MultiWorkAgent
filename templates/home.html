@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Home — MultiWorkAgent{% endblock %}
+{% block content %}
+<h1 class="page-title">Command center</h1>
+<p class="page-sub">{% if selected_business %}Workspace: {{ selected_business.name }}{% else %}Cross-business overview{% endif %}</p>
+
+<section class="metrics">
+  <div class="metric-card">
+    <div class="metric-label">Runs this period</div>
+    <div class="metric-value">{% if plan or runs_limit_free_tier %}{{ usage_used }} / {{ usage_quota }}{% else %}—{% endif %}</div>
+    <div class="metric-hint">{% if billing_period_end %}Resets {{ billing_period_end }}{% elif runs_limit_free_tier %}Free tier · monthly limit{% else %}No billing period{% endif %}</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Active businesses</div>
+    <div class="metric-value">{{ businesses|length }}</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">{% if runs_limit_free_tier %}Runs this month{% else %}Runs today{% endif %}</div>
+    <div class="metric-value">{{ runs_today }} / {{ runs_daily_max }}</div>
+    <div class="metric-hint">{% if runs_limit_free_tier %}Free tier allowance{% else %}Rolling 24h circuit breaker{% endif %}</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Concurrent runs</div>
+    <div class="metric-value">{{ concurrent }} / {{ concurrent_max }}</div>
+  </div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Businesses</h2>
+    {% if businesses %}
+    <div class="business-grid">
+      {% for b in businesses %}
+      <article class="business-card">
+        <div class="business-card-header">
+          <div>
+            <div class="business-name">{{ b.name }}</div>
+            <div class="meta-row">{{ b.industry }} · {{ b.last_activity }}</div>
+          </div>
+          <span class="badge {% if b.health == 'healthy' %}ok{% else %}warn{% endif %}">{{ b.db_status }}</span>
+        </div>
+        <div class="meta-row">{{ b.open_tasks }} open tasks{% if b.alerts %} · {{ b.alerts }} alert{% endif %}</div>
+        <div class="card-actions">
+          <a class="btn btn-primary" href="{{ url_for('business_workspace', business_id=b.id) }}">Open workspace</a>
+          <a class="btn" href="{{ url_for('agent', business=b.id) }}">Ask agent</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">No businesses yet. Add one to connect data and run the agent.</p>
+    <a class="btn btn-primary" href="{{ url_for('businesses') }}">Add business</a>
+    {% endif %}
+  </section>
+
+  <div>
+    <section class="card" style="margin-bottom: 1.25rem;">
+      <h2>Suggested actions</h2>
+      {% if suggested_actions %}
+      <ul class="suggested-list">
+        {% for s in suggested_actions %}
+        <li>
+          <span>{{ s.text }}</span>
+          <span class="run-badge">~{{ s.runs }} run</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <button type="button" class="btn btn-primary" style="margin-top: 0.75rem;">Batch approve</button>
+      {% else %}
+      <p class="empty-state">Suggestions appear when the agent has context from your businesses.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Recent runs</h2>
+      {% if recent_runs %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Business</th>
+            <th>Summary</th>
+            <th>Units</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_runs %}
+          <tr>
+            <td>{{ r.time }}</td>
+            <td>{{ r.business }}</td>
+            <td>{{ r.summary }}</td>
+            <td><span class="run-badge">{{ r.units }}</span></td>
+            <td><span class="status-dot {{ r.status }}"></span>{{ r.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty-state">No execution runs yet.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Agent — MultiWorkAgent{% endblock %}
+{% block body_class %}page-agent{% endblock %}
+{% block main_class %}main--agent{% endblock %}
+{% block content %}
+{% set token_pct = ((run_input_tokens / run_input_cap * 100) if run_input_cap else 0)|int %}
+<div class="agent-layout">
+  <aside class="agent-chats-panel" id="agent-chats-panel" aria-label="Chats">
+    <div class="agent-chats-head">
+      <h2 class="agent-chats-title">Chats</h2>
+      <button type="button" class="btn btn-sm btn-with-icon agent-side-chat-btn" id="agent-new-side-chat">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Side chat
+      </button>
+    </div>
+    <ul class="agent-chats-list" id="agent-chats-list" role="list"></ul>
+  </aside>
+<div class="agent-shell" id="agent-shell">
+  <div class="agent-limits-banner" id="agent-limits-banner" role="alert" hidden></div>
+  <div class="agent-drop-overlay" id="agent-drop-overlay" aria-hidden="true">Drop files to attach</div>
+  <div class="agent-chat-bar">
+    <div class="agent-chat-bar-titles">
+      <span class="agent-scope-chip {% if not selected_business %}agent-scope-chip--all{% endif %}" id="agent-scope-chip">{% if selected_business %}{{ selected_business.name }}{% else %}All businesses{% endif %}</span>
+      <span class="agent-thread-label" id="agent-thread-label">Main chat</span>
+    </div>
+    <button type="button" class="agent-menu-btn" id="agent-menu-btn" aria-label="Open run details" aria-expanded="false" aria-controls="agent-drawer">
+      <span class="agent-menu-icon" aria-hidden="true">
+        <svg class="agent-menu-icon-svg" viewBox="0 0 24 24" focusable="false">
+          <path d="M5 7h14M5 12h14M5 17h14"/>
+        </svg>
+      </span>
+    </button>
+  </div>
+
+  <div class="agent-scroll" id="agent-scroll">
+    <div class="agent-scroll-inner {% if messages %}agent-scroll-inner--thread{% else %}agent-scroll-inner--empty{% endif %}" id="agent-scroll-inner">
+      <div class="agent-messages" id="agent-messages" role="log" aria-live="polite">
+        <p class="empty-state agent-empty">Send a message to start. Mention resources with @ when connected.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="agent-composer-wrap">
+    <div class="agent-composer-stack" id="agent-composer-stack">
+      <p class="agent-editing-hint ui-motion-fade" id="agent-editing-hint" hidden>
+        Editing sent message
+        <button type="button" class="agent-editing-cancel" id="agent-cancel-edit">Cancel</button>
+      </p>
+      <ul class="agent-attachments ui-motion-fade" id="agent-attachments" hidden aria-label="Attached files"></ul>
+      <form class="agent-prompt-box" id="agent-composer" action="#" method="post" enctype="multipart/form-data">
+        <input type="file" id="agent-file-input" class="agent-file-input" name="files" multiple hidden>
+        <button type="button" class="agent-prompt-btn agent-upload-btn" id="agent-upload-btn" aria-label="Upload files">
+          <svg class="agent-prompt-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+        <textarea id="agent-message-input" rows="1" placeholder="Message agent…" aria-label="Message"></textarea>
+        <button type="submit" class="agent-prompt-btn agent-send-btn" id="agent-send-btn" aria-label="Send message">
+          <svg class="agent-prompt-icon agent-send-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 19V7M7 12l5-5 5 5"/>
+          </svg>
+          <svg class="agent-prompt-icon agent-stop-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="agent-drawer-backdrop" id="agent-drawer-backdrop" aria-hidden="true"></div>
+  <aside class="agent-drawer" id="agent-drawer" aria-hidden="true">
+    <div class="agent-drawer-head">
+      <h2>Run details</h2>
+      <button type="button" class="icon-btn agent-drawer-close" id="agent-drawer-close" aria-label="Close panel">×</button>
+    </div>
+    <div class="agent-drawer-body">
+      <section class="agent-drawer-section">
+        <h3>Chat</h3>
+        <p class="meta-row">Remove all messages from the main chat for this workspace. Side chats are not affected.</p>
+        <button type="button" class="btn btn-danger btn-sm" id="agent-clear-main-chat">Clear main chat</button>
+      </section>
+      <section class="agent-drawer-section">
+        <h3>Run inspector</h3>
+        <p class="meta-row agent-run-summary" id="agent-run-summary" hidden></p>
+        <p class="meta-row">Token budget (standard run)</p>
+        <p class="meta-row agent-run-status" id="agent-run-status" hidden></p>
+        <div class="meter"><div class="meter-fill" id="agent-run-meter-fill" style="width: {{ token_pct }}%;"></div></div>
+        <p class="inspector-stats" id="agent-run-stats">{{ run_input_tokens }} / {{ run_input_cap }} input · {{ run_output_tokens }} / {{ run_output_cap }} output</p>
+        <h4>Tool calls</h4>
+        <ul class="inspector-tools" id="agent-run-tool-calls"></ul>
+        <p class="empty-state empty-state--compact" id="agent-run-tool-calls-empty">No tool calls in this run.</p>
+      </section>
+
+      <section class="agent-drawer-section">
+        <h3>Queue</h3>
+        <p class="meta-row" id="agent-concurrent-line">Concurrent: {{ concurrent }} / {{ concurrent_max }}</p>
+        <p class="meta-row" id="agent-runs-today">{% if runs_limit_free_tier %}This month{% else %}Today{% endif %}: {{ runs_today }} / {{ runs_daily_max }} runs</p>
+        <button type="button" class="btn">New structured run</button>
+      </section>
+    </div>
+  </aside>
+</div>
+</div>
+{% endblock %}

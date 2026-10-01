@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ business.name }} — MultiWorkAgent{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ business.name }}</h1>
+<p class="page-sub">{{ business.industry }} workspace</p>
+
+<nav class="tabs">
+  <a class="tab active" href="#">Overview</a>
+  <a class="tab" href="{{ url_for('agent') }}">Agent</a>
+  <a class="tab" href="#">Tasks</a>
+  <a class="tab" href="{{ url_for('data_integrations') }}">Data</a>
+  <a class="tab" href="{{ url_for('data_integrations') }}">Integrations</a>
+  <a class="tab" href="#">Activity</a>
+  <a class="tab" href="{{ url_for('settings') }}">Settings</a>
+</nav>
+
+{% if business.alerts %}
+<div class="alert-banner">{{ business.alert_message }}</div>
+{% endif %}
+
+<section class="metrics">
+  <div class="metric-card">
+    <div class="metric-label">Agent access</div>
+    <div class="metric-value" style="font-size: 1.1rem;">{{ business.db_count }} DBs · {{ business.integration_count }} integrations</div>
+    <a href="{{ url_for('data_integrations') }}">Manage</a>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Tasks</div>
+    <div class="metric-value">{{ business.open_tasks }} open</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Data freshness</div>
+    <div class="metric-value" style="font-size: 1.1rem;">{{ business.db_status }}</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Last runs (this business)</h2>
+  {% if business_runs %}
+  <table class="data-table">
+    <thead>
+      <tr><th>Summary</th><th>Units</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for r in business_runs %}
+      <tr><td>{{ r.summary }}</td><td>{{ r.units }}</td><td>{{ r.status }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-state">No runs for this business yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

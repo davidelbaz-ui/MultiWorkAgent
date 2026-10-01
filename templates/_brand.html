@@ -1,0 +1,23 @@
+{% macro brand_mark(size='md') -%}
+<span class="brand-mark brand-mark--{{ size }}" aria-hidden="true"></span>
+{%- endmacro %}
+
+{% macro brand_wordmark(size='md') -%}
+<span class="brand-wordmark brand-wordmark--{{ size }}">
+  <span class="brand-wordmark-primary">Multi</span>
+  <span class="brand-wordmark-accent">Work</span>
+  <span class="brand-wordmark-primary">Agent</span>
+</span>
+{%- endmacro %}
+
+{% macro brand_lockup(href=None, size='md', show_text=true, class='') -%}
+{% set tag = 'a' if href else 'span' %}
+<{{ tag }}
+  {% if href %}href="{{ href }}"{% endif %}
+  class="brand-lockup brand-lockup--{{ size }} {{ class }}"
+  {% if href %}aria-label="MultiWorkAgent home"{% endif %}
+>
+  {{ brand_mark(size=size) }}
+  {% if show_text %}{{ brand_wordmark(size=size) }}{% endif %}
+</{{ tag }}>
+{%- endmacro %}

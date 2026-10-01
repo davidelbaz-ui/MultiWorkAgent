@@ -1,0 +1,35 @@
+{% extends "auth_base.html" %}
+{% from "_auth_oauth.html" import auth_oauth_buttons with context %}
+{% block title %}Create account — MultiWorkAgent{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <h1 class="auth-title">Create account</h1>
+  <p class="auth-sub">One login for all your businesses. You’ll be the account owner.</p>
+  {% if error %}
+  <p class="auth-error" role="alert">{{ error }}</p>
+  {% endif %}
+  {{ auth_oauth_buttons('') }}
+  <form class="auth-form" method="post" action="{{ url_for('signup') }}">
+    <label class="auth-label">
+      <span>Name (optional)</span>
+      <input class="auth-input" type="text" name="display_name" autocomplete="name">
+    </label>
+    <label class="auth-label">
+      <span>Email</span>
+      <input class="auth-input" type="email" name="email" autocomplete="email" required>
+    </label>
+    <label class="auth-label">
+      <span>Password</span>
+      <input class="auth-input" type="password" name="password" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label class="auth-label">
+      <span>Confirm password</span>
+      <input class="auth-input" type="password" name="password_confirm" autocomplete="new-password" minlength="8" required>
+    </label>
+    <button type="submit" class="btn btn-primary auth-submit">Create account</button>
+  </form>
+  <p class="auth-footer">
+    Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+  </p>
+</section>
+{% endblock %}
