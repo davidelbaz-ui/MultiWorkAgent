@@ -19,10 +19,12 @@ Register these **exact** callback URLs in Google Cloud (must match `APP_BASE_URL
 
 | Environment | Callback URL |
 |-------------|--------------|
-| Production (`multiworkagent.com`) | `https://multiworkagent.com/auth/google/callback` |
+| Production (Vercel) | `https://multiworkagent.vercel.app/auth/google/callback` |
 | Local dev | `http://127.0.0.1:5000/auth/google/callback` |
 
-Set **`APP_BASE_URL=https://multiworkagent.com`** in production.
+Microsoft login uses the same host: `https://multiworkagent.vercel.app/auth/microsoft/callback`.
+
+Set **`APP_BASE_URL=https://multiworkagent.vercel.app`** on Vercel (Production).
 
 ## Google Cloud
 

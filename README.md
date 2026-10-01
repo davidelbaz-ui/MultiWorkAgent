@@ -2,7 +2,7 @@
 
 Multi-tenant business operations agent: businesses, integrations, databases, agent runs, billing, and usage metering.
 
-Production site: **https://multiworkagent.com** (Vercel + custom domain).
+Production site: **https://multiworkagent.vercel.app** (Vercel).
 
 ## Local development
 
@@ -18,7 +18,7 @@ Open http://127.0.0.1:5000
 
 ## Deploy on Vercel
 
-See [VERCEL.md](VERCEL.md). Set `APP_BASE_URL=https://multiworkagent.com` in production.
+See [VERCEL.md](VERCEL.md). Set `APP_BASE_URL=https://multiworkagent.vercel.app` in production.
 
 ## OAuth login
 

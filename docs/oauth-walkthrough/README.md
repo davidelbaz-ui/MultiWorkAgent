@@ -16,3 +16,5 @@
 | 12 | Discord | (after #11) | pending |
 
 Callback for all integrations: `{APP_BASE_URL}/integrations/oauth/callback`
+
+**Production (operator):** register `https://multiworkagent.vercel.app/integrations/oauth/callback` and set Vercel `APP_BASE_URL=https://multiworkagent.vercel.app`.

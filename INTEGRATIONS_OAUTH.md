@@ -8,7 +8,12 @@ Callback URL for every provider:
 {APP_BASE_URL}/integrations/oauth/callback
 ```
 
-Example local: `http://127.0.0.1:5000/integrations/oauth/callback`
+| Environment | Callback URL |
+|-------------|--------------|
+| Production (Vercel) | `https://multiworkagent.vercel.app/integrations/oauth/callback` |
+| Local dev | `http://127.0.0.1:5000/integrations/oauth/callback` |
+
+Set **`APP_BASE_URL=https://multiworkagent.vercel.app`** on Vercel so Connect sends the same redirect URI you registered in each provider console.
 
 Use a **different OAuth client** than Google login (`GOOGLE_LOGIN_*`). Integration Google uses `GOOGLE_OAUTH_*`.
 

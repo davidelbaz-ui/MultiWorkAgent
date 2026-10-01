@@ -10,16 +10,16 @@ Asana’s docs require **HTTPS** for web redirect URLs (not `http://127.0.0.1`).
 
 **Option A — production domain (recommended)**
 
-If MultiWorkAgent is on Vercel with **multiworkagent.com**:
+On Vercel (**multiworkagent.vercel.app**):
 
 1. Register redirect URI:
 
    ```text
-   https://multiworkagent.com/integrations/oauth/callback
+   https://multiworkagent.vercel.app/integrations/oauth/callback
    ```
 
-2. In Vercel env: `APP_BASE_URL=https://multiworkagent.com` (see [VERCEL.md](../../VERCEL.md))
-3. Open the app at **https://multiworkagent.com** → **Data & integrations** → **Asana** → **OAuth**
+2. In Vercel env: `APP_BASE_URL=https://multiworkagent.vercel.app` (see [VERCEL.md](../../VERCEL.md))
+3. Open **https://multiworkagent.vercel.app** → **Data & integrations** → **Asana** → **OAuth**
 
 **Option B — local tunnel**
 

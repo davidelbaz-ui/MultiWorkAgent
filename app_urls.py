@@ -1,10 +1,13 @@
-"""Canonical public URL helpers (custom domain, reverse proxy)."""
+"""Canonical public URL helpers (Vercel production URL, reverse proxy)."""
 
 from __future__ import annotations
 
 import os
 
 from flask import url_for
+
+# Register this host in every OAuth provider console (login + integrations).
+PRODUCTION_APP_BASE_URL = "https://multiworkagent.vercel.app"
 
 
 def app_base_url() -> str | None:
