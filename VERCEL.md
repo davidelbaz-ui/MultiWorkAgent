@@ -11,6 +11,10 @@ Set **`APP_BASE_URL`** to that exact value in Vercel (no trailing slash). All lo
 3. Confirm the project’s **`.vercel.app`** domain is `multiworkagent.vercel.app` (Vercel → Project → Settings → Domains).
 4. Add environment variables below for **Production** (and Preview only if you use a different `APP_BASE_URL` there).
 
+## Deploy updates from GitHub
+
+Vercel **automatically builds** when you push to `main`. You do **not** pull on the server. After changing **Environment Variables**, click **Redeploy** (env changes are not applied to old deployments until redeploy).
+
 ## Required environment variables (production)
 
 | Variable | Value |

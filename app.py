@@ -814,12 +814,14 @@ def login_oauth_start(provider: str):
     if not login_oauth.is_login_provider(provider):
         abort(404)
     if not login_oauth.is_provider_configured(provider):
+        provider_label = provider.title()
+        error = f"{provider_label} sign-in is not configured on this server."
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+            error += (
+                " Add GOOGLE_LOGIN_CLIENT_ID and GOOGLE_LOGIN_CLIENT_SECRET in "
+                "Vercel → Project → Settings → Environment Variables (Production), then redeploy."
+            )
         return render_template(
-            "login.html",
-            error=f"{provider.title()} sign-in is not configured on this server.",
-            next_url="",
-            **_auth_template_context(),
-        )
     next_url = _safe_next_url(request.args.get("next"))
     state = login_oauth_state_store.create_state(provider=provider, next_url=next_url)
     redirect_uri = login_oauth_callback_url(provider)
