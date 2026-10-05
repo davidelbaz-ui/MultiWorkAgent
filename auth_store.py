@@ -27,6 +27,18 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def _format_timestamp(iso: str | None) -> str:
+    if not iso:
+        return "—"
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).strftime("%b %d, %Y %H:%M UTC")
+    except ValueError:
+        return iso
+
+
 def bootstrap() -> None:
     init_app_database()
 
@@ -399,6 +411,9 @@ def _update_display_name(user_id: str, display_name: str) -> None:
 
 
 def touch_last_login(user_id: str) -> None:
+    """Persist UTC timestamp when a customer completes sign-in."""
+    if not user_id:
+        return
     now = _utc_now()
     with connect() as conn:
         conn.execute(
@@ -419,6 +434,7 @@ def list_users_for_admin() -> list[dict[str, Any]]:
                 u.created_at,
                 u.last_login_at,
                 m.role,
+                m.created_at AS member_since,
                 a.id AS account_id,
                 a.created_at AS account_created_at,
                 (
@@ -454,15 +470,20 @@ def list_users_for_admin() -> list[dict[str, Any]]:
                 "id": row["id"],
                 "name": name,
                 "email": row["email"],
-                "display_name": row["display_name"] or "",
+                "display_name": (row["display_name"] or "").strip(),
                 "created_at": row["created_at"],
+                "created_at_display": _format_timestamp(row["created_at"]),
                 "last_login_at": row["last_login_at"],
+                "last_login_display": _format_timestamp(row["last_login_at"]),
                 "role": row["role"],
                 "role_label": ROLE_LABELS.get(row["role"], row["role"])
                 if row["role"]
                 else "",
                 "account_id": row["account_id"],
                 "account_created_at": row["account_created_at"],
+                "account_created_display": _format_timestamp(row["account_created_at"]),
+                "member_since": row["member_since"],
+                "member_since_display": _format_timestamp(row["member_since"]),
                 "business_count": int(row["business_count"] or 0),
                 "sign_in_methods": ", ".join(sign_in),
             }
