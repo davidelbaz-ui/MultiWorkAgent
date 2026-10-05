@@ -6,7 +6,12 @@ import os
 import sqlite3
 import unittest
 
-from remote_sqlite import ephemeral_local_storage, should_trust_session_membership
+from remote_sqlite import (
+    ephemeral_local_storage,
+    reset_connection_state_for_tests,
+    should_trust_session_membership,
+    turso_env_configured,
+)
 
 
 class RemoteSqliteConfigTest(unittest.TestCase):
@@ -42,12 +47,15 @@ class RemoteSqliteConfigTest(unittest.TestCase):
             for k in ("VERCEL", "TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN")
         }
         try:
+            reset_connection_state_for_tests()
             os.environ["VERCEL"] = "1"
             os.environ["TURSO_DATABASE_URL"] = "libsql://example.turso.io"
             os.environ["TURSO_AUTH_TOKEN"] = "token"
-            self.assertFalse(ephemeral_local_storage())
-            self.assertFalse(should_trust_session_membership())
+            self.assertTrue(turso_env_configured())
+            self.assertTrue(ephemeral_local_storage())
+            self.assertTrue(should_trust_session_membership())
         finally:
+            reset_connection_state_for_tests()
             for key, value in saved.items():
                 if value is None:
                     os.environ.pop(key, None)

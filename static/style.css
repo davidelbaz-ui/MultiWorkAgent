@@ -155,13 +155,35 @@ a:hover {
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   grid-template-areas:
     "header header"
+    "storage storage"
     "sidebar main";
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
+}
+
+.storage-warning-banner {
+  grid-area: storage;
+  padding: 0.55rem var(--main-padding-x);
+  background: rgba(220, 140, 40, 0.12);
+  border-bottom: 1px solid rgba(220, 140, 40, 0.35);
+  color: var(--text);
+}
+
+.storage-warning-message {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.storage-warning-detail {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .topbar {

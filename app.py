@@ -130,7 +130,12 @@ def _legal_template_context() -> dict:
 
 @app.context_processor
 def _inject_auth_oauth_context() -> dict:
-    return _auth_template_context()
+    from remote_sqlite import storage_banner_for_ui
+
+    return {
+        **_auth_template_context(),
+        "storage_warning": storage_banner_for_ui(),
+    }
 
 
 def _login_session(user: dict, membership: dict) -> None:

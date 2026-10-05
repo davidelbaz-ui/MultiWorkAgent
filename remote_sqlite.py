@@ -12,6 +12,9 @@ from app_config import is_vercel_runtime
 
 LOGGER = logging.getLogger(__name__)
 
+_turso_connected = False
+_turso_fallback_logged = False
+
 
 def turso_credentials() -> tuple[str, str] | None:
     url = os.environ.get("TURSO_DATABASE_URL", "").strip()
@@ -21,12 +24,17 @@ def turso_credentials() -> tuple[str, str] | None:
     return None
 
 
-def uses_remote_database() -> bool:
+def turso_env_configured() -> bool:
     return turso_credentials() is not None
 
 
+def uses_remote_database() -> bool:
+    """True only after a successful Turso connection in this process."""
+    return _turso_connected
+
+
 def ephemeral_local_storage() -> bool:
-    if uses_remote_database():
+    if _turso_connected:
         return False
     if is_vercel_runtime():
         return True
@@ -47,6 +55,28 @@ def should_trust_session_membership() -> bool:
     if _env_bool("AUTH_STRICT_MEMBERSHIP"):
         return False
     return ephemeral_local_storage()
+
+
+def storage_banner_for_ui() -> dict[str, str] | None:
+    if _turso_connected:
+        return None
+    if not is_vercel_runtime() and not _env_bool("EPHEMERAL_STORAGE"):
+        return None
+    if turso_env_configured():
+        return {
+            "message": "Database is not connected — businesses, chats, and other data will not stay saved.",
+            "detail": (
+                "Turso credentials are set but the app could not connect. Fix TURSO_DATABASE_URL and "
+                "TURSO_AUTH_TOKEN in Vercel (then redeploy), or remove them until Turso is ready."
+            ),
+        }
+    return {
+        "message": "Data on this deployment is temporary — businesses and chats can disappear between page loads.",
+        "detail": (
+            "Add a Turso database and set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN in Vercel Environment "
+            "Variables, then redeploy. See VERCEL.md in the repo."
+        ),
+    }
 
 
 class _RowMapping:
@@ -110,7 +140,7 @@ class _LibsqlConnection:
 
     def __init__(self, inner: Any) -> None:
         self._inner = inner
-        self.row_factory: Any = sqlite3.Row  # ignored; rows are always _RowMapping
+        self.row_factory: Any = sqlite3.Row
 
     def execute(self, sql: str, params: Any = ()) -> _LibsqlCursor:
         if params:
@@ -153,25 +183,38 @@ def _connect_libsql(url: str, token: str) -> _LibsqlConnection:
 
 
 def connect_sqlite(*, path: Path) -> sqlite3.Connection | _LibsqlConnection:
+    global _turso_connected, _turso_fallback_logged
+
     creds = turso_credentials()
     if creds:
         url, token = creds
         try:
-            return _connect_libsql(url, token)
+            conn = _connect_libsql(url, token)
+            _turso_connected = True
+            return conn
         except Exception as exc:
+            _turso_connected = False
             if _env_bool("TURSO_REQUIRED"):
                 raise RuntimeError(
                     "Could not connect to Turso (TURSO_REQUIRED=1). "
                     "Check TURSO_DATABASE_URL and TURSO_AUTH_TOKEN."
                 ) from exc
-            LOGGER.warning(
-                "Turso connection failed; falling back to local SQLite at %s: %s",
-                path,
-                exc,
-            )
+            if not _turso_fallback_logged:
+                LOGGER.warning(
+                    "Turso connection failed; using ephemeral local SQLite on this instance "
+                    "(businesses and other data will not persist across requests): %s",
+                    exc,
+                )
+                _turso_fallback_logged = True
 
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, detect_types=sqlite3.PARSE_DECLTYPES)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def reset_connection_state_for_tests() -> None:
+    global _turso_connected, _turso_fallback_logged
+    _turso_connected = False
+    _turso_fallback_logged = False

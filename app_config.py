@@ -109,16 +109,19 @@ def validate_production_secrets(config: AppConfig) -> list[str]:
         warnings.append(
             "INTEGRATION_ENCRYPTION_KEY is not set; integration credentials derive from FLASK_SECRET_KEY"
         )
-    from remote_sqlite import ephemeral_local_storage, uses_remote_database
+    from remote_sqlite import ephemeral_local_storage, turso_env_configured, uses_remote_database
 
     if is_production_env(config.app_env) and ephemeral_local_storage():
         warnings.append(
             "App data uses ephemeral storage (e.g. Vercel /tmp); set TURSO_DATABASE_URL and "
-            "TURSO_AUTH_TOKEN for durable login and data. Session cookies are trusted between "
-            "requests until Turso is configured."
+            "TURSO_AUTH_TOKEN for durable data. Session cookies are trusted between requests until Turso connects."
         )
-    elif is_production_env(config.app_env) and not uses_remote_database():
+    elif (
+        is_production_env(config.app_env)
+        and turso_env_configured()
+        and not uses_remote_database()
+    ):
         warnings.append(
-            "No TURSO_DATABASE_URL configured; SQLite is local-only and not shared across serverless instances."
+            "TURSO_* env vars are set but Turso is not connected; data remains ephemeral until connection succeeds."
         )
     return warnings
