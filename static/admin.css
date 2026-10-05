@@ -248,6 +248,70 @@ body.admin-page .admin-back a:hover {
   margin-bottom: 1rem;
 }
 
+.admin-users-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.25rem;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+}
+
+.admin-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-filter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-filter-switcher {
+  min-width: 11.5rem;
+}
+
+.admin-filter-switcher .business-switcher-trigger {
+  min-width: 11.5rem;
+}
+
+.admin-users-search {
+  flex: 1 1 14rem;
+  min-width: 12rem;
+  max-width: 24rem;
+}
+
+.admin-filter-input {
+  width: 100%;
+  min-width: 12rem;
+  padding: 0.45rem 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-filter-input:hover,
+.admin-filter-input:focus {
+  outline: none;
+  border-color: rgba(91, 141, 239, 0.55);
+  box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.25);
+}
+
+.admin-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding-bottom: 0.1rem;
+}
+
 .admin-inline-form {
   display: inline;
 }

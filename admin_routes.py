@@ -192,9 +192,72 @@ def admin_support_status(account_id: str):
 
 @admin_bp.get("/users")
 def admin_users():
+    query = request.args.get("q", "").strip()
+    role = request.args.get("role", "").strip()
+    sign_in = request.args.get("sign_in", "").strip()
+    last_login = request.args.get("last_login", "").strip()
+    sort = request.args.get("sort", "created_desc").strip() or "created_desc"
+
+    users, total = auth_store.list_users_for_admin(
+        query=query,
+        role=role,
+        sign_in=sign_in,
+        last_login=last_login,
+        sort=sort,
+    )
+
+    role_options = [
+        {"value": "", "label": "All roles"},
+        {"value": "owner", "label": "Owner"},
+        {"value": "operator", "label": "Operator"},
+        {"value": "viewer", "label": "Viewer"},
+    ]
+    sign_in_options = [
+        {"value": "", "label": "Any method"},
+        {"value": "password", "label": "Password only"},
+        {"value": "oauth", "label": "OAuth linked"},
+        {"value": "google", "label": "Google"},
+        {"value": "microsoft", "label": "Microsoft"},
+    ]
+    last_login_options = [
+        {"value": "", "label": "Any time"},
+        {"value": "never", "label": "Never signed in"},
+        {"value": "7d", "label": "Last 7 days"},
+        {"value": "30d", "label": "Last 30 days"},
+    ]
+    sort_options = [
+        {"value": "created_desc", "label": "Newest users"},
+        {"value": "created_asc", "label": "Oldest users"},
+        {"value": "name_asc", "label": "Name A → Z"},
+        {"value": "name_desc", "label": "Name Z → A"},
+        {"value": "email_asc", "label": "Email A → Z"},
+        {"value": "email_desc", "label": "Email Z → A"},
+        {"value": "account_desc", "label": "Newest accounts"},
+        {"value": "account_asc", "label": "Oldest accounts"},
+        {"value": "last_login_desc", "label": "Recent sign-in"},
+        {"value": "last_login_asc", "label": "Oldest sign-in"},
+        {"value": "businesses_desc", "label": "Most businesses"},
+        {"value": "businesses_asc", "label": "Fewest businesses"},
+    ]
+
+    filters_active = any([query, role, sign_in, last_login, sort != "created_desc"])
+
     return render_template(
         "admin/users.html",
-        users=auth_store.list_users_for_admin(),
+        users=users,
+        total=total,
+        filters={
+            "q": query,
+            "role": role,
+            "sign_in": sign_in,
+            "last_login": last_login,
+            "sort": sort,
+        },
+        filters_active=filters_active,
+        role_options=role_options,
+        sign_in_options=sign_in_options,
+        last_login_options=last_login_options,
+        sort_options=sort_options,
     )
 
 

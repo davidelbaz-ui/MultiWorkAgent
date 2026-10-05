@@ -1,0 +1,36 @@
+{% macro form_switcher(name, field_label, options, selected, switcher_id) %}
+<div class="business-switcher admin-filter-switcher" data-form-switcher data-input-name="{{ name }}">
+  <span class="admin-filter-label">{{ field_label }}</span>
+  <button
+    type="button"
+    class="business-switcher-trigger"
+    aria-label="{{ field_label }}"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    id="{{ switcher_id }}-trigger"
+  >
+    <span class="business-switcher-label">
+      {%- for opt in options if opt.value == selected -%}{{ opt.label }}{%- endfor -%}
+    </span>
+    <span class="business-switcher-chevron" aria-hidden="true"></span>
+  </button>
+  <ul
+    class="business-switcher-menu"
+    role="listbox"
+    aria-labelledby="{{ switcher_id }}-trigger"
+    id="{{ switcher_id }}-menu"
+    hidden
+  >
+    {% for opt in options %}
+    <li
+      class="business-switcher-option {% if opt.value == selected %}is-selected{% endif %}"
+      role="option"
+      aria-selected="{% if opt.value == selected %}true{% else %}false{% endif %}"
+      tabindex="{% if opt.value == selected %}0{% else %}-1{% endif %}"
+      data-value="{{ opt.value }}"
+    >{{ opt.label }}</li>
+    {% endfor %}
+  </ul>
+  <input type="hidden" name="{{ name }}" value="{{ selected }}">
+</div>
+{% endmacro %}

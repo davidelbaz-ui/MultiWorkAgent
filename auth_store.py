@@ -423,10 +423,88 @@ def touch_last_login(user_id: str) -> None:
         conn.commit()
 
 
-def list_users_for_admin() -> list[dict[str, Any]]:
-    with connect() as conn:
-        rows = conn.execute(
+def list_users_for_admin(
+    *,
+    query: str = "",
+    role: str = "",
+    sign_in: str = "",
+    last_login: str = "",
+    sort: str = "created_desc",
+) -> tuple[list[dict[str, Any]], int]:
+    """Return filtered user rows for admin and total matching count."""
+    from datetime import timedelta
+
+    conditions: list[str] = []
+    params: list[Any] = []
+
+    clean_query = query.strip().lower()
+    if clean_query:
+        like = f"%{clean_query}%"
+        conditions.append(
+            "(LOWER(u.email) LIKE ? OR LOWER(COALESCE(u.display_name, '')) LIKE ?)"
+        )
+        params.extend([like, like])
+
+    if role in ROLES:
+        conditions.append("m.role = ?")
+        params.append(role)
+
+    if sign_in == "password":
+        conditions.append(
+            "NOT EXISTS (SELECT 1 FROM user_auth_identities i WHERE i.user_id = u.id)"
+        )
+    elif sign_in == "oauth":
+        conditions.append(
+            "EXISTS (SELECT 1 FROM user_auth_identities i WHERE i.user_id = u.id)"
+        )
+    elif sign_in in OAUTH_PROVIDERS:
+        conditions.append(
+            "EXISTS (SELECT 1 FROM user_auth_identities i WHERE i.user_id = u.id AND i.provider = ?)"
+        )
+        params.append(sign_in)
+
+    if last_login == "never":
+        conditions.append("u.last_login_at IS NULL")
+    elif last_login in {"7d", "30d"}:
+        days = 7 if last_login == "7d" else 30
+        cutoff = (
+            datetime.now(timezone.utc) - timedelta(days=days)
+        ).replace(microsecond=0).isoformat()
+        conditions.append("u.last_login_at >= ?")
+        params.append(cutoff)
+
+    where_sql = " AND ".join(conditions) if conditions else "TRUE"
+
+    sort_sql = {
+        "name_asc": "LOWER(COALESCE(NULLIF(TRIM(u.display_name), ''), u.email)) ASC, u.email ASC",
+        "name_desc": "LOWER(COALESCE(NULLIF(TRIM(u.display_name), ''), u.email)) DESC, u.email DESC",
+        "email_asc": "LOWER(u.email) ASC",
+        "email_desc": "LOWER(u.email) DESC",
+        "created_asc": "u.created_at ASC",
+        "created_desc": "u.created_at DESC",
+        "account_asc": "a.created_at ASC NULLS LAST",
+        "account_desc": "a.created_at DESC NULLS LAST",
+        "last_login_asc": "u.last_login_at ASC NULLS LAST",
+        "last_login_desc": "u.last_login_at DESC NULLS LAST",
+        "businesses_asc": "business_count ASC",
+        "businesses_desc": "business_count DESC",
+    }.get(sort, "u.created_at DESC")
+
+    base_from = """
+            FROM users u
+            LEFT JOIN account_members m ON m.user_id = u.id
+            LEFT JOIN accounts a ON a.id = m.account_id
             """
+
+    with connect() as conn:
+        count_row = conn.execute(
+            f"SELECT COUNT(*) AS n {base_from} WHERE {where_sql}",
+            tuple(params),
+        ).fetchone()
+        total = int(count_row["n"]) if count_row else 0
+
+        rows = conn.execute(
+            f"""
             SELECT
                 u.id,
                 u.email,
@@ -448,11 +526,11 @@ def list_users_for_admin() -> list[dict[str, Any]]:
                     FROM user_auth_identities i
                     WHERE i.user_id = u.id
                 ) AS oauth_providers
-            FROM users u
-            LEFT JOIN account_members m ON m.user_id = u.id
-            LEFT JOIN accounts a ON a.id = m.account_id
-            ORDER BY u.created_at DESC
-            """
+            {base_from}
+            WHERE {where_sql}
+            ORDER BY {sort_sql}
+            """,
+            tuple(params),
         ).fetchall()
     users: list[dict[str, Any]] = []
     for row in rows:
@@ -488,7 +566,7 @@ def list_users_for_admin() -> list[dict[str, Any]]:
                 "sign_in_methods": ", ".join(sign_in),
             }
         )
-    return users
+    return users, total
 
 
 def authenticate(email: str, password: str) -> tuple[dict[str, Any], dict[str, Any]] | None:
