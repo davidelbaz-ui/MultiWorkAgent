@@ -1,19 +1,56 @@
 {% extends "admin/base.html" %}
 {% block title %}Page settings — Admin{% endblock %}
 {% block content %}
-<h1 class="admin-page-title">Page settings</h1>
-<p class="meta-row">Changes apply to the public site (start page, maintenance banner, etc.).</p>
-<form method="post" class="admin-form admin-form--wide">
-  {% for page in pages %}
-  <label class="admin-label">{{ page.label }}
-    {% if page.key == 'page.start.hero_lead' or page.key == 'page.maintenance.message' %}
-    <textarea class="admin-textarea" name="{{ page.key }}" rows="3">{{ page.value }}</textarea>
-    {% else %}
-    <input class="admin-input" type="text" name="{{ page.key }}" value="{{ page.value }}">
-    {% endif %}
-    <span class="meta-row">Key: <code>{{ page.key }}</code></span>
-  </label>
+<header class="admin-page-header">
+  <div>
+    <h1 class="admin-page-title">Page settings</h1>
+    <p class="admin-page-lead">Edit customer-facing copy. Changes apply on the live site after you save.</p>
+  </div>
+  <a class="btn btn-sm" href="{{ public_site_url }}" target="_blank" rel="noopener">View site</a>
+</header>
+
+<form method="post" class="admin-page-settings">
+  {% for section in sections %}
+  <section class="admin-settings-section" id="settings-{{ section.id }}">
+    <div class="admin-settings-section-head">
+      <h2>{{ section.title }}</h2>
+      {% if section.description %}
+      <p class="admin-settings-section-desc">{{ section.description }}</p>
+      {% endif %}
+    </div>
+    <div class="admin-settings-grid">
+      {% for field in section.fields %}
+      <div class="admin-settings-field admin-settings-field--{{ field.field }}">
+        <div class="admin-settings-field-head">
+          <label class="admin-settings-label" for="field-{{ field.key|replace('.', '-') }}">{{ field.label }}</label>
+          {% if field.updated_at %}
+          <span class="admin-settings-meta">Updated {{ field.updated_at[:10] }}{% if field.updated_by %} · {{ field.updated_by }}{% endif %}</span>
+          {% endif %}
+        </div>
+        {% if field.help %}
+        <p class="admin-settings-help">{{ field.help }}</p>
+        {% endif %}
+        {% if field.field == 'textarea' %}
+        <textarea class="admin-textarea" id="field-{{ field.key|replace('.', '-') }}" name="{{ field.key }}" rows="4">{{ field.value }}</textarea>
+        {% elif field.field == 'toggle' %}
+        <label class="admin-toggle">
+          <input type="hidden" name="{{ field.key }}" value="0">
+          <input type="checkbox" name="{{ field.key }}" value="1" {% if field.value in ('1', 'true', 'on', 'yes') %}checked{% endif %}>
+          <span class="admin-toggle-ui" aria-hidden="true"></span>
+          <span>{% if field.value in ('1', 'true', 'on', 'yes') %}On{% else %}Off{% endif %} — customers {% if field.value in ('1', 'true', 'on', 'yes') %}cannot{% else %}can{% endif %} use the app</span>
+        </label>
+        {% else %}
+        <input class="admin-input" type="text" id="field-{{ field.key|replace('.', '-') }}" name="{{ field.key }}" value="{{ field.value }}">
+        {% endif %}
+        <p class="admin-settings-key"><code>{{ field.key }}</code></p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
   {% endfor %}
-  <button type="submit" class="btn btn-primary">Save all</button>
+  <div class="admin-settings-actions">
+    <button type="submit" class="btn btn-primary">Save all changes</button>
+    <p class="meta-row">Operator /admin login is not affected by these settings.</p>
+  </div>
 </form>
 {% endblock %}

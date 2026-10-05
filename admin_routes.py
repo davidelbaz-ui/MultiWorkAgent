@@ -208,19 +208,24 @@ def admin_system():
     )
 
 
+@admin_bp.context_processor
+def admin_layout_context():
+    from app_urls import public_app_base_url
+
+    return {"public_site_url": public_app_base_url()}
+
+
 @admin_bp.get("/pages")
 def admin_pages():
-    return render_template("admin/pages.html", pages=site_settings_store.list_all())
+    return render_template(
+        "admin/pages.html",
+        sections=site_settings_store.admin_sections(),
+    )
 
 
 @admin_bp.post("/pages")
 def admin_pages_save():
-    values = {}
-    for item in site_settings_store.PAGE_DEFINITIONS:
-        key = item["key"]
-        if key in request.form:
-            values[key] = request.form.get(key, "")
-    site_settings_store.update_values(values, updated_by=g.admin_email)
+    site_settings_store.apply_form_values(request.form, updated_by=g.admin_email)
     flash("Page settings saved.", "success")
     return redirect(url_for("admin.admin_pages"))
 

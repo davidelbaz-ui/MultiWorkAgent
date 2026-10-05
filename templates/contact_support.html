@@ -4,8 +4,7 @@
 {% block content %}
 <h1 class="page-title">Contact support</h1>
 <p class="page-sub">
-  Chat with our team. We aim to respond within {{ support_sla_hours }} hours on business days.
-  Your conversation is saved to your account so you can return anytime.
+  {{ support_intro or ('Chat with our team. We aim to respond within ' ~ support_sla_hours ~ ' hours on business days. Your conversation is saved to your account so you can return anytime.') }}
 </p>
 
 <section class="card support-chat-card">

@@ -1,3 +1,4 @@
+{% from "_brand.html" import brand_lockup %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,8 +10,9 @@
 </head>
 <body class="admin-page admin-page--center">
   <div class="admin-login-card">
+    {{ brand_lockup(href=public_site_url, size='md', class='admin-login-brand') }}
     <h1>Operator sign in</h1>
-    <p class="meta-row">Operator sign-in · <code>/admin</code></p>
+    <p class="meta-row">Separate from customer sign-in · <code>/admin</code></p>
     {% if error %}
     <p class="admin-flash admin-flash--error">{{ error }}</p>
     {% endif %}

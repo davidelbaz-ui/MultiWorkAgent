@@ -1,3 +1,4 @@
+{% from "_brand.html" import brand_lockup %}
 {% from "_favicon.html" import favicon_tags %}
 <!DOCTYPE html>
 <html lang="en">
@@ -13,8 +14,8 @@
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Admin navigation">
       <div class="admin-brand">
-        <span class="admin-brand-mark">MWA</span>
-        <span class="admin-brand-text">Operator</span>
+        {{ brand_lockup(href=public_site_url, size='sm', class='admin-brand-lockup') }}
+        <span class="admin-brand-badge">Operator</span>
       </div>
       <nav class="admin-nav">
         <a class="admin-nav-link {% if request.endpoint == 'admin.admin_dashboard' %}is-active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>

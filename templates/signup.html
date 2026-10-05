@@ -4,7 +4,7 @@
 {% block content %}
 <section class="auth-card">
   <h1 class="auth-title">Create account</h1>
-  <p class="auth-sub">One login for all your businesses. You’ll be the account owner.</p>
+  <p class="auth-sub">{{ auth_subtitle or 'One login for all your businesses. You’ll be the account owner.' }}</p>
   {% if error %}
   <p class="auth-error" role="alert">{{ error }}</p>
   {% endif %}

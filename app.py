@@ -196,6 +196,16 @@ def _auth_template_context() -> dict:
     return {"oauth_providers": login_oauth.configured_login_providers()}
 
 
+def _site_copy(keys: list[str]) -> dict[str, str]:
+    if not DB_READY:
+        return {}
+    try:
+        return site_settings_store.get_many(keys)
+    except Exception:
+        LOGGER.exception("site_settings_read_failed")
+        return {}
+
+
 def _legal_template_context() -> dict:
     if session.get("user_id") and session.get("account_id"):
         back_href = url_for("settings")
@@ -983,6 +993,8 @@ def login():
         error = "Invalid email or password."
     ctx = {"error": error, "next_url": next_url}
     ctx.update(_auth_template_context())
+    copy = _site_copy(["page.auth.login_subtitle"])
+    ctx["auth_subtitle"] = copy.get("page.auth.login_subtitle", "")
     return render_template("login.html", **ctx)
 
 
@@ -1011,6 +1023,8 @@ def signup():
                 error = str(exc)
     ctx = {"error": error}
     ctx.update(_auth_template_context())
+    copy = _site_copy(["page.auth.signup_subtitle"])
+    ctx["auth_subtitle"] = copy.get("page.auth.signup_subtitle", "")
     return render_template("signup.html", **ctx)
 
 
@@ -1133,17 +1147,23 @@ def index():
     if session.get("user_id") and session.get("account_id"):
         return render_template("home.html", **_ctx("home"))
     ctx = _auth_template_context()
-    copy = site_settings_store.get_many(
+    copy = _site_copy(
         [
+            "page.start.eyebrow",
             "page.start.hero_title",
             "page.start.hero_lead",
             "page.start.hero_note",
+            "page.start.cta_signup",
+            "page.start.cta_signin",
         ]
     )
     ctx.update(
+        start_eyebrow=copy.get("page.start.eyebrow", ""),
         start_hero_title=copy.get("page.start.hero_title", ""),
         start_hero_lead=copy.get("page.start.hero_lead", ""),
         start_hero_note=copy.get("page.start.hero_note", ""),
+        start_cta_signup=copy.get("page.start.cta_signup", ""),
+        start_cta_signin=copy.get("page.start.cta_signin", ""),
     )
     return render_template("start.html", **ctx)
 
@@ -1832,12 +1852,14 @@ def settings():
 
 @app.get("/support/contact")
 def contact_support():
+    intro = _site_copy(["page.support.intro"]).get("page.support.intro", "")
     return render_template(
         "contact_support.html",
         **_ctx(
             "settings",
             support_sla_hours=support_store.SUPPORT_SLA_HOURS,
             support_max_body=support_store.MAX_MESSAGE_BODY_LEN,
+            support_intro=intro,
         ),
     )
 

@@ -23,14 +23,14 @@
   <main class="start-main">
     <section class="start-hero">
       <div class="start-hero-copy">
-        <p class="start-eyebrow">Multi-business operations agent</p>
+        <p class="start-eyebrow">{{ start_eyebrow or 'Multi-business operations agent' }}</p>
         <h1 class="start-title">{{ start_hero_title or 'One agent. Every business. One dashboard.' }}</h1>
         <p class="start-lead">
           {{ start_hero_lead or 'MultiWorkAgent is your control surface for running work across many companies—chat with an AI operator, connect integrations and databases per business, and meter every action in clear execution runs.' }}
         </p>
         <div class="start-hero-actions">
-          <a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}">Sign up now</a>
-          <a class="btn btn-lg" href="{{ url_for('login') }}">Sign in</a>
+          <a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}">{{ start_cta_signup or 'Sign up now' }}</a>
+          <a class="btn btn-lg" href="{{ url_for('login') }}">{{ start_cta_signin or 'Sign in' }}</a>
         </div>
         <p class="meta-row start-hero-note">{{ start_hero_note or 'Starter plans from $19/mo · Scoped credentials · No shared secrets across businesses' }}</p>
       </div>
