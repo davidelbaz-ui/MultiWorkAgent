@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+import logging
 
 from flask import (
     Blueprint,
@@ -19,31 +19,26 @@ import admin_auth
 import admin_log_buffer
 import admin_stats
 import app_logging
+import app_state
 import http_rate_limit
 import site_settings_store
 import support_store
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
-
-
-def _app_state():
-    import app as main_app
-
-    return main_app
+_ADMIN_LOGGER = logging.getLogger("bma")
 
 
 @admin_bp.before_request
 def admin_gate():
-    main = _app_state()
     endpoint = request.endpoint or ""
 
-    if not main.DB_READY:
+    if not app_state.DB_READY:
         if endpoint == "admin.admin_login":
             return None
         return (
             render_template(
                 "admin/db_required.html",
-                db_error=main.DB_INIT_ERROR,
+                db_error=app_state.DB_INIT_ERROR,
             ),
             503,
         )
@@ -85,7 +80,7 @@ def admin_login():
             session["admin_email"] = admin_auth.admin_email()
             session.permanent = True
             app_logging.log_event(
-                _app_state().LOGGER,
+                _ADMIN_LOGGER,
                 "admin_login_ok",
                 email=admin_auth.admin_email(),
                 remote_addr=remote,
@@ -206,8 +201,10 @@ def admin_pages_save():
 
 @admin_bp.get("/health")
 def admin_health():
-    main = _app_state()
     return (
-        {"ok": main.DB_READY, "admin": admin_auth.admin_configured()},
-        200 if main.DB_READY else 503,
+        {
+            "ok": app_state.DB_READY,
+            "admin": admin_auth.admin_configured(),
+        },
+        200 if app_state.DB_READY else 503,
     )

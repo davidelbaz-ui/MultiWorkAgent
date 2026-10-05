@@ -27,6 +27,7 @@ from flask import (
 )
 
 import app_logging
+import app_state
 import http_rate_limit
 from app_config import load_app_config, apply_flask_config, validate_production_secrets
 from pg_storage import should_trust_session_membership
@@ -116,6 +117,13 @@ DB_READY = False
 DB_INIT_ERROR: str | None = None
 
 
+def _publish_db_status() -> None:
+    global DB_READY, DB_INIT_ERROR
+    app_state.set_database_status(ready=DB_READY, error=DB_INIT_ERROR)
+    app.config["DB_READY"] = DB_READY
+    app.config["DB_INIT_ERROR"] = DB_INIT_ERROR
+
+
 def bootstrap_application_stores() -> None:
     global DB_READY, DB_INIT_ERROR
     from db_connection import database_url, deployment_database_error
@@ -123,14 +131,18 @@ def bootstrap_application_stores() -> None:
     misconfig = deployment_database_error()
     if misconfig:
         DB_INIT_ERROR = misconfig
+        DB_READY = False
         LOGGER.error("database_misconfigured %s", DB_INIT_ERROR)
+        _publish_db_status()
         return
     if not database_url():
         DB_INIT_ERROR = (
             "DATABASE_URL is not set. Connect Vercel Postgres (POSTGRES_URL) or set DATABASE_URL "
             "under Project Settings / Environment Variables, then redeploy."
         )
+        DB_READY = False
         LOGGER.error("database_unconfigured %s", DB_INIT_ERROR)
+        _publish_db_status()
         return
     try:
         account_lifecycle.bootstrap()
@@ -162,7 +174,9 @@ def bootstrap_application_stores() -> None:
             )
         else:
             DB_INIT_ERROR = f"Database setup failed: {exc}"
+        DB_READY = False
         LOGGER.exception("database_bootstrap_failed")
+    _publish_db_status()
 
 
 bootstrap_application_stores()
