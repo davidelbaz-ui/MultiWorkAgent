@@ -153,20 +153,18 @@ function buildIntegrationWizardConfig(ctx) {
     });
   } else {
     ctx.authMethod = "api_key";
-    if (ctx.oauthAvailable) {
-      steps.push({
-        id: "oauth-unconfigured",
-        title: "OAuth on this server",
-        render(container) {
-          container.appendChild(
-            wizardPanel("OAuth not enabled here", [
-              "This provider supports OAuth, but the site operator has not set the server OAuth app credentials yet.",
-              "You can still connect with an API key from your own account.",
-            ]),
-          );
-        },
-      });
-    }
+    steps.push({
+      id: "method",
+      title: "How to connect",
+      render(container, c) {
+        container.appendChild(
+          wizardPanel("Connect with an API key", [
+            `An API key from your ${c.name} account is the only way to connect here.`,
+            "Paste it on the last step. We encrypt it and never show it again.",
+          ]),
+        );
+      },
+    });
   }
 
   steps.push({

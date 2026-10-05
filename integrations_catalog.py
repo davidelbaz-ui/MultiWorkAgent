@@ -24,6 +24,7 @@ class IntegrationWithAuth(Integration, total=False):
     auth_methods: list[str]
     oauth_available: bool
     oauth_configured: bool
+    oauth_offered: bool
 
 
 class IntegrationCategory(TypedDict):
@@ -251,14 +252,19 @@ def get_integration(slug: str) -> Integration | None:
 def enrich_integration(item: Integration) -> IntegrationWithAuth:
     slug = item["slug"]
     oauth_available = integration_oauth.is_oauth_provider(slug)
+    oauth_configured = (
+        integration_oauth.is_provider_configured(slug) if oauth_available else False
+    )
+    oauth_offered = oauth_available and oauth_configured
     auth_methods = ["api_key"]
-    if oauth_available:
+    if oauth_offered:
         auth_methods.append("oauth")
     return {
         **item,
         "auth_methods": auth_methods,
         "oauth_available": oauth_available,
-        "oauth_configured": integration_oauth.is_provider_configured(slug) if oauth_available else False,
+        "oauth_configured": oauth_configured,
+        "oauth_offered": oauth_offered,
     }
 
 

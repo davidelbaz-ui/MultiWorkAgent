@@ -67,6 +67,26 @@ def list_messages(thread_id: str) -> list[dict[str, Any]]:
 
 
 MAX_INLINE_IMAGE_BYTES = 7 * 1024 * 1024
+MAX_INLINE_TEXT_BYTES = 512 * 1024
+
+
+def is_text_like_attachment(mime_type: str | None, original_name: str) -> bool:
+    mime = (mime_type or "").lower()
+    if mime.startswith("text/"):
+        return True
+    if mime in (
+        "application/json",
+        "application/xml",
+        "application/x-yaml",
+        "application/yaml",
+        "application/javascript",
+    ):
+        return True
+    lower = original_name.lower()
+    for ext in (".txt", ".md", ".csv", ".json", ".yaml", ".yml", ".xml", ".log"):
+        if lower.endswith(ext):
+            return True
+    return False
 
 
 def read_message_attachment_bytes(
@@ -74,6 +94,7 @@ def read_message_attachment_bytes(
     thread_id: str,
     message_id: int,
     file_id: int,
+    max_bytes: int | None = None,
 ) -> tuple[bytes, str] | None:
     with connect() as conn:
         row = conn.execute(
@@ -87,7 +108,8 @@ def read_message_attachment_bytes(
         ).fetchone()
     if not row:
         return None
-    if int(row["size_bytes"] or 0) > MAX_INLINE_IMAGE_BYTES:
+    limit = MAX_INLINE_IMAGE_BYTES if max_bytes is None else max_bytes
+    if int(row["size_bytes"] or 0) > limit:
         return None
     path = _thread_dir(thread_id) / row["stored_name"]
     if not path.is_file():

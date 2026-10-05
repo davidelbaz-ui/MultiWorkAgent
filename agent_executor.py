@@ -19,6 +19,7 @@ _stream_cancel_events: dict[str, threading.Event] = {}
 
 import agent_tool_trace
 import chat_store
+import knowledge_store
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
@@ -200,9 +201,14 @@ def _mock_enabled() -> bool:
     return os.environ.get("AGENT_MOCK", "").strip().lower() in ("1", "true", "yes")
 
 
-def _system_prompt(*, scope_label: str, business_name: str | None) -> str:
+def _system_prompt(
+    *,
+    scope_label: str,
+    business_name: str | None,
+    knowledge_block: str | None = None,
+) -> str:
     scope = business_name or scope_label
-    return (
+    prompt = (
         "You are MultiWorkAgent, an operations assistant for accounts "
         "that manage one or many businesses.\n\n"
         f"Active workspace scope: {scope}.\n"
@@ -210,23 +216,64 @@ def _system_prompt(*, scope_label: str, business_name: str | None) -> str:
         "When the user asks you to change external systems, explain what you would do "
         "and note that a connection is required.\n"
         "When the user attaches images, describe and use what you see in them.\n"
+        "When the user attaches text files (or business knowledge files below), use their contents.\n"
         "Be concise, practical, and use plain language."
     )
+    if knowledge_block:
+        prompt += (
+            "\n\nBusiness knowledge files for this workspace:\n"
+            f"{knowledge_block}"
+        )
+    return prompt
 
 
-def _format_user_content(msg: dict[str, Any]) -> str:
+def _decode_attachment_text(data: bytes) -> str:
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data.decode("utf-8", errors="replace")
+
+
+def _text_attachment_part(
+    thread_id: str,
+    message_id: int,
+    att: dict[str, Any],
+    *,
+    max_chars: int = 100_000,
+) -> dict[str, str]:
+    name = att.get("original_name") or "file"
+    loaded = chat_store.read_message_attachment_bytes(
+        thread_id=thread_id,
+        message_id=message_id,
+        file_id=int(att["id"]),
+        max_bytes=chat_store.MAX_INLINE_TEXT_BYTES,
+    )
+    if not loaded:
+        return {"text": f"[Attached file could not be loaded: {name}]"}
+    text = _decode_attachment_text(loaded[0])
+    if len(text) > max_chars:
+        text = text[:max_chars] + "\n… [truncated]"
+    return {"text": f"[Attached file: {name}]\n{text}"}
+
+
+def _format_user_content(thread_id: str, msg: dict[str, Any]) -> str:
     parts: list[str] = []
     if msg.get("content"):
         parts.append(str(msg["content"]))
-    attachments = msg.get("attachments") or []
-    non_images = [
-        a.get("original_name") or "file"
-        for a in attachments
-        if not str(a.get("mime_type") or "").lower().startswith("image/")
-    ]
-    if non_images:
-        names = ", ".join(non_images)
-        parts.append(f"[Attached files (not opened): {names}]")
+    message_id = int(msg["id"])
+    not_opened: list[str] = []
+    for att in msg.get("attachments") or []:
+        mime = str(att.get("mime_type") or "").lower()
+        name = att.get("original_name") or "file"
+        if mime.startswith("image/"):
+            continue
+        if chat_store.is_text_like_attachment(att.get("mime_type"), name):
+            snippet = _text_attachment_part(thread_id, message_id, att)["text"]
+            parts.append(snippet)
+        else:
+            not_opened.append(name)
+    if not_opened:
+        parts.append(f"[Attached files (not opened): {', '.join(not_opened)}]")
     return "\n\n".join(parts) if parts else "(empty message)"
 
 
@@ -270,7 +317,10 @@ def _gemini_user_parts(thread_id: str, msg: dict[str, Any]) -> list[dict[str, An
                     }
                 )
         else:
-            parts.append({"text": f"[Attached file (not opened): {name}]"})
+            if chat_store.is_text_like_attachment(att.get("mime_type"), name):
+                parts.append(_text_attachment_part(thread_id, message_id, att))
+            else:
+                parts.append({"text": f"[Attached file (not opened): {name}]"})
     if not parts:
         parts.append({"text": "(empty message)"})
     return parts
@@ -288,7 +338,7 @@ def _history_for_api(thread_id: str) -> list[dict[str, Any]]:
             api_messages.append(
                 {
                     "role": "user",
-                    "content": _format_user_content(msg),
+                    "content": _format_user_content(thread_id, msg),
                     "parts": _gemini_user_parts(thread_id, msg),
                 }
             )
@@ -315,7 +365,7 @@ def _mock_reply(
     last_user = next((m for m in reversed(state["messages"]) if m["role"] == "user"), None)
     snippet = ""
     if last_user:
-        snippet = (_format_user_content(last_user) or "")[:500]
+        snippet = (_format_user_content(thread_id, last_user) or "")[:500]
     content = (
         "Mock agent reply (AGENT_MOCK is enabled).\n\n"
         f"I received:\n{snippet or '(no text)'}"
@@ -627,11 +677,33 @@ def _iter_gemini_stream_chunks(
                 yield "", usage
 
 
+def _agent_system_prompt(
+    *,
+    scope_label: str,
+    business_name: str | None,
+    account_id: str | None,
+    business_id: str | None,
+) -> str:
+    knowledge = ""
+    if account_id and business_id:
+        knowledge = knowledge_store.build_agent_knowledge_block(
+            account_id,
+            business_id=business_id,
+        )
+    return _system_prompt(
+        scope_label=scope_label,
+        business_name=business_name,
+        knowledge_block=knowledge or None,
+    )
+
+
 def stream_generate_reply(
     thread_id: str,
     *,
     scope_label: str,
     business_name: str | None = None,
+    account_id: str | None = None,
+    business_id: str | None = None,
     cancel_event: threading.Event | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Yield stream events: delta, done (with AgentRunResult fields), or error."""
@@ -659,7 +731,12 @@ def stream_generate_reply(
         return
 
     message_count = len(api_messages)
-    system = _system_prompt(scope_label=scope_label, business_name=business_name)
+    system = _agent_system_prompt(
+        scope_label=scope_label,
+        business_name=business_name,
+        account_id=account_id,
+        business_id=business_id,
+    )
 
     if _agent_provider() != "gemini":
         result = _call_anthropic(
@@ -827,6 +904,8 @@ def generate_reply(
     *,
     scope_label: str,
     business_name: str | None = None,
+    account_id: str | None = None,
+    business_id: str | None = None,
 ) -> AgentRunResult:
     if _mock_enabled():
         return _mock_reply(
@@ -844,7 +923,12 @@ def generate_reply(
         )
 
     message_count = len(api_messages)
-    system = _system_prompt(scope_label=scope_label, business_name=business_name)
+    system = _agent_system_prompt(
+        scope_label=scope_label,
+        business_name=business_name,
+        account_id=account_id,
+        business_id=business_id,
+    )
     if _agent_provider() == "gemini":
         return _call_gemini(
             system=system,

@@ -3,6 +3,7 @@ storage/app.sqlite
 db.sqlite
 *.sqlite
 storage/chat_files/
+storage/knowledge_files/
 .env
 .env.*
 !.env.example

@@ -41,6 +41,7 @@ import connection_store
 import database_introspect
 import database_store
 import integration_oauth
+import knowledge_store
 import login_oauth
 import login_oauth_state_store
 from app_urls import integration_oauth_callback_url, login_oauth_callback_url
@@ -153,6 +154,7 @@ def bootstrap_application_stores() -> None:
         oauth_state_store.bootstrap()
         login_oauth_state_store.bootstrap()
         database_store.bootstrap()
+        knowledge_store.bootstrap()
         subscription_store.bootstrap()
         invoice_store.bootstrap()
         notification_store.bootstrap()
@@ -905,6 +907,8 @@ def _execute_agent_turn(thread_id: str, *, trigger_summary: str) -> dict:
         thread_id,
         scope_label=_business_switcher_label(),
         business_name=_business_name_for_agent(),
+        account_id=account_id,
+        business_id=_get_selected_business_id(),
     )
 
     agent_message, record = _persist_agent_run_result(thread_id, account_id, run["id"], result)
@@ -1502,6 +1506,48 @@ def api_business_database_delete(business_id: str, connection_id: str):
     if not business_store.get_business(account_id, business_id):
         return jsonify({"error": "not found"}), 404
     if not database_store.delete_connection(account_id, business_id, connection_id):
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"ok": True})
+
+
+@app.get("/api/businesses/<business_id>/knowledge-files")
+def api_business_knowledge_files_list(business_id: str):
+    account_id = _ensure_account_id()
+    if not business_store.get_business(account_id, business_id):
+        return jsonify({"error": "not found"}), 404
+    rows = knowledge_store.list_files(account_id, business_id=business_id)
+    return jsonify({"files": [knowledge_store.file_to_api(r) for r in rows]})
+
+
+@app.post("/api/businesses/<business_id>/knowledge-files")
+def api_business_knowledge_files_upload(business_id: str):
+    account_id = _ensure_account_id()
+    upload = request.files.get("file")
+    if not upload or not upload.filename:
+        return jsonify({"error": "file required"}), 400
+    data = upload.read()
+    try:
+        record = knowledge_store.add_file(
+            account_id,
+            business_id,
+            original_name=upload.filename,
+            mime_type=upload.mimetype,
+            size_bytes=len(data),
+            data=data,
+        )
+    except LookupError:
+        return jsonify({"error": "not found"}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 413
+    return jsonify({"file": record}), 201
+
+
+@app.delete("/api/businesses/<business_id>/knowledge-files/<file_id>")
+def api_business_knowledge_files_delete(business_id: str, file_id: str):
+    account_id = _ensure_account_id()
+    if not business_store.get_business(account_id, business_id):
+        return jsonify({"error": "not found"}), 404
+    if not knowledge_store.delete_file(account_id, business_id, file_id):
         return jsonify({"error": "not found"}), 404
     return jsonify({"ok": True})
 
@@ -2357,6 +2403,8 @@ def api_agent_message_stream():
                 thread_id,
                 scope_label=scope_label,
                 business_name=business_name,
+                account_id=account_id,
+                business_id=_get_selected_business_id(),
                 cancel_event=cancel_event,
             ):
                 if event.get("event") == "delta":

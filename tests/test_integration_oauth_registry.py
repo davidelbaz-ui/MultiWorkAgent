@@ -25,9 +25,10 @@ class IntegrationOAuthRegistryTests(unittest.TestCase):
 
     def test_catalog_slug_has_oauth_slot(self) -> None:
         item = enrich_integration({"slug": "wordpress", "name": "WordPress"})
-        self.assertIn("oauth", item["auth_methods"])
+        self.assertNotIn("oauth", item["auth_methods"])
         self.assertTrue(item["oauth_available"])
         self.assertFalse(item["oauth_configured"])
+        self.assertFalse(item["oauth_offered"])
 
     def test_is_oauth_provider(self) -> None:
         self.assertTrue(integration_oauth.is_oauth_provider("github"))

@@ -16,11 +16,6 @@
 {% else %}
 <p class="meta-row integration-scope-note">Select a <strong>single business</strong> in the header before connecting a provider.</p>
 {% endif %}
-<p class="meta-row integration-scope-note">
-  All <strong>{{ oauth_definitions }}</strong> catalog providers have OAuth env slots;
-  <strong>{{ oauth_configured }}</strong> have keys set on this server.
-  <strong>{{ oauth_urls_wired }}</strong> have authorize/token URLs wired — see <code>integration_oauth_registry.py</code> and <code>.env.example</code>.
-</p>
 
 <section class="card integration-connections-card">
   <h2>Connected integrations</h2>
@@ -119,14 +114,25 @@
   <p class="empty-state ui-motion-fade" id="integration-no-results" hidden>No providers match your search.</p>
 </section>
 
-<section class="card" style="margin-top: 1.25rem;">
-  <h2>Knowledge & files</h2>
-  <p class="empty-state">No files uploaded.</p>
-  <button type="button" class="btn">Upload files</button>
+<section class="card" style="margin-top: 1.25rem;" id="knowledge-files-card">
+  <div class="integration-catalog-head">
+    <h2>Knowledge &amp; files</h2>
+    <button
+      type="button"
+      class="btn btn-sm"
+      id="knowledge-upload-btn"
+      data-selected-business-id="{{ selected_business_id or '' }}"
+    >Upload files</button>
+  </div>
+  <p class="meta-row integration-scope-note">Reference documents for the selected business. Text files are included in agent runs; images and PDFs are listed by name only.</p>
+  <input type="file" id="knowledge-file-input" multiple hidden>
+  <ul class="integration-connections-list" id="knowledge-files-list" hidden></ul>
+  <p class="empty-state" id="knowledge-files-empty">No files uploaded{% if selected_business %} for {{ selected_business.name }}{% endif %}.</p>
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='integrations.js') }}"></script>
 <script src="{{ url_for('static', filename='databases.js') }}"></script>
+<script src="{{ url_for('static', filename='knowledge.js') }}"></script>
 {% endblock %}

@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 20
+APP_SCHEMA_VERSION = 21
 
 
 def _utc_now() -> str:
@@ -546,6 +546,28 @@ def migration_020_users_last_login(conn: DBConnection) -> None:
         conn.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
 
 
+def migration_021_business_knowledge_files(conn: DBConnection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS business_knowledge_files (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            business_id TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            stored_name TEXT NOT NULL,
+            mime_type TEXT,
+            size_bytes INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (business_id) REFERENCES businesses (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_business_knowledge_files_scope
+            ON business_knowledge_files (account_id, business_id, created_at DESC);
+        """
+    )
+
+
 MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (1, "core_accounts_businesses", migration_001_core_accounts_businesses),
     (2, "business_archived_at", migration_002_business_archived_at),
@@ -567,6 +589,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (18, "contact_support", migration_018_contact_support),
     (19, "site_settings", migration_019_site_settings),
     (20, "users_last_login", migration_020_users_last_login),
+    (21, "business_knowledge_files", migration_021_business_knowledge_files),
 ]
 
 
