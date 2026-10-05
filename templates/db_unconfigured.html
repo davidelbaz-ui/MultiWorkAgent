@@ -1,0 +1,24 @@
+{% extends "legal_base.html" %}
+{% block title %}Database setup required — MultiWorkAgent{% endblock %}
+{% block meta_description %}
+<meta name="description" content="MultiWorkAgent production database is not configured yet.">
+{% endblock %}
+{% block legal_content %}
+  <h1>Database setup required</h1>
+  <p class="legal-lead">
+    This deployment cannot save accounts, businesses, or chats until PostgreSQL is configured.
+  </p>
+  {% if db_error %}
+  <p class="meta-row">{{ db_error }}</p>
+  {% endif %}
+  <h2>Vercel (production)</h2>
+  <ol class="legal-prose">
+    <li>Vercel project → <strong>Storage</strong> → create or connect <strong>Postgres</strong>.</li>
+    <li>Ensure <strong>POSTGRES_URL</strong> or <strong>DATABASE_URL</strong> is set for Production (the integration usually adds this automatically).</li>
+    <li><strong>Redeploy</strong> after env vars change.</li>
+  </ol>
+  <p class="meta-row">
+    Format: <code>postgresql://user:password@host:5432/dbname</code> — password is part of the URL.
+  </p>
+  <p class="meta-row">See <code>docs/DATABASE.md</code> in the repo for local Docker setup.</p>
+{% endblock %}

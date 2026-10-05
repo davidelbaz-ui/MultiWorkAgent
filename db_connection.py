@@ -112,14 +112,19 @@ class DBConnection:
 
 
 def database_url() -> str:
-    raw = (
-        os.environ.get("DATABASE_URL", "").strip()
-        or os.environ.get("POSTGRES_URL", "").strip()
-        or os.environ.get("POSTGRES_PRISMA_URL", "").strip()
-    )
-    if raw.startswith("postgres://"):
-        raw = "postgresql://" + raw[len("postgres://") :]
-    return raw
+    for key in (
+        "DATABASE_URL",
+        "POSTGRES_URL",
+        "POSTGRES_PRISMA_URL",
+        "POSTGRES_URL_NON_POOLING",
+    ):
+        raw = os.environ.get(key, "").strip()
+        if not raw:
+            continue
+        if raw.startswith("postgres://"):
+            raw = "postgresql://" + raw[len("postgres://") :]
+        return raw
+    return ""
 
 
 def require_database_url() -> str:
@@ -133,7 +138,9 @@ def require_database_url() -> str:
 
 
 def connect() -> DBConnection:
-    return DBConnection(psycopg.connect(require_database_url(), autocommit=False))
+    return DBConnection(
+        psycopg.connect(require_database_url(), autocommit=False, connect_timeout=15)
+    )
 
 
 def table_exists(conn: DBConnection, name: str) -> bool:

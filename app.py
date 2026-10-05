@@ -99,6 +99,48 @@ AUTH_PUBLIC_ENDPOINTS = frozenset(
 
 RATE_LIMITED_AUTH_ENDPOINTS = frozenset({"login", "signup"})
 
+DB_PUBLIC_ENDPOINTS = frozenset({"health", "static", "favicon"})
+
+DB_READY = False
+DB_INIT_ERROR: str | None = None
+
+
+def bootstrap_application_stores() -> None:
+    global DB_READY, DB_INIT_ERROR
+    from db_connection import database_url
+
+    if not database_url():
+        DB_INIT_ERROR = (
+            "DATABASE_URL is not set. Connect Vercel Postgres (POSTGRES_URL) or set DATABASE_URL "
+            "under Project Settings / Environment Variables, then redeploy."
+        )
+        LOGGER.error("database_unconfigured %s", DB_INIT_ERROR)
+        return
+    try:
+        account_lifecycle.bootstrap()
+        auth_store.bootstrap()
+        business_store.bootstrap()
+        run_store.bootstrap()
+        connection_store.bootstrap()
+        oauth_state_store.bootstrap()
+        login_oauth_state_store.bootstrap()
+        database_store.bootstrap()
+        subscription_store.bootstrap()
+        invoice_store.bootstrap()
+        notification_store.bootstrap()
+        settings_store.bootstrap()
+        support_store.bootstrap()
+        chat_store.bootstrap()
+        DB_READY = True
+        DB_INIT_ERROR = None
+        LOGGER.info("database_bootstrap_ok")
+    except Exception as exc:
+        DB_INIT_ERROR = f"Database setup failed: {exc}"
+        LOGGER.exception("database_bootstrap_failed")
+
+
+bootstrap_application_stores()
+
 
 def _safe_next_url(raw: str | None) -> str:
     if not raw or not raw.startswith("/") or raw.startswith("//"):
@@ -212,6 +254,34 @@ def _ensure_account_id() -> str:
     if not account_id:
         abort(401)
     return account_id
+
+
+@app.before_request
+def require_database_ready():
+    if DB_READY:
+        return None
+    endpoint = request.endpoint or ""
+    base = endpoint.split(".")[0]
+    if base in DB_PUBLIC_ENDPOINTS:
+        return None
+    if request.path.startswith("/api/"):
+        return (
+            jsonify(
+                {
+                    "error": DB_INIT_ERROR or "database not configured",
+                    "code": "database_unconfigured",
+                }
+            ),
+            503,
+        )
+    return (
+        render_template(
+            "db_unconfigured.html",
+            db_error=DB_INIT_ERROR,
+            **_legal_template_context(),
+        ),
+        503,
+    )
 
 
 @app.before_request
@@ -345,7 +415,15 @@ def handle_internal_error(_exc):
 
 @app.get("/health")
 def health():
-    return jsonify({"ok": True, "env": APP_CONFIG.app_env}), 200
+    payload = {
+        "ok": DB_READY,
+        "env": APP_CONFIG.app_env,
+        "database": "ready" if DB_READY else "unconfigured",
+    }
+    if DB_INIT_ERROR:
+        payload["database_error"] = DB_INIT_ERROR
+    status = 200 if DB_READY else 503
+    return jsonify(payload), status
 
 
 @app.get("/favicon.ico")
@@ -2236,21 +2314,6 @@ def api_agent_message_delete(message_id: int):
     state = chat_store.get_thread_state(thread_id)
     return jsonify({"messages": state["messages"]})
 
-
-account_lifecycle.bootstrap()
-auth_store.bootstrap()
-business_store.bootstrap()
-run_store.bootstrap()
-connection_store.bootstrap()
-oauth_state_store.bootstrap()
-login_oauth_state_store.bootstrap()
-database_store.bootstrap()
-subscription_store.bootstrap()
-invoice_store.bootstrap()
-notification_store.bootstrap()
-settings_store.bootstrap()
-support_store.bootstrap()
-chat_store.bootstrap()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
