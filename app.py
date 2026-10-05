@@ -105,6 +105,7 @@ AUTH_PUBLIC_ENDPOINTS = frozenset(
         "privacy_policy",
         "terms_and_conditions",
         "licence_agreement",
+        "agent_notes",
     }
 )
 
@@ -119,6 +120,7 @@ DB_PUBLIC_ENDPOINTS = frozenset(
         "privacy_policy",
         "terms_and_conditions",
         "licence_agreement",
+        "agent_notes",
     }
 )
 
@@ -1239,6 +1241,11 @@ def terms_and_conditions():
 @app.get("/licence-agreement")
 def licence_agreement():
     return render_template("licence_agreement.html", **_legal_template_context())
+
+
+@app.get("/agent-notes")
+def agent_notes():
+    return render_template("agent_notes.html", **_legal_template_context())
 
 
 @app.route("/businesses")

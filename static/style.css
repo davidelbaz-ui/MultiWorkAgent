@@ -1703,6 +1703,25 @@ table.data-table {
   gap: 0.4rem;
 }
 
+.agent-composer-notice {
+  margin: 0;
+  padding: 0 0.15rem;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.agent-composer-notice a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.agent-composer-notice a:hover {
+  color: var(--text);
+}
+
 .agent-scroll-inner--thread .agent-composer-stack {
   max-width: 36rem;
 }

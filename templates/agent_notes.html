@@ -1,0 +1,95 @@
+{% extends "legal_base.html" %}
+{% block title %}Agent notes — MultiWorkAgent{% endblock %}
+{% block meta_description %}
+<meta name="description" content="Important information about the MultiWorkAgent AI assistant: accuracy, your responsibilities, and limitations.">
+{% endblock %}
+{% block legal_content %}
+<header class="legal-document-head">
+  <p class="legal-eyebrow">Before you chat</p>
+  <h1 class="legal-document-title">Agent notes</h1>
+  <p class="legal-document-meta">Last updated: {{ legal_last_updated }}</p>
+</header>
+
+<div class="legal-prose">
+  <p>
+    MultiWorkAgent includes an <strong>AI agent</strong> that answers questions using your messages, attachments,
+    knowledge files, and workspace context. Please read this page before you rely on anything the agent says or
+    before you act on its suggestions. By using the agent, you acknowledge the points below. Our
+    <a href="{{ url_for('terms_and_conditions') }}">Terms &amp; Conditions</a> and
+    <a href="{{ url_for('licence_agreement') }}">Licence agreement</a> govern liability and your legal relationship
+    with us; this page explains what you need to know in plain language.
+  </p>
+
+  <h2>The agent can be wrong</h2>
+  <p>
+    Replies are produced by third-party AI models. They can be <strong>incorrect, incomplete, outdated, biased, or
+    misleading</strong>, even when they sound confident. The agent does not “know” your business the way you do.
+    It may invent details (“hallucinate”), misread files, or misunderstand integrations and data you mention.
+  </p>
+  <p>
+    <strong>Do not treat agent output as fact</strong> without checking sources, your own records, and (when
+    appropriate) qualified professionals.
+  </p>
+
+  <h2>You are responsible for decisions and actions</h2>
+  <ul>
+    <li><strong>Review every response</strong> before you use it for operations, finance, HR, legal, safety, or customer-facing work.</li>
+    <li><strong>You choose</strong> what to do in your company, in connected tools, and in third-party systems. We are not responsible for business decisions you make based on the agent.</li>
+    <li><strong>Verify</strong> numbers, dates, names, compliance steps, and technical instructions before executing them in production systems.</li>
+    <li>If you share agent output with teammates or customers, <strong>you</strong> are responsible for that communication.</li>
+  </ul>
+
+  <h2>Not professional advice</h2>
+  <p>
+    The agent is a general productivity assistant. It is <strong>not</strong> a lawyer, accountant, tax adviser,
+    licensed financial adviser, or other regulated professional. Nothing in chat is legal, tax, investment, medical,
+    or safety advice. Get advice from qualified professionals for those matters.
+  </p>
+
+  <h2>What the agent does and does not do today</h2>
+  <ul>
+    <li>The agent <strong>advises and drafts</strong> in chat using context you and your workspace provide.</li>
+    <li>In the current product, the chat agent does <strong>not</strong> automatically run integration API calls or
+      change data in connected systems on its own. If you act in Square, databases, or other integrations, that is
+      through actions <strong>you</strong> take outside the agent or through features you explicitly use.</li>
+    <li><strong>Structured runs</strong>, usage limits, and tool behavior may differ by plan and configuration; check
+      run details in the app when shown.</li>
+  </ul>
+
+  <h2>Your data and third-party AI</h2>
+  <p>
+    Messages and attachments you send may be processed by AI providers we use to operate the Service, as described in
+    our <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>. Do not send secrets you are not allowed to share,
+    personal data you cannot lawfully process, or content that violates law or third-party terms.
+  </p>
+
+  <h2>Team roles</h2>
+  <p>
+    <strong>Viewers</strong> cannot send agent messages. <strong>Operators</strong> and <strong>owners</strong> can.
+    The account owner is responsible for who has access and how the agent is used on the account.
+  </p>
+
+  <h2>Limits and availability</h2>
+  <p>
+    Agent use is subject to plan quotas (for example monthly runs on the free tier), concurrent run limits, and fair
+    use. The Service may be interrupted for maintenance or factors outside our control. See Billing and usage in the
+    app for your current limits.
+  </p>
+
+  <h2>Our responsibility</h2>
+  <p>
+    We provide the Service <strong>“as is”</strong> without guaranteeing that agent output will be accurate or fit
+    for your purpose. To the maximum extent permitted by law, we and our suppliers are not liable for indirect or
+    consequential harm (including lost profits, data, or goodwill) arising from your use of the agent, and our total
+    liability for claims relating to the Service is limited as set out in the
+    <a href="{{ url_for('terms_and_conditions') }}">Terms &amp; Conditions</a>. Some jurisdictions do not allow certain
+    limitations; where required by law, those limits may not apply to you.
+  </p>
+
+  <h2>Questions</h2>
+  <p>
+    If something in the product behaves unexpectedly or you need help, use
+    <a href="{{ url_for('contact_support') }}">Contact support</a> from Settings.
+  </p>
+</div>
+{% endblock %}
