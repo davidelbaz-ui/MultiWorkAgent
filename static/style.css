@@ -121,6 +121,23 @@ body {
   overflow: hidden;
 }
 
+/* Standalone pages (legal, marketing) scroll the document, not an inner panel */
+html:has(body.legal-page),
+html:has(body.start-page) {
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.legal-page,
+body.start-page {
+  height: auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 a,
 button,
 .btn,
