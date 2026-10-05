@@ -459,6 +459,8 @@ def enforce_auth_and_roles():
 
 @app.after_request
 def apply_security_headers(response):
+    if request.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=86400")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")

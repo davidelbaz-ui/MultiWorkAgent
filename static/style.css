@@ -209,13 +209,13 @@ a:hover {
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 0;
-  padding: 0.65rem var(--main-padding-x) 0.65rem 0;
+  padding: 0.65rem var(--main-padding-x) 0.65rem 0.5rem;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
 .topbar-brand {
-  padding: 0 0.65rem;
+  padding: 0 0.5rem 0 1.15rem;
   min-width: 0;
 }
 
@@ -962,7 +962,7 @@ a:hover {
   }
 
   .topbar-brand {
-    padding: 0;
+    padding: 0 0 0 0.75rem;
   }
 
   .topbar-workspace {
@@ -1457,9 +1457,9 @@ table.data-table {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding: 0.65rem 0.65rem calc(0.65rem + env(safe-area-inset-bottom, 0));
+  padding: 0.85rem 0.85rem calc(1.5rem + env(safe-area-inset-bottom, 0));
   border: none;
-  background: transparent;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
   z-index: 2;
 }
 
@@ -2877,7 +2877,7 @@ table.data-table {
 }
 
 .topbar-brand.brand-lockup {
-  padding: 0 0.15rem;
+  padding: 0 0.35rem 0 0;
 }
 
 /* Marketing start page */

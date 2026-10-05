@@ -103,7 +103,18 @@ async function initThemeFromAccount() {
 }
 
 applyThemePreference(readThemePreference());
-void initThemeFromAccount();
+
+function scheduleIdle(fn, timeoutMs = 2500) {
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(fn, { timeout: timeoutMs });
+  } else {
+    setTimeout(fn, 100);
+  }
+}
+
+scheduleIdle(() => {
+  void initThemeFromAccount();
+});
 
 if (window.matchMedia) {
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {

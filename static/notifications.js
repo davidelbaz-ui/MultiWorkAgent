@@ -160,10 +160,24 @@ function initNotificationsMenu() {
     }
   });
 
-  void refreshNotifications();
+  scheduleIdle(() => {
+    void refreshNotifications().catch(() => {});
+  });
+
   window.setInterval(() => {
+    if (document.visibilityState !== "visible") {
+      return;
+    }
     void refreshNotifications().catch(() => {});
   }, 60000);
+}
+
+function scheduleIdle(fn, timeoutMs = 2500) {
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(fn, { timeout: timeoutMs });
+  } else {
+    setTimeout(fn, 100);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initNotificationsMenu);

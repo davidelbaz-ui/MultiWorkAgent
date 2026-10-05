@@ -1221,7 +1221,9 @@ async function initAgentComposer() {
   });
 
   try {
-    await loadState();
+    requestAnimationFrame(() => {
+      void loadState().catch((err) => console.error(err));
+    });
   } catch (err) {
     console.error(err);
   }
