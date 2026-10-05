@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import unittest
 
 from remote_sqlite import ephemeral_local_storage, should_trust_session_membership
@@ -52,6 +53,21 @@ class RemoteSqliteConfigTest(unittest.TestCase):
                     os.environ.pop(key, None)
                 else:
                     os.environ[key] = value
+
+    def test_libsql_row_factory(self) -> None:
+        import libsql
+
+        from remote_sqlite import _LibsqlConnection
+
+        inner = libsql.connect(":memory:")
+        conn = _LibsqlConnection(inner)
+        conn.row_factory = sqlite3.Row
+        conn.execute("CREATE TABLE sample (id INTEGER, name TEXT)")
+        conn.execute("INSERT INTO sample (id, name) VALUES (?, ?)", (1, "alpha"))
+        row = conn.execute("SELECT id, name FROM sample").fetchone()
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual(row["name"], "alpha")
 
 
 if __name__ == "__main__":
