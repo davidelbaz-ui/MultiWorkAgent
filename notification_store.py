@@ -255,6 +255,29 @@ def mark_all_read(account_id: str) -> int:
         return int(cur.rowcount)
 
 
+def delete_notification(account_id: str, notification_id: str) -> bool:
+    with connect() as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM account_notifications
+            WHERE account_id = ? AND id = ?
+            """,
+            (account_id, notification_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def delete_all_notifications(account_id: str) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "DELETE FROM account_notifications WHERE account_id = ?",
+            (account_id,),
+        )
+        conn.commit()
+        return int(cur.rowcount)
+
+
 def notification_to_api(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": row["id"],

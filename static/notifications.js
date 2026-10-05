@@ -47,6 +47,10 @@ function renderNotificationsList(items) {
     const li = document.createElement("li");
     li.className = `notifications-item${item.is_read ? "" : " notifications-item--unread"}`;
     li.dataset.notificationId = item.id;
+
+    const row = document.createElement("div");
+    row.className = "notifications-item-row";
+
     const link = item.href ? document.createElement("a") : document.createElement("div");
     link.className = "notifications-item-link";
     if (item.href) {
@@ -62,7 +66,19 @@ function renderNotificationsList(items) {
     time.className = "notifications-item-time";
     time.textContent = formatNotificationTime(item.created_at);
     link.append(title, body, time);
-    li.appendChild(link);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "notifications-item-delete";
+    deleteBtn.dataset.notificationId = item.id;
+    deleteBtn.setAttribute("aria-label", `Delete notification: ${item.title || "notification"}`);
+    deleteBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M8 8l8 8M16 8l-8 8"/>
+      </svg>`;
+
+    row.append(link, deleteBtn);
+    li.appendChild(row);
     list.appendChild(li);
   });
 }
@@ -96,19 +112,27 @@ function initNotificationsMenu() {
   }
   const trigger = root.querySelector(".notifications-trigger");
   const panel = root.querySelector(".notifications-panel");
-  const markAll = document.getElementById("notifications-mark-all");
+  const deleteAll = document.getElementById("notifications-delete-all");
   if (!trigger || !panel) {
     return;
   }
 
   const close = () => {
-    panel.hidden = true;
+    root.classList.remove("is-open");
     trigger.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => {
+      if (!root.classList.contains("is-open")) {
+        panel.hidden = true;
+      }
+    }, 220);
   };
 
   const open = async () => {
     panel.hidden = false;
-    trigger.setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => {
+      root.classList.add("is-open");
+      trigger.setAttribute("aria-expanded", "true");
+    });
     try {
       await refreshNotifications();
     } catch (err) {
@@ -118,10 +142,10 @@ function initNotificationsMenu() {
 
   trigger.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (panel.hidden) {
-      void open();
-    } else {
+    if (root.classList.contains("is-open")) {
       close();
+    } else {
+      void open();
     }
   });
 
@@ -131,10 +155,28 @@ function initNotificationsMenu() {
     }
   });
 
-  markAll?.addEventListener("click", async (e) => {
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      close();
+    }
+  });
+
+  deleteAll?.addEventListener("click", async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    const ok =
+      typeof openAppConfirm === "function"
+        ? await openAppConfirm({
+            title: "Delete all notifications",
+            message: "Remove every notification from your feed? This cannot be undone.",
+            confirmLabel: "Delete all",
+          })
+        : window.confirm("Delete all notifications?");
+    if (!ok) {
+      return;
+    }
     try {
-      await notificationsApiJson("/api/notifications/read-all", { method: "POST" });
+      await notificationsApiJson("/api/notifications/delete-all", { method: "POST" });
       await refreshNotifications();
     } catch (err) {
       console.error(err);
@@ -142,6 +184,25 @@ function initNotificationsMenu() {
   });
 
   panel.addEventListener("click", async (e) => {
+    const deleteBtn = e.target.closest(".notifications-item-delete");
+    if (deleteBtn instanceof HTMLElement) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = deleteBtn.dataset.notificationId;
+      if (!id) {
+        return;
+      }
+      try {
+        await notificationsApiJson(`/api/notifications/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        await refreshNotifications();
+      } catch (err) {
+        console.error(err);
+      }
+      return;
+    }
+
     const item = e.target.closest(".notifications-item");
     if (!(item instanceof HTMLElement)) {
       return;
@@ -151,7 +212,9 @@ function initNotificationsMenu() {
       return;
     }
     try {
-      await notificationsApiJson(`/api/notifications/${id}/read`, { method: "POST" });
+      await notificationsApiJson(`/api/notifications/${encodeURIComponent(id)}/read`, {
+        method: "POST",
+      });
       item.classList.remove("notifications-item--unread");
       const data = await notificationsApiJson("/api/notifications");
       syncNotificationsBadge(data.unread_count);

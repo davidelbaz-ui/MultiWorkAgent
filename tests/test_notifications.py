@@ -51,6 +51,26 @@ class NotificationsTest(PostgresStoreTestCase):
         items = notification_store.list_notifications(self.account_id)
         self.assertEqual(items[0]["kind"], "run_failed")
 
+    def test_delete_one_and_all(self) -> None:
+        n1 = notification_store.create_notification(
+            self.account_id,
+            kind="run_done",
+            title="One",
+            body="A",
+        )
+        notification_store.create_notification(
+            self.account_id,
+            kind="run_done",
+            title="Two",
+            body="B",
+        )
+        self.assertIsNotNone(n1)
+        self.assertTrue(notification_store.delete_notification(self.account_id, n1["id"]))
+        self.assertEqual(len(notification_store.list_notifications(self.account_id)), 1)
+        deleted = notification_store.delete_all_notifications(self.account_id)
+        self.assertEqual(deleted, 1)
+        self.assertEqual(notification_store.unread_count(self.account_id), 0)
+
 
 if __name__ == "__main__":
     import unittest

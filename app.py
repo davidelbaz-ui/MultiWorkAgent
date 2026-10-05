@@ -2026,6 +2026,21 @@ def api_notifications_mark_read(notification_id: str):
     return jsonify({"ok": True, "unread_count": notification_store.unread_count(account_id)})
 
 
+@app.delete("/api/notifications/<notification_id>")
+def api_notifications_delete(notification_id: str):
+    account_id = _ensure_account_id()
+    if not notification_store.delete_notification(account_id, notification_id):
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"ok": True, "unread_count": notification_store.unread_count(account_id)})
+
+
+@app.post("/api/notifications/delete-all")
+def api_notifications_delete_all():
+    account_id = _ensure_account_id()
+    deleted = notification_store.delete_all_notifications(account_id)
+    return jsonify({"ok": True, "deleted": deleted, "unread_count": 0})
+
+
 def _settings_actor() -> tuple[str, str]:
     user_id = session.get("user_id")
     account_id = session.get("account_id")

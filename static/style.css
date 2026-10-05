@@ -2866,7 +2866,19 @@ table.data-table {
   border-radius: var(--radius);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   z-index: 120;
-  padding: 0.5rem;
+  padding: 0.35rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+.notifications-menu.is-open .notifications-panel {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .notifications-panel-head {
@@ -2874,12 +2886,27 @@ table.data-table {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  padding: 0.35rem 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
 }
 
 .notifications-panel-title {
   font-weight: 600;
   font-size: 0.85rem;
+}
+
+.notifications-delete-all {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.notifications-delete-all:hover {
+  color: var(--text);
+  background: var(--surface-2);
 }
 
 .notifications-list {
@@ -2896,17 +2923,64 @@ table.data-table {
   border-bottom: none;
 }
 
+.notifications-item-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+}
+
 .notifications-item-link {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.55rem 0.35rem;
   color: inherit;
   text-decoration: none;
+  border-radius: calc(var(--radius) - 2px);
 }
 
 .notifications-item-link:hover {
   background: var(--surface-2);
+}
+
+.notifications-item-delete {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.15rem;
+  padding: 0;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background var(--motion-duration) var(--motion-ease),
+    color var(--motion-duration) var(--motion-ease);
+}
+
+.notifications-item-delete svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.notifications-item-delete:hover,
+.notifications-item-delete:focus-visible {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.notifications-empty {
+  padding: 0.75rem 0.35rem;
 }
 
 .notifications-item--unread .notifications-item-title {
