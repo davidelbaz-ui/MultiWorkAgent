@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 21
+APP_SCHEMA_VERSION = 22
 
 
 def _utc_now() -> str:
@@ -568,6 +568,34 @@ def migration_021_business_knowledge_files(conn: DBConnection) -> None:
     )
 
 
+def migration_022_subscription_enterprise_annual(conn: DBConnection) -> None:
+    if "billing_interval" not in _column_names(conn, "account_subscriptions"):
+        conn.execute(
+            """
+            ALTER TABLE account_subscriptions
+            ADD COLUMN billing_interval TEXT NOT NULL DEFAULT 'monthly'
+            """
+        )
+    conn.execute(
+        "ALTER TABLE account_subscriptions DROP CONSTRAINT IF EXISTS account_subscriptions_plan_tier_check"
+    )
+    conn.execute(
+        """
+        ALTER TABLE account_subscriptions ADD CONSTRAINT account_subscriptions_plan_tier_check
+        CHECK (plan_tier IN ('none', 'starter', 'pro', 'enterprise'))
+        """
+    )
+    conn.execute(
+        "ALTER TABLE account_subscriptions DROP CONSTRAINT IF EXISTS account_subscriptions_billing_interval_check"
+    )
+    conn.execute(
+        """
+        ALTER TABLE account_subscriptions ADD CONSTRAINT account_subscriptions_billing_interval_check
+        CHECK (billing_interval IN ('monthly', 'annual'))
+        """
+    )
+
+
 MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (1, "core_accounts_businesses", migration_001_core_accounts_businesses),
     (2, "business_archived_at", migration_002_business_archived_at),
@@ -590,6 +618,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (19, "site_settings", migration_019_site_settings),
     (20, "users_last_login", migration_020_users_last_login),
     (21, "business_knowledge_files", migration_021_business_knowledge_files),
+    (22, "subscription_enterprise_annual", migration_022_subscription_enterprise_annual),
 ]
 
 

@@ -212,24 +212,32 @@ def _extract_amount(invoice: dict[str, Any]) -> tuple[int, str]:
     return int(money.get("amount") or 0), str(money.get("currency") or currency)
 
 
-def create_mock_subscription_invoice(account_id: str, plan_tier: str) -> dict[str, Any]:
+def create_mock_subscription_invoice(
+    account_id: str,
+    plan_tier: str,
+    *,
+    billing_interval: str = "monthly",
+) -> dict[str, Any]:
     plan = subscription_plans.get_plan(plan_tier)
     if not plan:
         raise ValueError("unknown plan tier")
+    interval = subscription_plans.normalize_billing_interval(billing_interval)
+    amount = subscription_plans.checkout_price_cents(plan_tier, interval)
+    interval_label = subscription_plans.billing_interval_label(interval)
     now = _utc_now()
     square_id = f"mock-invoice-{uuid.uuid4()}"
     payload = {
         "id": square_id,
         "invoice_number": f"MOCK-{plan.tier.upper()}-{now[:10]}",
         "status": "PAID",
-        "title": f"{plan.display_name} subscription",
+        "title": f"{plan.display_name} subscription ({interval_label})",
         "created_at": now,
         "updated_at": now,
         "public_url": "",
         "payment_requests": [
             {
                 "computed_amount_money": {
-                    "amount": plan.price_usd_cents,
+                    "amount": amount,
                     "currency": "USD",
                 }
             }

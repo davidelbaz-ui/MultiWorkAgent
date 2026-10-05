@@ -56,6 +56,7 @@ import settings_store
 import site_settings_store
 import support_store
 import square_billing
+import subscription_plans
 import subscription_store
 import oauth_state_store
 import run_limits
@@ -754,6 +755,8 @@ def _billing_fields() -> dict:
     summary = subscription_store.billing_summary(account_id)
     return {
         "plan": summary["plan"],
+        "plan_tier": summary["plan_tier"],
+        "billing_interval": summary.get("billing_interval") or "monthly",
         "usage_used": summary.get("usage_used", 0),
         "usage_quota": summary["usage_quota"],
         "top_up_balance": summary["top_up_balance"],
@@ -1753,7 +1756,10 @@ def api_global_search():
 
 @app.route("/billing")
 def billing():
-    return render_template("billing.html", **_ctx("billing"))
+    return render_template(
+        "billing.html",
+        **_ctx("billing", plan_catalog=subscription_plans.catalog_for_billing()),
+    )
 
 
 @app.get("/api/billing/subscription")
@@ -1800,16 +1806,20 @@ def api_billing_checkout():
     account_id = _ensure_account_id()
     payload = request.get_json(silent=True) or {}
     plan = payload.get("plan")
+    billing_interval = payload.get("billing_interval") or payload.get("interval") or "monthly"
     if not isinstance(plan, str):
-        return jsonify({"error": "plan is required (starter or pro)"}), 400
+        return jsonify({"error": "plan is required (starter, pro, or enterprise)"}), 400
     plan = plan.strip().lower()
-    if plan not in ("starter", "pro"):
-        return jsonify({"error": "plan must be starter or pro"}), 400
+    billing_interval = subscription_plans.normalize_billing_interval(
+        str(billing_interval) if billing_interval else "monthly"
+    )
+    if not subscription_plans.is_valid_checkout(plan, billing_interval):
+        return jsonify({"error": "plan must be starter, pro, or enterprise with monthly or annual billing"}), 400
 
     mode = square_billing.billing_mode()
     if mode == "mock":
         try:
-            square_billing.mock_activate(account_id, plan)
+            square_billing.mock_activate(account_id, plan, billing_interval=billing_interval)
         except square_billing.SquareBillingError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify(
@@ -1834,6 +1844,7 @@ def api_billing_checkout():
         checkout_url = square_billing.create_checkout_url(
             account_id,
             plan,
+            billing_interval=billing_interval,
             redirect_url=redirect_url,
             buyer_email=email,
         )

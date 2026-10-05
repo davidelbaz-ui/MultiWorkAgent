@@ -79,7 +79,7 @@ PAGE_DEFINITIONS: list[dict[str, str]] = [
         "section": "start",
         "field": "text",
         "help": "Fine print below the hero actions.",
-        "default": "Starter plans from $19/mo · Scoped credentials · No shared secrets across businesses",
+        "default": "Starter plans from $49.99/mo · Scoped credentials · No shared secrets across businesses",
     },
     {
         "key": "page.auth.login_subtitle",

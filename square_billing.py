@@ -36,8 +36,11 @@ def is_square_configured() -> bool:
     if not token or not location:
         return False
     for tier in subscription_plans.PLANS:
-        if subscription_plans.plan_variation_id(tier) or subscription_plans.plan_checkout_url(tier):
-            return True
+        for interval in subscription_plans.BILLING_INTERVALS:
+            if subscription_plans.plan_variation_id(tier, interval) or subscription_plans.plan_checkout_url(
+                tier, interval
+            ):
+                return True
     return False
 
 
@@ -117,27 +120,29 @@ def create_checkout_url(
     account_id: str,
     plan_tier: str,
     *,
+    billing_interval: str = "monthly",
     redirect_url: str,
     buyer_email: str | None = None,
 ) -> str:
     plan = subscription_plans.get_plan(plan_tier)
     if not plan:
         raise SquareBillingError("unknown plan")
+    interval = subscription_plans.normalize_billing_interval(billing_interval)
 
-    static_url = subscription_plans.plan_checkout_url(plan_tier)
-    if static_url and not subscription_plans.plan_variation_id(plan_tier):
+    static_url = subscription_plans.plan_checkout_url(plan_tier, interval)
+    if static_url and not subscription_plans.plan_variation_id(plan_tier, interval):
         sep = "&" if "?" in static_url else "?"
         return f"{static_url}{sep}reference_id={account_id}"
 
-    variation_id = subscription_plans.plan_variation_id(plan_tier)
+    variation_id = subscription_plans.plan_variation_id(plan_tier, interval)
     location_id = os.environ.get("SQUARE_LOCATION_ID", "").strip()
     if not variation_id or not location_id:
         raise SquareBillingError(
-            "Set SQUARE_LOCATION_ID and plan variation IDs, or SQUARE_CHECKOUT_URL_* env URLs."
+            "Set SQUARE_LOCATION_ID and plan variation IDs (monthly and annual), or SQUARE_CHECKOUT_URL_* env URLs."
         )
 
     ensure_square_customer(account_id, email=buyer_email)
-    subscription_store.set_pending_checkout(account_id, plan.tier)
+    subscription_store.set_pending_checkout(account_id, plan.tier, billing_interval=interval)
 
     body = {
         "idempotency_key": str(uuid.uuid4()),
@@ -147,7 +152,7 @@ def create_checkout_url(
             "merchant_support_email": buyer_email or os.environ.get("SQUARE_SUPPORT_EMAIL", ""),
         },
         "pre_populated_data": {},
-        "payment_note": f"account_id={account_id};plan={plan.tier}"[:500],
+        "payment_note": f"account_id={account_id};plan={plan.tier};interval={interval}"[:500],
     }
     if buyer_email:
         body["pre_populated_data"]["buyer_email"] = buyer_email.strip()
@@ -160,22 +165,31 @@ def create_checkout_url(
     return url
 
 
-def mock_activate(account_id: str, plan_tier: str) -> dict[str, Any]:
+def mock_activate(
+    account_id: str,
+    plan_tier: str,
+    *,
+    billing_interval: str = "monthly",
+) -> dict[str, Any]:
     if not is_billing_mock_enabled():
         raise SquareBillingError("Billing mock mode is disabled")
     from datetime import timedelta
 
+    interval = subscription_plans.normalize_billing_interval(billing_interval)
     now = datetime.now(timezone.utc).replace(microsecond=0)
     period_end = now + timedelta(days=30)
     subscription_store.activate_plan(
         account_id,
         plan_tier=plan_tier,
+        billing_interval=interval,
         status="active",
         period_start=now.isoformat(),
         period_end=period_end.isoformat(),
         square_subscription_id=f"mock-sub-{uuid.uuid4()}",
     )
-    invoice_store.create_mock_subscription_invoice(account_id, plan_tier)
+    invoice_store.create_mock_subscription_invoice(
+        account_id, plan_tier, billing_interval=interval
+    )
     return subscription_store.get_subscription(account_id)
 
 
@@ -249,13 +263,29 @@ def apply_subscription_object(subscription: dict[str, Any]) -> str | None:
         if phases and isinstance(phases[0], dict):
             variation_id = str(phases[0].get("plan_variation_id") or "")
 
-    tier = subscription_plans.tier_for_variation_id(variation_id) if variation_id else None
-    if not tier:
-        note = subscription.get("note") or ""
-        if "plan=starter" in str(note):
+    tier: str | None = None
+    billing_interval = "monthly"
+    if variation_id:
+        resolved = subscription_plans.tier_and_interval_for_variation_id(variation_id)
+        if resolved:
+            tier, billing_interval = resolved
+
+    note = subscription.get("note") or subscription.get("source") or ""
+    if isinstance(note, dict):
+        note = json.dumps(note)
+    note_text = str(note)
+    note_tier, note_interval = subscription_plans.parse_plan_from_payment_note(note_text)
+    if note_tier:
+        tier = note_tier
+    if note_interval:
+        billing_interval = note_interval
+    elif not tier:
+        if "plan=starter" in note_text:
             tier = "starter"
-        elif "plan=pro" in str(note):
+        elif "plan=pro" in note_text:
             tier = "pro"
+        elif "plan=enterprise" in note_text:
+            tier = "enterprise"
 
     status = _square_status_to_local(str(subscription.get("status") or "INACTIVE"))
     sub_id = subscription.get("id")
@@ -265,6 +295,7 @@ def apply_subscription_object(subscription: dict[str, Any]) -> str | None:
         subscription_store.activate_plan(
             account_id,
             plan_tier=tier,
+            billing_interval=billing_interval,
             status=status,
             period_end=_period_end_from_subscription(subscription),
             square_customer_id=str(customer_id) if customer_id else None,

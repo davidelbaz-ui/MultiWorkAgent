@@ -21,7 +21,7 @@ class SubscriptionStoreTest(PostgresStoreTestCase):
         subscription_store.activate_plan(self.account_id, plan_tier="starter", status="active")
         summary = subscription_store.billing_summary(self.account_id)
         self.assertEqual(summary["plan"], "Starter")
-        self.assertEqual(summary["usage_quota"], 50)
+        self.assertEqual(summary["usage_quota"], 150)
         self.assertTrue(subscription_store.is_subscription_active(self.account_id))
 
     def test_webhook_idempotent(self) -> None:

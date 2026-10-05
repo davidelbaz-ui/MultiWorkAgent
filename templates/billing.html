@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Billing & usage — MultiWorkAgent{% endblock %}
 {% block content %}
-<div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}">
+<div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}">
 <h1 class="page-title">Billing & usage</h1>
 <p class="page-sub">AI Service Subscription System · Square payments</p>
 {% if request.args.get('checkout') == 'done' %}
@@ -24,30 +24,39 @@
   <div class="progress-bar"><div class="progress-fill" style="width: {{ (usage_used / usage_quota * 100)|int }}%;"></div></div>
   <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used · Top-up balance: <strong>{{ top_up_balance }}</strong> runs</p>
   {% if billing_period_end %}
-  <p class="meta-row">Billing period ends {{ billing_period_end }}</p>
+  <p class="meta-row">Usage period resets {{ billing_period_end }}</p>
   {% endif %}
   {% else %}
   <p class="empty-state">No active subscription. Choose a plan below.</p>
   {% endif %}
-  <p class="meta-row">Plan runs are used first, then top-up credits. Unused top-up rolls over.</p>
+  <p class="meta-row">Plan runs are used first, then top-up credits. Unused top-up rolls over. Annual billing saves 20% vs paying monthly for 12 months.</p>
   {% if plan and subscription_status == 'active' and account_role == 'owner' %}
   <button type="button" class="btn btn-sm" id="billing-cancel-subscription">Cancel at period end</button>
   {% endif %}
 </section>
 
-<div class="pricing-grid" style="margin-bottom: 1.25rem;">
-  <div class="price-card {% if plan == 'Starter' %}featured{% endif %}">
-    <h3>Starter{% if plan == 'Starter' %} (current){% endif %}</h3>
-    <div class="price">$19<span style="font-size:1rem;font-weight:400;">/mo</span></div>
-    <p>50 runs/mo · solopreneurs & small teams</p>
-    <button type="button" class="btn btn-primary" data-billing-plan="starter" {% if plan == 'Starter' %}disabled{% endif %}>Subscribe</button>
+<div class="billing-interval-toggle meta-row" role="group" aria-label="Billing frequency">
+  <label class="app-wizard-choice billing-interval-choice">
+    <input type="radio" name="billing-interval" value="monthly" checked>
+    <span class="app-wizard-choice-text"><strong>Monthly</strong></span>
+  </label>
+  <label class="app-wizard-choice billing-interval-choice">
+    <input type="radio" name="billing-interval" value="annual">
+    <span class="app-wizard-choice-text"><strong>Annual</strong> <span class="meta-row">Save 20%</span></span>
+  </label>
+</div>
+
+<div class="pricing-grid" style="margin-bottom: 1.25rem;" id="pricing-grid">
+  {% for item in plan_catalog %}
+  <div class="price-card {% if plan_tier == item.tier and plan %}featured{% endif %}" data-plan-tier="{{ item.tier }}">
+    <h3>{{ item.display_name }}<span class="billing-current-label" hidden> (current)</span></h3>
+    <div class="price billing-price-monthly" data-monthly="{{ item.monthly_price }}">{{ item.monthly_price }}<span style="font-size:1rem;font-weight:400;">/mo</span></div>
+    <div class="price billing-price-annual" hidden data-annual="{{ item.annual_price }}" data-equiv="{{ item.annual_monthly_equiv }}">{{ item.annual_price }}<span style="font-size:1rem;font-weight:400;">/yr</span></div>
+    <p class="billing-price-annual-note meta-row" hidden>Billed annually · {{ item.annual_monthly_equiv }}/mo equivalent</p>
+    <p>{{ item.monthly_quota }} runs/mo{% if item.tier == 'starter' %} · solopreneurs & small teams{% elif item.tier == 'pro' %} · agencies & growing teams{% else %} · high-volume operations{% endif %}</p>
+    <button type="button" class="btn btn-primary" data-billing-plan="{{ item.tier }}">Subscribe</button>
   </div>
-  <div class="price-card {% if plan == 'Pro' %}featured{% endif %}">
-    <h3>Pro{% if plan == 'Pro' %} (current){% endif %}</h3>
-    <div class="price">$49<span style="font-size:1rem;font-weight:400;">/mo</span></div>
-    <p>200 runs/mo · agencies & startups</p>
-    <button type="button" class="btn btn-primary" data-billing-plan="pro" {% if plan == 'Pro' %}disabled{% endif %}>Subscribe</button>
-  </div>
+  {% endfor %}
   <div class="price-card">
     <h3>Credit top-up</h3>
     <div class="price">$10</div>

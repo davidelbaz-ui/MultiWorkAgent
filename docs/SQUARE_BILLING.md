@@ -1,6 +1,6 @@
 # Square billing (MultiWorkAgent subscriptions & invoices)
 
-This app bills **your customers for MultiWorkAgent** (Starter / Pro plans) through **Square**. That uses **server env vars** (`SQUARE_*` below). It is separate from connecting **Square as a business integration** so the agent can operate a merchant’s Square account (`SQUARE_OAUTH_*` in the integration catalog).
+This app bills **your customers for MultiWorkAgent** (Starter, Pro, and Enterprise) through **Square**. That uses **server env vars** (`SQUARE_*` below). It is separate from connecting **Square as a business integration** so the agent can operate a merchant’s Square account (`SQUARE_OAUTH_*` in the integration catalog).
 
 When billing is configured, the **Billing** page offers Square checkout, webhooks update subscription status and quotas, and owners can **Sync from Square** for invoices.
 
@@ -10,7 +10,7 @@ When billing is configured, the **Billing** page offers Square checkout, webhook
 |-------|---------|
 | Square Developer application | Access token + webhook signature key |
 | Square location | `SQUARE_LOCATION_ID` (same environment as token) |
-| Subscription plan variations | Starter ($19/mo, 50 runs) and Pro ($49/mo, 200 runs) |
+| Subscription plan variations | Six Square variations: Starter / Pro / Enterprise × monthly and annual (annual = 20% off vs 12× monthly) |
 | Public HTTPS app URL | `APP_BASE_URL` + webhook endpoint |
 
 Local testing without Square: set `BILLING_DEV_MOCK=1` (or `SQUARE_MOCK=1`). Subscribe on Billing activates plans and a sample invoice in the database only.
@@ -34,26 +34,42 @@ In [Square Dashboard](https://squareup.com/dashboard) (sandbox or production mat
 
 All checkout and invoice search calls are scoped to this location.
 
-## 3. Subscription plans (Starter & Pro)
+## 3. Subscription plans (Starter, Pro, Enterprise)
 
-Plans are defined in code (`subscription_plans.py`): **Starter** and **Pro** with monthly quotas. Square must have matching **subscription plan variations**.
+Plans are defined in code (`subscription_plans.py`):
+
+| Plan | Monthly | Annual (20% off) | Runs / month |
+|------|---------|------------------|--------------|
+| Starter | $49.99 | $479.90/yr | 150 |
+| Pro | $149.99 | $1,439.90/yr | 500 |
+| Enterprise | $249.99 | $2,399.90/yr | 1,000 |
+
+Square must have matching **subscription plan variations** (one per row — monthly and annual are separate variations in Square).
 
 1. In Square Dashboard, enable **Subscriptions** for your business (Square Subscriptions product).
-2. Create two subscription plans aligned with your pricing (e.g. $19/mo and $49/mo).
+2. Create subscription plans at the prices above (monthly cadence + annual cadence per tier).
 3. Obtain each plan’s **subscription plan variation ID** (Square Dashboard plan details, or Subscriptions/Catalog API).
 
 Set:
 
 ```env
 SQUARE_STARTER_PLAN_VARIATION_ID=
+SQUARE_STARTER_ANNUAL_PLAN_VARIATION_ID=
 SQUARE_PRO_PLAN_VARIATION_ID=
+SQUARE_PRO_ANNUAL_PLAN_VARIATION_ID=
+SQUARE_ENTERPRISE_PLAN_VARIATION_ID=
+SQUARE_ENTERPRISE_ANNUAL_PLAN_VARIATION_ID=
 ```
 
 **Alternative:** pre-built Square payment links (no variation IDs):
 
 ```env
 SQUARE_CHECKOUT_URL_STARTER=https://...
+SQUARE_CHECKOUT_URL_STARTER_ANNUAL=https://...
 SQUARE_CHECKOUT_URL_PRO=https://...
+SQUARE_CHECKOUT_URL_PRO_ANNUAL=https://...
+SQUARE_CHECKOUT_URL_ENTERPRISE=https://...
+SQUARE_CHECKOUT_URL_ENTERPRISE_ANNUAL=https://...
 ```
 
 If a static URL is set and the variation ID for that tier is empty, checkout redirects there with `reference_id=<account_id>`.
@@ -107,8 +123,12 @@ Add for **Production** (then **Redeploy**):
 | `SQUARE_ACCESS_TOKEN` | Production or sandbox token |
 | `SQUARE_LOCATION_ID` | From Square locations |
 | `SQUARE_ENVIRONMENT` | `production` or `sandbox` |
-| `SQUARE_STARTER_PLAN_VARIATION_ID` | From Subscriptions |
-| `SQUARE_PRO_PLAN_VARIATION_ID` | From Subscriptions |
+| `SQUARE_STARTER_PLAN_VARIATION_ID` | Monthly Starter |
+| `SQUARE_STARTER_ANNUAL_PLAN_VARIATION_ID` | Annual Starter |
+| `SQUARE_PRO_PLAN_VARIATION_ID` | Monthly Pro |
+| `SQUARE_PRO_ANNUAL_PLAN_VARIATION_ID` | Annual Pro |
+| `SQUARE_ENTERPRISE_PLAN_VARIATION_ID` | Monthly Enterprise |
+| `SQUARE_ENTERPRISE_ANNUAL_PLAN_VARIATION_ID` | Annual Enterprise |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` | From Developer → Webhooks |
 | `SQUARE_WEBHOOK_NOTIFICATION_URL` | Full webhook URL |
 | `SQUARE_SUPPORT_EMAIL` | Optional |
@@ -118,7 +138,7 @@ Do **not** set `BILLING_DEV_MOCK=1` on production.
 ## 7. Verify end-to-end
 
 1. Open **Billing** as account **owner** — banner should not say “Square is not configured”.
-2. Click **Subscribe** on Starter or Pro → Square checkout opens.
+2. Click **Subscribe** on a plan (toggle **Monthly** or **Annual**) → Square checkout opens.
 3. Complete sandbox payment → return to Billing with “Checkout complete…” → after webhook, plan and usage quota update.
 4. **Invoices (Square)** → **Sync from Square** (requires a linked Square customer after checkout).
 

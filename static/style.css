@@ -2281,6 +2281,17 @@ table.data-table {
   font-weight: 800;
 }
 
+.billing-interval-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.billing-interval-choice {
+  margin: 0;
+}
+
 .progress-bar {
   height: 10px;
   background: var(--bg);

@@ -23,7 +23,7 @@ class InvoiceStoreTest(PostgresStoreTestCase):
         square_billing.mock_activate(self.account_id, "starter")
         display = invoice_store.list_for_display(self.account_id)
         self.assertEqual(len(display), 1)
-        self.assertEqual(display[0]["amount"], "$19.00")
+        self.assertEqual(display[0]["amount"], "$49.99")
         self.assertIn("Starter", display[0]["description"])
 
     def test_upsert_and_webhook(self) -> None:

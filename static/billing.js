@@ -13,6 +13,48 @@ async function billingApiJson(url, options = {}) {
   return data;
 }
 
+function selectedBillingInterval() {
+  const checked = document.querySelector('input[name="billing-interval"]:checked');
+  return checked?.value === "annual" ? "annual" : "monthly";
+}
+
+function applyBillingIntervalDisplay() {
+  const interval = selectedBillingInterval();
+  const isAnnual = interval === "annual";
+  document.querySelectorAll(".billing-price-monthly").forEach((el) => {
+    el.hidden = isAnnual;
+  });
+  document.querySelectorAll(".billing-price-annual, .billing-price-annual-note").forEach((el) => {
+    el.hidden = !isAnnual;
+  });
+  updateSubscribeButtons();
+}
+
+function updateSubscribeButtons() {
+  const card = document.getElementById("billing-page");
+  if (!card) {
+    return;
+  }
+  const currentTier = card.dataset.currentTier || "";
+  const currentInterval = card.dataset.currentInterval || "monthly";
+  const interval = selectedBillingInterval();
+  const hasPlan = Boolean(card.dataset.currentPlan);
+
+  document.querySelectorAll("#pricing-grid .price-card[data-plan-tier]").forEach((priceCard) => {
+    const tier = priceCard.dataset.planTier;
+    const btn = priceCard.querySelector("[data-billing-plan]");
+    const label = priceCard.querySelector(".billing-current-label");
+    const isCurrent = hasPlan && tier === currentTier && interval === currentInterval;
+    if (label) {
+      label.hidden = !isCurrent;
+    }
+    if (btn) {
+      btn.disabled = isCurrent;
+      btn.textContent = isCurrent ? "Current plan" : "Subscribe";
+    }
+  });
+}
+
 function initBillingSubscribe() {
   const card = document.getElementById("billing-page");
   if (!card) {
@@ -20,7 +62,17 @@ function initBillingSubscribe() {
   }
   const mode = card.dataset.billingMode || "unconfigured";
   const isOwner = card.dataset.accountRole === "owner";
-  const currentPlan = card.dataset.currentPlan || "";
+
+  document.querySelectorAll('input[name="billing-interval"]').forEach((input) => {
+    input.addEventListener("change", applyBillingIntervalDisplay);
+  });
+  if (card.dataset.currentInterval === "annual") {
+    const annualInput = document.querySelector('input[name="billing-interval"][value="annual"]');
+    if (annualInput) {
+      annualInput.checked = true;
+    }
+  }
+  applyBillingIntervalDisplay();
 
   document.querySelectorAll("[data-billing-plan]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -37,7 +89,7 @@ function initBillingSubscribe() {
       if (!plan) {
         return;
       }
-      if (currentPlan && btn.textContent?.includes("current")) {
+      if (btn.disabled) {
         return;
       }
 
@@ -50,11 +102,13 @@ function initBillingSubscribe() {
         return;
       }
 
+      const billingInterval = selectedBillingInterval();
+
       try {
         const data = await billingApiJson("/api/billing/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan }),
+          body: JSON.stringify({ plan, billing_interval: billingInterval }),
         });
         if (data.checkout_url) {
           window.location.href = data.checkout_url;

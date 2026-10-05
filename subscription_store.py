@@ -61,6 +61,7 @@ def _row_to_sub(row: Any) -> dict[str, Any]:
     return {
         "account_id": row["account_id"],
         "plan_tier": row["plan_tier"],
+        "billing_interval": row["billing_interval"] if "billing_interval" in row.keys() else "monthly",
         "status": row["status"],
         "monthly_quota": int(row["monthly_quota"]),
         "top_up_balance_runs": float(row["top_up_balance_runs"]),
@@ -81,7 +82,7 @@ def get_subscription(account_id: str) -> dict[str, Any]:
         row = conn.execute(
             """
             SELECT
-                account_id, plan_tier, status, monthly_quota, top_up_balance_runs,
+                account_id, plan_tier, billing_interval, status, monthly_quota, top_up_balance_runs,
                 plan_runs_consumed, current_period_start, current_period_end,
                 square_customer_id, square_subscription_id, cancel_at_period_end,
                 created_at, updated_at
@@ -138,20 +139,26 @@ def set_square_customer_id(account_id: str, square_customer_id: str) -> None:
         conn.commit()
 
 
-def set_pending_checkout(account_id: str, plan_tier: str) -> dict[str, Any]:
+def set_pending_checkout(
+    account_id: str,
+    plan_tier: str,
+    *,
+    billing_interval: str = "monthly",
+) -> dict[str, Any]:
     plan = subscription_plans.get_plan(plan_tier)
     if not plan:
         raise ValueError("unknown plan tier")
+    interval = subscription_plans.normalize_billing_interval(billing_interval)
     ensure_row(account_id)
     now = _utc_now()
     with connect() as conn:
         conn.execute(
             """
             UPDATE account_subscriptions
-            SET plan_tier = ?, status = 'pending', monthly_quota = ?, updated_at = ?
+            SET plan_tier = ?, billing_interval = ?, status = 'pending', monthly_quota = ?, updated_at = ?
             WHERE account_id = ?
             """,
-            (plan.tier, plan.monthly_quota, now, account_id),
+            (plan.tier, interval, plan.monthly_quota, now, account_id),
         )
         conn.commit()
     return get_subscription(account_id)
@@ -162,6 +169,7 @@ def activate_plan(
     *,
     plan_tier: str,
     status: str = "active",
+    billing_interval: str = "monthly",
     period_start: str | None = None,
     period_end: str | None = None,
     square_customer_id: str | None = None,
@@ -171,6 +179,7 @@ def activate_plan(
     plan = subscription_plans.get_plan(plan_tier)
     if not plan:
         raise ValueError("unknown plan tier")
+    interval = subscription_plans.normalize_billing_interval(billing_interval)
     if status not in ("pending", "active", "past_due", "canceled", "inactive"):
         raise ValueError("invalid subscription status")
 
@@ -188,6 +197,7 @@ def activate_plan(
             UPDATE account_subscriptions
             SET
                 plan_tier = ?,
+                billing_interval = ?,
                 status = ?,
                 monthly_quota = ?,
                 current_period_start = ?,
@@ -205,6 +215,7 @@ def activate_plan(
             """,
             (
                 plan.tier,
+                interval,
                 status,
                 plan.monthly_quota,
                 period_start,
@@ -251,6 +262,8 @@ def billing_summary(account_id: str) -> dict[str, Any]:
     usage = usage_metering.usage_snapshot(account_id)
     plan_def = subscription_plans.get_plan(sub["plan_tier"])
     display_plan = plan_def.display_name if plan_def and sub["status"] in _ACTIVE_STATUSES | {"pending"} else None
+    if display_plan and sub.get("billing_interval") == "annual":
+        display_plan = f"{display_plan} (Annual)"
     if sub["status"] == "canceled" or sub["plan_tier"] == "none":
         display_plan = None
 
@@ -264,6 +277,7 @@ def billing_summary(account_id: str) -> dict[str, Any]:
     return {
         "plan": display_plan,
         "plan_tier": sub["plan_tier"],
+        "billing_interval": sub.get("billing_interval") or "monthly",
         "status": sub["status"],
         "usage_quota": quota,
         "usage_used": usage["usage_used"],
