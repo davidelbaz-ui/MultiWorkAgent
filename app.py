@@ -822,6 +822,11 @@ def login_oauth_start(provider: str):
                 "Vercel → Project → Settings → Environment Variables (Production), then redeploy."
             )
         return render_template(
+            "login.html",
+            error=error,
+            next_url="",
+            **_auth_template_context(),
+        )
     next_url = _safe_next_url(request.args.get("next"))
     state = login_oauth_state_store.create_state(provider=provider, next_url=next_url)
     redirect_uri = login_oauth_callback_url(provider)
