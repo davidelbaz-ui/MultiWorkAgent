@@ -9,21 +9,36 @@
     This deployment cannot save accounts, businesses, or chats until PostgreSQL is configured.
   </p>
   {% if db_error %}
-  <p class="meta-row">{{ db_error }}</p>
+  <p class="meta-row"><strong>What we detected:</strong> {{ db_error }}</p>
   {% endif %}
-  <h2>Common mistake</h2>
-  <p class="legal-prose">
-    If the error mentions <strong>127.0.0.1</strong>, you pasted your <em>local</em> <code>DATABASE_URL</code> into Vercel.
-    Delete that variable on Vercel and use <strong>Storage → Postgres</strong> so <code>POSTGRES_URL</code> points to a remote host.
-  </p>
-  <h2>Vercel (production)</h2>
+
+  {% if db_env and db_env.fix_steps %}
+  <h2>Fix (in order)</h2>
   <ol class="legal-prose">
-    <li>Vercel project → <strong>Storage</strong> → create or connect <strong>Postgres</strong>.</li>
-    <li>Ensure <strong>POSTGRES_URL</strong> or <strong>DATABASE_URL</strong> is set for Production (the integration usually adds this automatically).</li>
-    <li><strong>Redeploy</strong> after env vars change.</li>
+    {% for step in db_env.fix_steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
   </ol>
+  {% endif %}
+
+  {% if db_env and db_env.env_keys %}
+  <h2>Env check (no secrets)</h2>
+  <ul class="legal-prose">
+    {% for key, status in db_env.env_keys.items() %}
+    <li><code>{{ key }}</code>: {{ status }}</li>
+    {% endfor %}
+  </ul>
   <p class="meta-row">
-    Format: <code>postgresql://user:password@host:5432/dbname</code> — password is part of the URL.
+    Open <a href="{{ url_for('health') }}">/health</a> for the same JSON after redeploy.
+    {% if db_env.vercel_env %}<span>Vercel env: {{ db_env.vercel_env }}</span>{% endif %}
   </p>
-  <p class="meta-row">See <code>docs/DATABASE.md</code> in the repo for local Docker setup.</p>
+  {% endif %}
+
+  <h2>Why this happens</h2>
+  <p class="legal-prose">
+    Creating a Postgres database in Vercel <strong>does not</strong> fix the app until that database is
+    <strong>connected to this project</strong> (which adds <code>POSTGRES_URL</code>) and any manual
+    <code>DATABASE_URL</code> copied from your local <code>.env</code> is <strong>deleted</strong>.
+  </p>
+  <p class="meta-row">See <code>docs/DATABASE.md</code> and <code>VERCEL.md</code> in the repo.</p>
 {% endblock %}

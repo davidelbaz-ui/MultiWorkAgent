@@ -275,6 +275,8 @@ def _ensure_account_id() -> str:
 def require_database_ready():
     if DB_READY:
         return None
+    from db_connection import database_env_diagnostics
+
     endpoint = request.endpoint or ""
     base = endpoint.split(".")[0]
     if base in DB_PUBLIC_ENDPOINTS:
@@ -293,6 +295,7 @@ def require_database_ready():
         render_template(
             "db_unconfigured.html",
             db_error=DB_INIT_ERROR,
+            db_env=database_env_diagnostics(),
             **_legal_template_context(),
         ),
         503,
@@ -430,10 +433,13 @@ def handle_internal_error(_exc):
 
 @app.get("/health")
 def health():
+    from db_connection import database_env_diagnostics
+
     payload = {
         "ok": DB_READY,
         "env": APP_CONFIG.app_env,
         "database": "ready" if DB_READY else "unconfigured",
+        "database_env": database_env_diagnostics(),
     }
     if DB_INIT_ERROR:
         payload["database_error"] = DB_INIT_ERROR

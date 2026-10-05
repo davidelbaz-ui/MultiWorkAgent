@@ -66,7 +66,9 @@ All app data (accounts, businesses, chats, support, billing) lives in **PostgreS
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/multiworkagent
 ```
 
-**Vercel:** create [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres) (or Neon / Supabase), copy the **`POSTGRES_URL`** / pooled URL into **`DATABASE_URL`**, redeploy.
+**Vercel:** create [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres), then **Connect Project** and choose **MultiWorkAgent** so `POSTGRES_URL` is injected for **Production**. **Delete** any manual `DATABASE_URL` you pasted from local `.env` (especially `127.0.0.1`). **Redeploy** and open `/health` — `database_env.env_keys.POSTGRES_URL` should be `remote`, not `missing`.
+
+Do **not** copy your Docker `DATABASE_URL` into Vercel unless the host is a remote provider (Neon, Supabase, etc.).
 
 See [docs/DATABASE.md](docs/DATABASE.md).
 

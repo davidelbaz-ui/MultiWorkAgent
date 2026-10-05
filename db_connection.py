@@ -146,6 +146,45 @@ def _env_url_keys() -> tuple[str, ...]:
     )
 
 
+def _env_url_status(key: str) -> str:
+    raw = os.environ.get(key, "").strip()
+    if not raw:
+        return "missing"
+    url = _normalize_postgres_url(raw)
+    return "local" if _is_local_database_host(url) else "remote"
+
+
+def database_env_diagnostics() -> dict[str, Any]:
+    """Non-secret snapshot of which DB env vars exist (for /health and setup UI)."""
+    env_keys = {key: _env_url_status(key) for key in _env_url_keys()}
+    has_remote_url = any(status == "remote" for status in env_keys.values())
+    fix_steps: list[str] = []
+    if is_vercel_runtime() and not has_remote_url:
+        local_database_url = env_keys.get("DATABASE_URL") == "local"
+        postgres_missing = env_keys.get("POSTGRES_URL") == "missing"
+        if local_database_url:
+            fix_steps.append(
+                "Delete DATABASE_URL under Vercel → Project → Settings → Environment Variables "
+                "(Production). Remove any value containing 127.0.0.1 or localhost."
+            )
+        if postgres_missing:
+            fix_steps.append(
+                "Open Vercel → Storage → your Postgres database → Connect Project → choose "
+                "MultiWorkAgent. Confirm POSTGRES_URL appears in Environment Variables for Production."
+            )
+        if not fix_steps:
+            fix_steps.append(
+                "Create or connect Vercel Postgres to this project, then redeploy."
+            )
+        fix_steps.append("Deployments → Redeploy production after env changes (required).")
+    return {
+        "env_keys": env_keys,
+        "has_remote_url": has_remote_url,
+        "vercel_env": (os.environ.get("VERCEL_ENV") or "").strip(),
+        "fix_steps": fix_steps,
+    }
+
+
 def database_url() -> str:
     candidates: list[str] = []
     for key in _env_url_keys():
@@ -166,20 +205,30 @@ def deployment_database_error() -> str | None:
     """Explain misconfiguration before connecting (especially localhost on Vercel)."""
     if not is_vercel_runtime():
         return None
-    raw_urls = [
-        _normalize_postgres_url(os.environ.get(key, ""))
-        for key in _env_url_keys()
-        if os.environ.get(key, "").strip()
-    ]
-    if not raw_urls:
+    diag = database_env_diagnostics()
+    if diag["has_remote_url"]:
         return None
-    remote = [u for u in raw_urls if not _is_local_database_host(u)]
-    if remote:
-        return None
+    env_keys = diag["env_keys"]
+    any_set = any(status != "missing" for status in env_keys.values())
+    if not any_set:
+        return (
+            "No PostgreSQL env vars on this deployment. Vercel → Storage → Postgres → "
+            "Connect Project → select MultiWorkAgent, then Redeploy."
+        )
+    if env_keys.get("DATABASE_URL") == "local" and env_keys.get("POSTGRES_URL") == "missing":
+        return (
+            "POSTGRES_URL is missing and DATABASE_URL still points to 127.0.0.1. "
+            "Connect the database to this project (Storage → Connect Project), delete the manual "
+            "DATABASE_URL in Settings → Environment Variables, then Redeploy."
+        )
+    if env_keys.get("DATABASE_URL") == "local":
+        return (
+            "DATABASE_URL points to 127.0.0.1 (localhost). Delete that variable on Vercel "
+            "and use Storage → Connect Project so POSTGRES_URL is set, then Redeploy."
+        )
     return (
-        "DATABASE_URL points to 127.0.0.1 (localhost). That only works on your computer, not on Vercel. "
-        "In Vercel: Storage → connect Postgres (uses POSTGRES_URL with a remote host), then remove any "
-        "DATABASE_URL that copies your local .env, and redeploy."
+        "PostgreSQL is not configured for this deployment. Ensure POSTGRES_URL is set for "
+        "Production (Storage → Connect Project), then Redeploy."
     )
 
 
