@@ -45,6 +45,7 @@ from app_urls import integration_oauth_callback_url, login_oauth_callback_url
 import invoice_store
 import notification_store
 import settings_store
+import support_store
 import square_billing
 import subscription_store
 import oauth_state_store
@@ -1610,6 +1611,90 @@ def settings():
     return render_template("settings.html", **_ctx("settings", **_settings_context()))
 
 
+@app.get("/support/contact")
+def contact_support():
+    return render_template(
+        "contact_support.html",
+        **_ctx(
+            "settings",
+            support_sla_hours=support_store.SUPPORT_SLA_HOURS,
+            support_max_body=support_store.MAX_MESSAGE_BODY_LEN,
+        ),
+    )
+
+
+@app.get("/api/support/messages")
+def api_support_messages_list():
+    account_id = _ensure_account_id()
+    user_id = session.get("user_id")
+    rows = support_store.list_messages(account_id)
+    return jsonify(
+        {
+            "messages": [
+                support_store.message_to_api(row, viewer_user_id=user_id) for row in rows
+            ],
+            "sla_hours": support_store.SUPPORT_SLA_HOURS,
+        }
+    )
+
+
+@app.post("/api/support/messages")
+def api_support_messages_create():
+    user_id = session.get("user_id")
+    account_id = _ensure_account_id()
+    if not user_id:
+        abort(401)
+    payload = request.get_json(silent=True) or {}
+    body = payload.get("body") if isinstance(payload, dict) else ""
+    try:
+        support_store.add_user_message(account_id=account_id, user_id=user_id, body=str(body))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    rows = support_store.list_messages(account_id)
+    return jsonify(
+        {
+            "ok": True,
+            "messages": [
+                support_store.message_to_api(row, viewer_user_id=user_id) for row in rows
+            ],
+        }
+    )
+
+
+def _support_reply_token() -> str | None:
+    raw = os.environ.get("SUPPORT_REPLY_TOKEN", "").strip()
+    return raw or None
+
+
+@app.post("/api/support/reply")
+def api_support_staff_reply():
+    """Operator-only: Bearer token must match SUPPORT_REPLY_TOKEN."""
+    expected = _support_reply_token()
+    if not expected:
+        return jsonify({"error": "support replies are not configured"}), 503
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header != f"Bearer {expected}":
+        return jsonify({"error": "unauthorized"}), 401
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({"error": "invalid body"}), 400
+    account_id = str(payload.get("account_id") or "").strip()
+    body = payload.get("body")
+    if not account_id:
+        return jsonify({"error": "account_id is required"}), 400
+    try:
+        support_store.add_support_reply(account_id=account_id, body=str(body or ""))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    rows = support_store.list_messages(account_id)
+    return jsonify(
+        {
+            "ok": True,
+            "messages": [support_store.message_to_api(row) for row in rows],
+        }
+    )
+
+
 @app.get("/api/notifications")
 def api_notifications_list():
     account_id = _ensure_account_id()
@@ -2117,6 +2202,7 @@ subscription_store.bootstrap()
 invoice_store.bootstrap()
 notification_store.bootstrap()
 settings_store.bootstrap()
+support_store.bootstrap()
 chat_store.bootstrap()
 
 if __name__ == "__main__":

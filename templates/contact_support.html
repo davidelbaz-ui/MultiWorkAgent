@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Contact support — MultiWorkAgent{% endblock %}
+{% block body_class %}page-support{% endblock %}
+{% block content %}
+<h1 class="page-title">Contact support</h1>
+<p class="page-sub">
+  Chat with our team. We aim to respond within {{ support_sla_hours }} hours on business days.
+  Your conversation is saved to your account so you can return anytime.
+</p>
+
+<section class="card support-chat-card">
+  <div class="support-chat-shell">
+    <div class="support-chat-messages" id="support-messages" role="log" aria-live="polite" aria-label="Support conversation">
+      <p class="empty-state" id="support-messages-loading">Loading conversation…</p>
+    </div>
+    <form class="support-chat-composer" id="support-composer" action="#" method="post">
+      <label class="support-sr-only" for="support-message-input">Message support</label>
+      <textarea
+        id="support-message-input"
+        rows="3"
+        placeholder="Describe your question or issue…"
+        maxlength="{{ support_max_body }}"
+        required
+      ></textarea>
+      <div class="support-chat-composer-actions">
+        <p class="meta-row support-chat-hint">Press Enter to send · Shift+Enter for a new line</p>
+        <button type="submit" class="btn btn-primary" id="support-send-btn">Send</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<nav class="support-back-nav" aria-label="Settings">
+  <a class="btn" href="{{ url_for('settings') }}">Back to settings</a>
+</nav>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='support.js') }}"></script>
+{% endblock %}

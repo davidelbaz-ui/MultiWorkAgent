@@ -10,10 +10,22 @@ from flask import url_for
 PRODUCTION_APP_BASE_URL = "https://multiworkagent.vercel.app"
 
 
+def _normalize_public_base_url(raw: str) -> str:
+    base = raw.strip().rstrip("/")
+    if not base:
+        return base
+    on_vercel = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+    if base.startswith("http://") and (
+        on_vercel or base.endswith(".vercel.app") or "multiworkagent" in base
+    ):
+        base = "https://" + base[len("http://") :]
+    return base
+
+
 def app_base_url() -> str | None:
     raw = os.environ.get("APP_BASE_URL", "").strip()
     if raw:
-        return raw.rstrip("/")
+        return _normalize_public_base_url(raw)
     if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
         return PRODUCTION_APP_BASE_URL.rstrip("/")
     return None

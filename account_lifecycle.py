@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import chat_store
+import support_store
 from app_db import connect, init_app_database
 
 
@@ -119,6 +120,7 @@ def purge_operational_data(account_id: str, *, user_id: str) -> dict[str, Any]:
     import subscription_store
 
     subscription_store.ensure_row(account_id)
+    support_store.delete_threads_for_account(account_id)
     return {"ok": True, "purged_workspaces": len(workspace_ids)}
 
 
@@ -127,6 +129,7 @@ def delete_account(account_id: str, *, user_id: str) -> list[str]:
     _require_owner(account_id, user_id)
     workspace_ids = list_chat_workspace_ids(account_id)
     chat_store.delete_workspaces(workspace_ids)
+    support_store.delete_threads_for_account(account_id)
 
     with connect() as conn:
         member_rows = conn.execute(
