@@ -234,6 +234,7 @@ function buildDatabaseWizardConfig(businessId) {
           '<input type="password" id="database-wizard-password" autocomplete="off">';
 
         panel.append(hostField, portField, dbField, userField, passField);
+        const host = panel.querySelector("#database-wizard-host");
         const port = panel.querySelector("#database-wizard-port");
         const db = panel.querySelector("#database-wizard-db");
         const user = panel.querySelector("#database-wizard-user");
@@ -378,16 +379,7 @@ async function openAddDatabaseWizard(selectedBusinessId) {
     }
     return;
   }
-  try {
-    await openAppWizard(buildDatabaseWizardConfig(selectedBusinessId));
-  } catch (err) {
-    console.error(err);
-    await openAppConfirm({
-      title: "Connection failed",
-      message: err.message || "Could not save database connection.",
-      confirmLabel: "OK",
-    });
-  }
+  await openAppWizard(buildDatabaseWizardConfig(selectedBusinessId));
 }
 
 function initDatabaseAdd() {
