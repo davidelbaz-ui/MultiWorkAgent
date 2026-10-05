@@ -39,11 +39,14 @@
   {{ form_switcher("sign_in", "Sign-in", sign_in_options, filters.sign_in, "admin-users-sign-in") }}
   {{ form_switcher("last_login", "Last sign-in", last_login_options, filters.last_login, "admin-users-last-login") }}
   {{ form_switcher("sort", "Sort by", sort_options, filters.sort, "admin-users-sort") }}
-  <div class="admin-filter-actions">
-    <button type="submit" class="btn btn-primary admin-users-apply">Apply</button>
-    {% if filters_active %}
-    <a class="btn btn-sm" href="{{ url_for('admin.admin_users') }}">Clear</a>
-    {% endif %}
+  <div class="admin-filter-field admin-filter-actions">
+    <span class="admin-filter-label" aria-hidden="true">&nbsp;</span>
+    <div class="admin-filter-actions-inner">
+      <button type="submit" class="btn btn-primary admin-users-apply">Apply</button>
+      {% if filters_active %}
+      <a class="btn btn-sm admin-users-clear" href="{{ url_for('admin.admin_users') }}">Clear</a>
+      {% endif %}
+    </div>
   </div>
 </form>
 

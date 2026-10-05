@@ -21,6 +21,7 @@ ROLE_LABELS = {
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 _MIN_PASSWORD_LEN = 8
 OAUTH_PROVIDERS = frozenset({"google", "microsoft"})
+ADMIN_SIGN_IN_PROVIDER_LABELS = {"google": "Google"}
 
 
 def _utc_now() -> str:
@@ -539,8 +540,13 @@ def list_users_for_admin(
         sign_in: list[str] = []
         if oauth:
             for part in oauth.split(", "):
-                label = part.strip().capitalize()
-                if label:
+                key = part.strip().lower()
+                if key == "microsoft":
+                    continue
+                label = ADMIN_SIGN_IN_PROVIDER_LABELS.get(
+                    key, part.strip().capitalize() if key else ""
+                )
+                if label and label not in sign_in:
                     sign_in.append(label)
         sign_in.append("Password")
         users.append(

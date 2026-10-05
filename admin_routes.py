@@ -217,7 +217,6 @@ def admin_users():
         {"value": "password", "label": "Password only"},
         {"value": "oauth", "label": "OAuth linked"},
         {"value": "google", "label": "Google"},
-        {"value": "microsoft", "label": "Microsoft"},
     ]
     last_login_options = [
         {"value": "", "label": "Any time"},

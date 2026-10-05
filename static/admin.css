@@ -254,6 +254,7 @@ body.admin-page .admin-back a:hover {
   gap: 1rem 1.25rem;
   align-items: flex-end;
   margin-bottom: 1.25rem;
+  --admin-filter-control-height: calc(0.9rem * 1.35 + 0.45rem * 2 + 2px);
 }
 
 .admin-filter-field {
@@ -276,6 +277,10 @@ body.admin-page .admin-back a:hover {
 
 .admin-filter-switcher .business-switcher-trigger {
   min-width: 11.5rem;
+  min-height: var(--admin-filter-control-height);
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+  box-sizing: border-box;
 }
 
 .admin-users-search {
@@ -339,7 +344,9 @@ body.admin-page .admin-back a:hover {
 .admin-filter-input {
   width: 100%;
   min-width: 12rem;
+  min-height: var(--admin-filter-control-height);
   padding: 0.45rem 0.85rem;
+  box-sizing: border-box;
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--text);
@@ -357,17 +364,29 @@ body.admin-page .admin-back a:hover {
 }
 
 .admin-filter-actions {
+  flex: 0 0 auto;
+}
+
+.admin-filter-actions-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  padding-bottom: 0.1rem;
 }
 
 .admin-users-apply {
-  min-height: 2.65rem;
-  padding: 0.55rem 1.45rem;
-  font-size: 0.95rem;
+  min-height: var(--admin-filter-control-height);
+  padding: 0 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  box-sizing: border-box;
+}
+
+.admin-users-clear {
+  min-height: var(--admin-filter-control-height);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
 }
 
 .admin-inline-form {
