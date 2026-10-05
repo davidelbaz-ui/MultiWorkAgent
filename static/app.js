@@ -3,6 +3,63 @@ let appDialogResolve = null;
 /** @type {HTMLElement | null} */
 let appDialogPreviousFocus = null;
 
+function formatHeaderUsageRuns(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return "0";
+  }
+  if (Math.abs(n - Math.round(n)) < 1e-9) {
+    return String(Math.round(n));
+  }
+  return String(Number(n.toFixed(2)));
+}
+
+/**
+ * @param {{ usage_used?: number, usage_quota?: number, plan?: string | null, runs_limit_free_tier?: boolean, limits?: { usage?: Record<string, unknown> } }} data
+ */
+function updateHeaderUsageChip(data) {
+  const chip = document.getElementById("header-usage-chip");
+  if (!chip || !data) {
+    return;
+  }
+  const usage = data.limits?.usage || {};
+  const usedRaw = data.usage_used ?? usage.usage_used;
+  const quotaRaw = data.usage_quota ?? usage.usage_quota;
+  if (usedRaw === undefined && quotaRaw === undefined) {
+    return;
+  }
+  const used = formatHeaderUsageRuns(usedRaw ?? 0);
+  const quota = formatHeaderUsageRuns(quotaRaw ?? 0);
+  const freeTier = Boolean(data.runs_limit_free_tier ?? usage.free_tier);
+  let planLabel = data.plan ?? chip.dataset.planLabel ?? "";
+  if (data.plan !== undefined && data.plan !== null) {
+    chip.dataset.planLabel = String(data.plan);
+    planLabel = String(data.plan);
+  }
+  if (!planLabel && freeTier) {
+    planLabel = "Free";
+    chip.dataset.planLabel = "Free";
+  }
+  let label;
+  if (planLabel && planLabel !== "Free") {
+    label = `${used} / ${quota} runs · ${planLabel}`;
+  } else if (freeTier || planLabel === "Free") {
+    label = `${used} / ${quota} runs · Free`;
+  } else if (Number(quotaRaw) > 0) {
+    label = `${used} / ${quota} runs · ${planLabel || "Plan"}`;
+  } else {
+    label = "No active plan";
+  }
+  chip.textContent = label;
+  const pct = Number(quotaRaw) ? (Number(usedRaw) / Number(quotaRaw)) * 100 : 0;
+  chip.classList.remove("ok", "warn");
+  if (Number(quotaRaw) && pct >= 75) {
+    chip.classList.add("warn");
+  } else if (planLabel && planLabel !== "Free") {
+    chip.classList.add("ok");
+  }
+}
+
 function closeAppDialog(result) {
   const root = document.getElementById("app-dialog-root");
   const input = document.getElementById("app-dialog-input");
@@ -678,6 +735,8 @@ async function initAgentComposer() {
   let streamRevealScheduled = false;
   /** @type {HTMLElement | null} */
   let streamRevealTextEl = null;
+  /** Full agent text received so far (handles cumulative SSE deltas). */
+  let streamReceivedFull = "";
 
   const scrollAgentToEnd = () => {
     if (scroll) {
@@ -739,6 +798,7 @@ async function initAgentComposer() {
   /** @type {SpeechRecognition | null} */
   let voiceRecognition = null;
   let voiceListening = false;
+  let voiceInputPrefix = "";
 
   const stopVoiceInput = () => {
     voiceListening = false;
@@ -792,9 +852,9 @@ async function initAgentComposer() {
     voiceRecognition.continuous = false;
     voiceRecognition.interimResults = true;
     voiceRecognition.lang = document.documentElement.lang || "en-US";
-    let interim = "";
 
     voiceRecognition.onstart = () => {
+      voiceInputPrefix = textarea.value.trim();
       voiceListening = true;
       sendBtn?.classList.add("is-listening");
     };
@@ -818,23 +878,27 @@ async function initAgentComposer() {
       }
     };
     voiceRecognition.onresult = (event) => {
-      let finalText = "";
-      interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      let committed = "";
+      let interim = "";
+      for (let i = 0; i < event.results.length; i += 1) {
         const part = event.results[i][0]?.transcript || "";
         if (event.results[i].isFinal) {
-          finalText += part;
+          committed += part;
         } else {
-          interim += part;
+          interim = part;
         }
       }
-      const base = textarea.value.replace(/\s+$/, "");
-      if (finalText.trim()) {
-        textarea.value = base ? `${base} ${finalText.trim()}` : finalText.trim();
-        interim = "";
-      } else if (interim.trim()) {
-        textarea.value = base ? `${base} ${interim.trim()}` : interim.trim();
+      const pieces = [];
+      if (voiceInputPrefix) {
+        pieces.push(voiceInputPrefix);
       }
+      if (committed.trim()) {
+        pieces.push(committed.trim());
+      }
+      if (interim.trim()) {
+        pieces.push(interim.trim());
+      }
+      textarea.value = pieces.join(" ");
       resizeAgentTextarea(textarea);
       syncComposerActionButton();
     };
@@ -890,6 +954,7 @@ async function initAgentComposer() {
           streamRevealBuffer = "";
           streamRevealTextEl = null;
           streamRevealScheduled = false;
+          streamReceivedFull = "";
           if (payload.message) {
             messages.appendChild(buildUserMessageBlock(payload.message));
           }
@@ -907,7 +972,19 @@ async function initAgentComposer() {
             textEl = bubble.querySelector(".msg-agent-text");
           }
           if (textEl) {
-            enqueueStreamReveal(payload.text, textEl);
+            const incoming = payload.text;
+            let delta = incoming;
+            if (incoming.startsWith(streamReceivedFull)) {
+              delta = incoming.slice(streamReceivedFull.length);
+              streamReceivedFull = incoming;
+            } else if (streamReceivedFull && streamReceivedFull.endsWith(incoming)) {
+              delta = "";
+            } else {
+              streamReceivedFull += incoming;
+            }
+            if (delta) {
+              enqueueStreamReveal(delta, textEl);
+            }
           }
         } else if (payload.type === "done") {
           activeRunId = null;
@@ -1129,6 +1206,12 @@ async function initAgentComposer() {
     if (sendBtn instanceof HTMLButtonElement && !form.classList.contains("is-agent-running")) {
       sendBtn.disabled = !limits.can_run;
     }
+    updateHeaderUsageChip({
+      limits,
+      usage_used: limits.usage?.usage_used,
+      usage_quota: limits.usage?.usage_quota,
+      runs_limit_free_tier: limits.usage?.free_tier,
+    });
   };
 
   const updateRunInspector = (run) => {
@@ -1225,6 +1308,7 @@ async function initAgentComposer() {
     updateThreadLabel(data);
     updateRunInspector(data.run);
     updateLimitsUI(data.limits);
+    updateHeaderUsageChip(data);
     renderThreadsList(data.threads || [], data.active_thread_id || data.thread_id);
     if (scroll && scrollToEnd) {
       requestAnimationFrame(() => {
@@ -1438,6 +1522,7 @@ async function initAgentComposer() {
       streamRevealBuffer = "";
       streamRevealTextEl = null;
       streamRevealScheduled = false;
+      streamReceivedFull = "";
       clearStreamingBubble();
       activeRunId = null;
       streamAbort = null;

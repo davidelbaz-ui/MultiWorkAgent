@@ -1881,8 +1881,15 @@ table.data-table {
 .agent-action-icons {
   position: relative;
   display: block;
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+
+.agent-action-icons svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .agent-send-btn .agent-send-icon,
@@ -1896,6 +1903,16 @@ table.data-table {
     transform 0.22s var(--motion-ease);
 }
 
+.agent-send-btn .agent-voice-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.agent-send-btn .agent-voice-icon path {
+  fill: currentColor;
+  stroke: none;
+}
+
 .agent-send-btn .agent-send-icon,
 .agent-send-btn .agent-voice-icon {
   opacity: 0;
@@ -1903,14 +1920,16 @@ table.data-table {
   pointer-events: none;
 }
 
-.agent-send-btn.is-send-mode .agent-send-icon {
+.agent-send-btn.is-voice-mode:not(.is-stop) .agent-voice-icon {
   opacity: 1;
   transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
-.agent-send-btn.is-voice-mode .agent-voice-icon {
+.agent-send-btn.is-send-mode:not(.is-stop) .agent-send-icon {
   opacity: 1;
   transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .agent-send-btn .agent-stop-icon {

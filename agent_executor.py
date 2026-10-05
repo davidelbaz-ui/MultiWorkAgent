@@ -807,12 +807,20 @@ def stream_generate_reply(
                         payload=payload,
                         cancel_event=cancel_event,
                     )
+                    stream_so_far = ""
                     for text, usage in stream:
                         if cancel_event and cancel_event.is_set():
                             break
                         if text:
-                            accumulated.append(text)
-                            yield {"event": "delta", "text": text}
+                            piece = text
+                            if stream_so_far and text.startswith(stream_so_far):
+                                piece = text[len(stream_so_far) :]
+                                stream_so_far = text
+                            else:
+                                stream_so_far += piece
+                            if piece:
+                                accumulated.append(piece)
+                                yield {"event": "delta", "text": piece}
                         if usage:
                             input_tokens = int(usage.get("promptTokenCount") or input_tokens)
                             output_tokens = int(

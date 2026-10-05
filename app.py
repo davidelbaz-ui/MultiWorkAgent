@@ -856,6 +856,11 @@ def _enrich_agent_state(state: dict) -> dict:
     state["runs_today"] = limits.get("runs_display_used", limits["runs_24h"])
     state["runs_daily_max"] = limits.get("runs_display_max", limits["runs_daily_max"])
     state["runs_limit_free_tier"] = bool((limits.get("usage") or {}).get("free_tier"))
+    usage = limits.get("usage") or {}
+    summary = subscription_store.billing_summary(_ensure_account_id())
+    state["usage_used"] = usage.get("usage_used", summary.get("usage_used"))
+    state["usage_quota"] = usage.get("usage_quota", summary.get("usage_quota"))
+    state["plan"] = summary.get("plan")
     run = state.get("run") or {}
     state["run_tool_calls"] = [
         tc.get("label") or tc.get("tool_name") for tc in run.get("tool_calls") or []

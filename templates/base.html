@@ -44,7 +44,7 @@
           </div>
         </div>
         {% set pct = (usage_used / usage_quota * 100) if usage_quota else 0 %}
-        <a href="{{ url_for('billing') }}" class="usage-chip {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}">
+        <a href="{{ url_for('billing') }}" class="usage-chip {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" id="header-usage-chip" data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}">
           {% if plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
         </a>
       </div>
