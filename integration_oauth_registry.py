@@ -110,6 +110,7 @@ _WIRED_OAUTH: list[OAuthProviderTemplate] = [
         scopes="repository account",
         client_id_env="BITBUCKET_OAUTH_CLIENT_ID",
         client_secret_env="BITBUCKET_OAUTH_CLIENT_SECRET",
+        token_auth="basic",
     ),
     OAuthProviderTemplate(
         slug="google-workspace-gmail-docs-drive-sheets-calendar",

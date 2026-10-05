@@ -1,8 +1,21 @@
 # OAuth walkthrough #3 — Bitbucket
 
-Status: **deferred** (404 on workspace URL — revisit after the rest)
+Status: **wired** in `integration_oauth_registry.py` (token exchange uses HTTP Basic auth).
 
-Bitbucket Cloud does **not** use “Personal settings” for OAuth anymore. Consumers live under a **workspace**.
+Bitbucket Cloud OAuth consumers live under a **workspace** (not Atlassian account settings).
+
+## Before you start (MultiWorkAgent)
+
+1. Decide which callback URL you will use — it must match `APP_BASE_URL` + `/integrations/oauth/callback`:
+   - **Production:** `https://multiworkagent.vercel.app/integrations/oauth/callback` (your `.env` currently sets `APP_BASE_URL` to this host even when running Flask locally, so OAuth returns to production unless you change it).
+   - **Local-only testing:** set `APP_BASE_URL=http://127.0.0.1:5000` and use `http://127.0.0.1:5000/integrations/oauth/callback` in Bitbucket.
+2. In `.env`, set:
+   ```env
+   BITBUCKET_OAUTH_CLIENT_ID=
+   BITBUCKET_OAUTH_CLIENT_SECRET=
+   ```
+   (`Key` → client id, `Secret` → client secret from Bitbucket.)
+3. Restart Flask after saving `.env`.
 
 ## Path A — menus (recommended)
 
@@ -13,8 +26,8 @@ Bitbucket Cloud does **not** use “Personal settings” for OAuth anymore. Cons
 5. Choose **Workspace settings**.
 6. Left sidebar: **Apps and features** → **OAuth consumers**.
 7. **Add consumer**:
-   - **Name:** `MultiWorkAgent (local)`
-   - **Callback URL:** `http://127.0.0.1:5000/integrations/oauth/callback`
+   - **Name:** `MultiWorkAgent`
+   - **Callback URL:** `{APP_BASE_URL}/integrations/oauth/callback` (see above)
    - Check **This is a private consumer** (confidential / has a secret).
    - **Permissions:** Account **Read**, Repositories **Read** (minimum).
 8. **Save** → expand the consumer → copy **Key** and **Secret**.
