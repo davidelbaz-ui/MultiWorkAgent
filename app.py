@@ -58,6 +58,8 @@ import support_store
 import square_billing
 import subscription_plans
 import subscription_store
+import team_invite_store
+import user_notification_store
 import oauth_state_store
 import run_limits
 import run_store
@@ -168,6 +170,8 @@ def bootstrap_application_stores() -> None:
         support_store.bootstrap()
         site_settings_store.bootstrap()
         chat_store.bootstrap()
+        user_notification_store.bootstrap()
+        team_invite_store.bootstrap()
         DB_READY = True
         DB_INIT_ERROR = None
         LOGGER.info("database_bootstrap_ok")
@@ -253,6 +257,35 @@ def _login_session(user: dict, membership: dict) -> None:
     session["role"] = membership["role"]
     session["user_email"] = user.get("email") or ""
     session["user_display_name"] = user.get("display_name") or user.get("name") or ""
+    try:
+        team_invite_store.sync_invites_for_user(user["id"], user.get("email") or "")
+    except Exception:
+        LOGGER.exception("team_invite_sync_failed user_id=%s", user.get("id"))
+
+
+def _apply_invite_session(membership: dict) -> None:
+    session["account_id"] = membership["account_id"]
+    session["role"] = membership["role"]
+
+
+def _notifications_feed(account_id: str, user_id: str) -> tuple[list[dict], int]:
+    account_rows = notification_store.list_notifications(account_id)
+    for row in account_rows:
+        row["scope"] = "account"
+    user_rows = user_notification_store.list_for_user(user_id)
+    merged = account_rows + user_rows
+    merged.sort(key=lambda row: row.get("created_at") or "", reverse=True)
+    merged = merged[:50]
+    api_rows = []
+    for row in merged:
+        if row.get("scope") == "user":
+            api_rows.append(user_notification_store.notification_to_api(row))
+        else:
+            api_rows.append(notification_store.notification_to_api(row))
+    unread = notification_store.unread_count(account_id) + user_notification_store.unread_count(
+        user_id
+    )
+    return api_rows, unread
 
 
 def _membership_from_session(user_id: str, account_id: str) -> dict | None:
@@ -1915,6 +1948,9 @@ def _settings_context() -> dict:
         "settings_appearance": bundle["appearance"],
         "settings_agent": bundle["agent"],
         "notification_prefs": notification_store.ensure_prefs(account_id),
+        "pending_team_invites": team_invite_store.list_pending_for_account(account_id)
+        if session.get("role") == "owner"
+        else [],
     }
 
 
@@ -2012,43 +2048,138 @@ def api_support_staff_reply():
 @app.get("/api/notifications")
 def api_notifications_list():
     account_id = _ensure_account_id()
-    rows = notification_store.list_notifications(account_id)
-    return jsonify(
-        {
-            "notifications": [notification_store.notification_to_api(r) for r in rows],
-            "unread_count": notification_store.unread_count(account_id),
-        }
-    )
+    user_id = session.get("user_id") or ""
+    items, unread = _notifications_feed(account_id, user_id)
+    return jsonify({"notifications": items, "unread_count": unread})
 
 
 @app.post("/api/notifications/read-all")
 def api_notifications_read_all():
     account_id = _ensure_account_id()
-    count = notification_store.mark_all_read(account_id)
-    return jsonify({"ok": True, "marked": count, "unread_count": 0})
+    user_id = session.get("user_id") or ""
+    notification_store.mark_all_read(account_id)
+    user_rows = user_notification_store.list_for_user(user_id, limit=100)
+    for row in user_rows:
+        if not row.get("is_read"):
+            user_notification_store.mark_read(user_id, row["id"])
+    _, unread = _notifications_feed(account_id, user_id)
+    return jsonify({"ok": True, "unread_count": unread})
 
 
 @app.post("/api/notifications/<notification_id>/read")
 def api_notifications_mark_read(notification_id: str):
     account_id = _ensure_account_id()
-    if not notification_store.mark_read(account_id, notification_id):
-        return jsonify({"error": "not found"}), 404
-    return jsonify({"ok": True, "unread_count": notification_store.unread_count(account_id)})
+    user_id = session.get("user_id") or ""
+    if notification_store.mark_read(account_id, notification_id):
+        _, unread = _notifications_feed(account_id, user_id)
+        return jsonify({"ok": True, "unread_count": unread})
+    if user_notification_store.mark_read(user_id, notification_id):
+        _, unread = _notifications_feed(account_id, user_id)
+        return jsonify({"ok": True, "unread_count": unread})
+    return jsonify({"error": "not found"}), 404
 
 
 @app.delete("/api/notifications/<notification_id>")
 def api_notifications_delete(notification_id: str):
     account_id = _ensure_account_id()
-    if not notification_store.delete_notification(account_id, notification_id):
-        return jsonify({"error": "not found"}), 404
-    return jsonify({"ok": True, "unread_count": notification_store.unread_count(account_id)})
+    user_id = session.get("user_id") or ""
+    if notification_store.delete_notification(account_id, notification_id):
+        _, unread = _notifications_feed(account_id, user_id)
+        return jsonify({"ok": True, "unread_count": unread})
+    if user_notification_store.delete_notification(user_id, notification_id):
+        _, unread = _notifications_feed(account_id, user_id)
+        return jsonify({"ok": True, "unread_count": unread})
+    return jsonify({"error": "not found"}), 404
 
 
 @app.post("/api/notifications/delete-all")
 def api_notifications_delete_all():
     account_id = _ensure_account_id()
-    deleted = notification_store.delete_all_notifications(account_id)
-    return jsonify({"ok": True, "deleted": deleted, "unread_count": 0})
+    user_id = session.get("user_id") or ""
+    notification_store.delete_all_notifications(account_id)
+    user_notification_store.delete_all(user_id)
+    return jsonify({"ok": True, "deleted": True, "unread_count": 0})
+
+
+@app.get("/api/team/invites")
+def api_team_invites_list():
+    account_id = _ensure_account_id()
+    if session.get("role") != "owner":
+        return jsonify({"error": "Only the account owner can view invites."}), 403
+    invites = team_invite_store.list_pending_for_account(account_id)
+    return jsonify({"invites": invites})
+
+
+@app.post("/api/team/invites")
+def api_team_invites_create():
+    account_id = _ensure_account_id()
+    user_id = session.get("user_id") or ""
+    payload = request.get_json(silent=True) or {}
+    email = payload.get("email") or ""
+    role = payload.get("role") or "operator"
+    try:
+        invite = team_invite_store.create_invite(
+            account_id,
+            email=str(email),
+            role=str(role),
+            invited_by_user_id=user_id,
+        )
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"ok": True, "invite": invite}), 201
+
+
+@app.delete("/api/team/invites/<invite_id>")
+def api_team_invites_cancel(invite_id: str):
+    account_id = _ensure_account_id()
+    user_id = session.get("user_id") or ""
+    try:
+        ok = team_invite_store.cancel_invite(account_id, invite_id, actor_user_id=user_id)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+    if not ok:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"ok": True})
+
+
+@app.post("/api/team/invites/<invite_id>/accept")
+def api_team_invites_accept(invite_id: str):
+    user_id = session.get("user_id") or ""
+    if not user_id:
+        return jsonify({"error": "authentication required"}), 401
+    try:
+        result = team_invite_store.accept_invite(invite_id, user_id=user_id)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    _apply_invite_session(result["membership"])
+    account_id = session.get("account_id") or ""
+    _, unread = _notifications_feed(account_id, user_id)
+    return jsonify(
+        {
+            "ok": True,
+            "membership": result["membership"],
+            "redirect": url_for("index"),
+            "unread_count": unread,
+        }
+    )
+
+
+@app.post("/api/team/invites/<invite_id>/decline")
+def api_team_invites_decline(invite_id: str):
+    user_id = session.get("user_id") or ""
+    if not user_id:
+        return jsonify({"error": "authentication required"}), 401
+    try:
+        team_invite_store.decline_invite(invite_id, user_id=user_id)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+    account_id = _ensure_account_id()
+    _, unread = _notifications_feed(account_id, user_id)
+    return jsonify({"ok": True, "unread_count": unread})
 
 
 def _settings_actor() -> tuple[str, str]:

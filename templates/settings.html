@@ -5,7 +5,7 @@
 <p class="page-sub">Account, security, agent behavior, notifications.</p>
 
 <div class="grid-2">
-  <section class="card">
+  <section class="card" id="settings-team-card">
     <h2>Account & team</h2>
     {% if current_user %}
     <p class="meta-row">Signed in as {{ current_user.email }}{% if account_role_label %} · {{ account_role_label }}{% endif %}</p>
@@ -25,7 +25,24 @@
     {% else %}
     <p class="empty-state">No team members.</p>
     {% endif %}
-    <p class="meta-row">Inviting teammates is coming soon.</p>
+    {% if account_role == 'owner' %}
+    <div class="settings-team-actions">
+      <button type="button" class="btn btn-primary" id="settings-invite-teammate">Invite teammate</button>
+    </div>
+    {% if pending_team_invites %}
+    <h3 class="settings-subheading">Pending invites</h3>
+    <ul class="settings-pending-invites" id="settings-pending-invites">
+      {% for inv in pending_team_invites %}
+      <li class="settings-pending-invite" data-invite-id="{{ inv.id }}">
+        <span>{{ inv.invitee_email }} · {{ inv.role_label }}</span>
+        <button type="button" class="btn btn-sm settings-cancel-invite" data-invite-id="{{ inv.id }}">Cancel</button>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% else %}
+    <p class="meta-row">Only the account owner can invite teammates.</p>
+    {% endif %}
   </section>
   <section class="card">
     <h2>Appearance</h2>

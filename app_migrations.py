@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 22
+APP_SCHEMA_VERSION = 23
 
 
 def _utc_now() -> str:
@@ -596,6 +596,56 @@ def migration_022_subscription_enterprise_annual(conn: DBConnection) -> None:
     )
 
 
+def migration_023_team_invites(conn: DBConnection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS account_team_invites (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            invitee_email TEXT NOT NULL,
+            invitee_user_id TEXT,
+            role TEXT NOT NULL CHECK (role IN ('operator', 'viewer')),
+            invited_by_user_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
+            user_notification_id TEXT,
+            created_at TEXT NOT NULL,
+            responded_at TEXT,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (invitee_user_id) REFERENCES users (id) ON DELETE SET NULL,
+            FOREIGN KEY (invited_by_user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_team_invites_account_status
+            ON account_team_invites (account_id, status, created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_team_invites_email_pending
+            ON account_team_invites (invitee_email, status);
+
+        CREATE TABLE IF NOT EXISTS user_notifications (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            href TEXT,
+            invite_id TEXT,
+            dedupe_key TEXT,
+            read_at TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_user_notifications_user_created
+            ON user_notifications (user_id, created_at DESC);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_user_notifications_dedupe
+            ON user_notifications (user_id, dedupe_key)
+            WHERE dedupe_key IS NOT NULL;
+        """
+    )
+
+
 MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (1, "core_accounts_businesses", migration_001_core_accounts_businesses),
     (2, "business_archived_at", migration_002_business_archived_at),
@@ -619,6 +669,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (20, "users_last_login", migration_020_users_last_login),
     (21, "business_knowledge_files", migration_021_business_knowledge_files),
     (22, "subscription_enterprise_annual", migration_022_subscription_enterprise_annual),
+    (23, "team_invites", migration_023_team_invites),
 ]
 
 

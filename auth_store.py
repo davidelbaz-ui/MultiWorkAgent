@@ -122,6 +122,9 @@ def get_primary_membership(user_id: str) -> dict[str, Any] | None:
             SELECT account_id, user_id, role, created_at
             FROM account_members
             WHERE user_id = ?
+            ORDER BY
+                CASE role WHEN 'owner' THEN 0 WHEN 'operator' THEN 1 ELSE 2 END,
+                created_at ASC
             LIMIT 1
             """,
             (user_id,),
@@ -163,6 +166,27 @@ def list_account_members(account_id: str) -> list[dict[str, Any]]:
             }
         )
     return members
+
+
+def add_account_member(account_id: str, user_id: str, role: str) -> dict[str, Any]:
+    if role not in ROLES or role == "owner":
+        raise ValueError("invalid role for invite")
+    if get_membership(account_id, user_id):
+        raise ValueError("user is already a member")
+    now = _utc_now()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO account_members (account_id, user_id, role, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (account_id, user_id, role, now),
+        )
+        conn.commit()
+    membership = get_membership(account_id, user_id)
+    if not membership:
+        raise RuntimeError("failed to add member")
+    return membership
 
 
 def create_account_with_owner(

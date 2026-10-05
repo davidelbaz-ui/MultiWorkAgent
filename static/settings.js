@@ -145,4 +145,130 @@ document.addEventListener("DOMContentLoaded", () => {
   initNotificationPrefs();
   initAgentPrefs();
   initDangerZone();
+  initTeamInvites();
 });
+
+function initTeamInvites() {
+  const inviteBtn = document.getElementById("settings-invite-teammate");
+  if (!inviteBtn || typeof openAppWizard !== "function") {
+    return;
+  }
+
+  const ctx = {
+    email: "",
+    role: "operator",
+  };
+
+  inviteBtn.addEventListener("click", () => {
+    ctx.email = "";
+    ctx.role = "operator";
+    void openAppWizard({
+      title: "Invite teammate",
+      finishLabel: "Send invite",
+      steps: [
+        {
+          id: "email",
+          title: "Email",
+          validate(wizardCtx) {
+            const input = document.getElementById("team-invite-email");
+            const email =
+              input instanceof HTMLInputElement ? input.value.trim() : wizardCtx.email;
+            if (!email) {
+              return "Enter an email address.";
+            }
+            wizardCtx.email = email;
+            return true;
+          },
+          render(body, wizardCtx) {
+            const label = document.createElement("label");
+            label.className = "app-wizard-field";
+            label.innerHTML = `Email address<input type="email" class="app-wizard-input" id="team-invite-email" autocomplete="email" placeholder="teammate@company.com">`;
+            body.appendChild(label);
+            const hint = document.createElement("p");
+            hint.className = "meta-row";
+            hint.textContent =
+              "They must sign in with this email to accept. If they do not have an account yet, they can sign up first.";
+            body.appendChild(hint);
+            const input = label.querySelector("input");
+            input?.addEventListener("input", () => {
+              wizardCtx.email = input.value.trim();
+            });
+            requestAnimationFrame(() => input?.focus());
+          },
+        },
+        {
+          id: "role",
+          title: "Role",
+          render(body, wizardCtx) {
+            const fieldset = document.createElement("fieldset");
+            fieldset.className = "app-wizard-fieldset";
+            fieldset.innerHTML = `
+              <legend class="app-wizard-legend">Choose a role</legend>
+              <label class="app-wizard-radio"><input type="radio" name="team-invite-role" value="operator" checked> Operator — run agent and edit data</label>
+              <label class="app-wizard-radio"><input type="radio" name="team-invite-role" value="viewer"> Viewer — read-only</label>`;
+            body.appendChild(fieldset);
+            fieldset.querySelectorAll('input[name="team-invite-role"]').forEach((input) => {
+              input.addEventListener("change", () => {
+                if (input instanceof HTMLInputElement && input.checked) {
+                  wizardCtx.role = input.value;
+                }
+              });
+            });
+          },
+        },
+        {
+          id: "review",
+          title: "Review",
+          render(body, wizardCtx) {
+            const roleLabel = wizardCtx.role === "viewer" ? "Viewer" : "Operator";
+            const p = document.createElement("p");
+            p.textContent = `Send an invitation to ${wizardCtx.email || "(email)"} as ${roleLabel}. They will see Accept and Decline in their notifications.`;
+            body.appendChild(p);
+          },
+        },
+      ],
+      ctx,
+      onFinish: async (wizardCtx) => {
+        const emailInput = document.getElementById("team-invite-email");
+        if (emailInput instanceof HTMLInputElement) {
+          wizardCtx.email = emailInput.value.trim();
+        }
+        if (!wizardCtx.email) {
+          throw new Error("Enter an email address.");
+        }
+        await settingsApiJson("/api/team/invites", {
+          method: "POST",
+          body: JSON.stringify({ email: wizardCtx.email, role: wizardCtx.role }),
+        });
+        window.location.reload();
+      },
+    });
+  });
+
+  document.getElementById("settings-pending-invites")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".settings-cancel-invite");
+    if (!(btn instanceof HTMLElement)) {
+      return;
+    }
+    const inviteId = btn.dataset.inviteId;
+    if (!inviteId) {
+      return;
+    }
+    const ok = await openAppConfirm({
+      title: "Cancel invite",
+      message: "Withdraw this invitation?",
+      confirmLabel: "Cancel invite",
+    });
+    if (!ok) {
+      return;
+    }
+    try {
+      await settingsApiJson(`/api/team/invites/${encodeURIComponent(inviteId)}`, {
+        method: "DELETE",
+      });
+      btn.closest(".settings-pending-invite")?.remove();
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}

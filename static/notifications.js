@@ -47,13 +47,19 @@ function renderNotificationsList(items) {
     const li = document.createElement("li");
     li.className = `notifications-item${item.is_read ? "" : " notifications-item--unread"}`;
     li.dataset.notificationId = item.id;
+    if (item.scope) {
+      li.dataset.notificationScope = item.scope;
+    }
 
     const row = document.createElement("div");
     row.className = "notifications-item-row";
 
-    const link = item.href ? document.createElement("a") : document.createElement("div");
+    const main = document.createElement("div");
+    main.className = "notifications-item-main";
+
+    const link = item.href && !item.actions ? document.createElement("a") : document.createElement("div");
     link.className = "notifications-item-link";
-    if (item.href) {
+    if (link instanceof HTMLAnchorElement && item.href) {
       link.href = item.href;
     }
     const title = document.createElement("span");
@@ -66,6 +72,24 @@ function renderNotificationsList(items) {
     time.className = "notifications-item-time";
     time.textContent = formatNotificationTime(item.created_at);
     link.append(title, body, time);
+    main.appendChild(link);
+
+    if (item.invite_id && Array.isArray(item.actions)) {
+      const actions = document.createElement("div");
+      actions.className = "notifications-item-actions";
+      const acceptBtn = document.createElement("button");
+      acceptBtn.type = "button";
+      acceptBtn.className = "btn btn-sm btn-primary notifications-invite-accept";
+      acceptBtn.dataset.inviteId = item.invite_id;
+      acceptBtn.textContent = "Accept";
+      const declineBtn = document.createElement("button");
+      declineBtn.type = "button";
+      declineBtn.className = "btn btn-sm notifications-invite-decline";
+      declineBtn.dataset.inviteId = item.invite_id;
+      declineBtn.textContent = "Decline";
+      actions.append(acceptBtn, declineBtn);
+      main.appendChild(actions);
+    }
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
@@ -77,7 +101,7 @@ function renderNotificationsList(items) {
         <path d="M8 8l8 8M16 8l-8 8"/>
       </svg>`;
 
-    row.append(link, deleteBtn);
+    row.append(main, deleteBtn);
     li.appendChild(row);
     list.appendChild(li);
   });
@@ -184,6 +208,55 @@ function initNotificationsMenu() {
   });
 
   panel.addEventListener("click", async (e) => {
+    const acceptBtn = e.target.closest(".notifications-invite-accept");
+    if (acceptBtn instanceof HTMLElement) {
+      e.preventDefault();
+      e.stopPropagation();
+      const inviteId = acceptBtn.dataset.inviteId;
+      if (!inviteId) {
+        return;
+      }
+      try {
+        const data = await notificationsApiJson(
+          `/api/team/invites/${encodeURIComponent(inviteId)}/accept`,
+          { method: "POST" },
+        );
+        await refreshNotifications();
+        if (data.redirect) {
+          window.location.href = data.redirect;
+        }
+      } catch (err) {
+        console.error(err);
+        if (typeof openAppAlert === "function") {
+          await openAppAlert({
+            title: "Could not accept invite",
+            message: err instanceof Error ? err.message : "Something went wrong.",
+          });
+        }
+      }
+      return;
+    }
+
+    const declineBtn = e.target.closest(".notifications-invite-decline");
+    if (declineBtn instanceof HTMLElement) {
+      e.preventDefault();
+      e.stopPropagation();
+      const inviteId = declineBtn.dataset.inviteId;
+      if (!inviteId) {
+        return;
+      }
+      try {
+        await notificationsApiJson(
+          `/api/team/invites/${encodeURIComponent(inviteId)}/decline`,
+          { method: "POST" },
+        );
+        await refreshNotifications();
+      } catch (err) {
+        console.error(err);
+      }
+      return;
+    }
+
     const deleteBtn = e.target.closest(".notifications-item-delete");
     if (deleteBtn instanceof HTMLElement) {
       e.preventDefault();

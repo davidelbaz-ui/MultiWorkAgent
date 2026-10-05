@@ -196,7 +196,7 @@ Summarize accurately; do not invent company addresses or emails. Direct users to
 
 **“Where do I upload SOPs for the agent?”** — Data & integrations → select business → Knowledge section.
 
-**“How do I add a team member?”** — Settings → Team (owner).
+**“How do I add a team member?”** — Settings → Account & team → **Invite teammate** (owner only). They receive Accept/Decline in notifications and must use the invited email.
 
 **“What counts as one run?”** — One agent reply cycle after you send a message (successful completion meters usage).
 
