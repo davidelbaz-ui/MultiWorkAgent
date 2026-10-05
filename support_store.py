@@ -26,35 +26,9 @@ def _utc_now() -> str:
 
 
 def bootstrap() -> None:
-    with connect() as conn:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS support_threads (
-                id TEXT PRIMARY KEY,
-                account_id TEXT NOT NULL UNIQUE,
-                status TEXT NOT NULL DEFAULT 'open',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
+    from app_db import init_app_database
 
-            CREATE INDEX IF NOT EXISTS idx_support_threads_account
-                ON support_threads (account_id);
-
-            CREATE TABLE IF NOT EXISTS support_messages (
-                id TEXT PRIMARY KEY,
-                thread_id TEXT NOT NULL,
-                sender_type TEXT NOT NULL,
-                author_user_id TEXT,
-                body TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (thread_id) REFERENCES support_threads (id) ON DELETE CASCADE
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_support_messages_thread
-                ON support_messages (thread_id, created_at ASC);
-            """
-        )
-        conn.commit()
+    init_app_database()
 
 
 def delete_threads_for_account(account_id: str) -> int:

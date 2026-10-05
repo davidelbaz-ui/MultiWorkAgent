@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import sqlite3
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+
+import psycopg
 
 import business_store
 from app_db import connect, init_app_database
@@ -152,7 +153,7 @@ def create_notification(
                 ),
             )
             conn.commit()
-        except sqlite3.IntegrityError:
+        except psycopg.errors.UniqueViolation:
             if dedupe_key:
                 row = conn.execute(
                     """

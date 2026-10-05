@@ -2,37 +2,20 @@
 
 from __future__ import annotations
 
-import gc
-import tempfile
-import unittest
-from pathlib import Path
-
-import app_db
 import auth_store
 import settings_store
+from tests.postgres_test_case import PostgresStoreTestCase
 
 
-class SettingsStoreTest(unittest.TestCase):
+class SettingsStoreTest(PostgresStoreTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
+        super().setUp()
         self.user, self.membership = auth_store.create_account_with_owner(
             email="settings@example.com",
             password="password123",
             display_name="Settings User",
         )
         self.account_id = self.membership["account_id"]
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_defaults_and_patch(self) -> None:
         bundle = settings_store.settings_bundle(self.user["id"], self.account_id)
@@ -62,4 +45,6 @@ class SettingsStoreTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import unittest
+
     unittest.main()

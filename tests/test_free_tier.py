@@ -2,40 +2,24 @@
 
 from __future__ import annotations
 
-import gc
 import os
-import tempfile
 import unittest
-from pathlib import Path
 from unittest import mock
 
-import app_db
 import business_store
 import run_limits
 import run_store
-import subscription_store
 import usage_metering
 from agent_executor import AgentRunResult
 from run_limits import RunLimitError
+from tests.postgres_test_case import PostgresStoreTestCase
 
 
-class FreeTierTest(unittest.TestCase):
+class FreeTierTest(PostgresStoreTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
+        super().setUp()
         self.account_id = "acct-free"
         business_store.create_business(self.account_id, name="Free Co", industry="")
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_free_tier_quota_and_block(self) -> None:
         snap = usage_metering.usage_snapshot(self.account_id)

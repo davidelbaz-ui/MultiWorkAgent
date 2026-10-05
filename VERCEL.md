@@ -22,6 +22,7 @@ Vercel **automatically builds** when you push to `main`. You do **not** pull on 
 | `APP_ENV` | `production` |
 | `FLASK_SECRET_KEY` | long random string |
 | `APP_BASE_URL` | `https://multiworkagent.vercel.app` |
+| **`DATABASE_URL`** | `postgresql://user:password@host:5432/dbname` (Vercel Postgres, Neon, Supabase, etc.) |
 | `GOOGLE_LOGIN_CLIENT_ID` / `SECRET` | login OAuth (redirect below) |
 | `INTEGRATION_ENCRYPTION_KEY` | optional but recommended |
 
@@ -55,24 +56,25 @@ With `APP_BASE_URL=https://multiworkagent.vercel.app`, integration OAuth uses HT
 
 Operator rule: for the walkthrough, register **`https://multiworkagent.vercel.app/integrations/oauth/callback`** (and login URLs above) in each provider app unless you intentionally maintain separate local OAuth clients.
 
-## Storage and login on Vercel
+## Database (PostgreSQL)
 
-Without a remote database, SQLite under **`/tmp`** is **ephemeral** (each serverless instance has its own empty file). The app **keeps you signed in via the session cookie** between page loads, but businesses, chats, and OAuth-linked accounts do not persist across instances until you add Turso.
+All app data (accounts, businesses, chats, support, billing) lives in **PostgreSQL** via **`DATABASE_URL`**. The username and password are part of the URL — there is no separate SQLite file on Vercel.
 
-**Recommended:** create a [Turso](https://turso.tech) database and set on Vercel (Production):
+**Local:** `docker compose up -d` then set in `.env`:
 
-| Variable | Value |
-|----------|--------|
-| `TURSO_DATABASE_URL` | `libsql://…` from Turso dashboard |
-| `TURSO_AUTH_TOKEN` | Turso database token |
+```text
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/multiworkagent
+```
 
-All app, agent chat, and support tables use that single remote database automatically.
+**Vercel:** create [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres) (or Neon / Supabase), copy the **`POSTGRES_URL`** / pooled URL into **`DATABASE_URL`**, redeploy.
 
-Also set **`FLASK_SECRET_KEY`** to a stable random value (never change it casually — changing it logs everyone out).
+See [docs/DATABASE.md](docs/DATABASE.md).
 
-Chat file uploads still use local `/tmp` until object storage is added.
+Chat **file uploads** still use `/tmp` on Vercel until object storage is added.
+
+Also set **`FLASK_SECRET_KEY`** to a stable random value (changing it logs everyone out).
 
 ## Local vs production commands
 
-- **Local:** `APP_BASE_URL=http://127.0.0.1:5000`, `python app.py`
+- **Local:** Postgres running, `DATABASE_URL` in `.env`, `APP_BASE_URL=http://127.0.0.1:5000`, `python app.py`
 - **Production:** env in Vercel; redeploy after changing env vars

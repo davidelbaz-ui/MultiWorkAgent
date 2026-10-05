@@ -2,27 +2,20 @@
 
 from __future__ import annotations
 
-import gc
-import tempfile
-import unittest
 from pathlib import Path
 
-import app_db
 import business_store
 import connection_store
 import database_store
 import global_search
 import run_store
 from agent_executor import AgentRunResult
+from tests.postgres_test_case import TempDirTestCase
 
 
-class GlobalSearchTest(unittest.TestCase):
+class GlobalSearchTest(TempDirTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
+        super().setUp()
         self.account_id = "acct-search"
         self.business = business_store.create_business(
             self.account_id, name="Searchable LLC", industry=""
@@ -31,14 +24,6 @@ class GlobalSearchTest(unittest.TestCase):
         self.other = business_store.create_business(
             self.account_id, name="Other Co", industry=""
         )
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_scoped_run_and_connection_search(self) -> None:
         run_store.record_chat_run(
@@ -90,4 +75,6 @@ class GlobalSearchTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import unittest
+
     unittest.main()

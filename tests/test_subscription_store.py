@@ -2,35 +2,20 @@
 
 from __future__ import annotations
 
-import gc
 import os
-import tempfile
 import unittest
-from pathlib import Path
 
-import app_db
 import business_store
 import square_billing
 import subscription_store
+from tests.postgres_test_case import PostgresStoreTestCase
 
 
-class SubscriptionStoreTest(unittest.TestCase):
+class SubscriptionStoreTest(PostgresStoreTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
+        super().setUp()
         self.account_id = "acct-bill-1"
         business_store.create_business(self.account_id, name="Bill Co", industry="")
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_activate_and_summary(self) -> None:
         subscription_store.activate_plan(self.account_id, plan_tier="starter", status="active")
@@ -69,13 +54,9 @@ class SubscriptionStoreTest(unittest.TestCase):
         self.assertIsNone(square_billing.handle_webhook_payload(payload))
 
 
-class SquareBillingMockTest(unittest.TestCase):
+class SquareBillingMockTest(PostgresStoreTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
+        super().setUp()
         self.account_id = "acct-mock"
         business_store.create_business(self.account_id, name="Mock", industry="")
         self._orig_mock = os.environ.get("BILLING_DEV_MOCK")
@@ -86,12 +67,7 @@ class SquareBillingMockTest(unittest.TestCase):
             os.environ.pop("BILLING_DEV_MOCK", None)
         else:
             os.environ["BILLING_DEV_MOCK"] = self._orig_mock
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
+        super().tearDown()
 
     def test_mock_activate(self) -> None:
         square_billing.mock_activate(self.account_id, "starter")

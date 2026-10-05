@@ -1,28 +1,15 @@
-"""Contact support persistence (support.sqlite)."""
+"""Contact support persistence."""
 
 from __future__ import annotations
 
-import gc
-import tempfile
-import unittest
-from pathlib import Path
-
 import auth_store
-import app_db
-import support_db
 import support_store
+from tests.postgres_test_case import PostgresStoreTestCase
 
 
-class SupportStoreTests(unittest.TestCase):
+class SupportStoreTests(PostgresStoreTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._support_db = Path(self._tmpdir.name) / "support.sqlite"
-        self._orig_app_path = app_db.APP_DB_PATH
-        self._orig_support_path = support_db.SUPPORT_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        support_db.SUPPORT_DB_PATH = self._support_db
-        app_db.init_app_database()
+        super().setUp()
         support_store.bootstrap()
         self.user, self.membership = auth_store.create_account_with_owner(
             email="support@example.com",
@@ -30,15 +17,6 @@ class SupportStoreTests(unittest.TestCase):
             display_name="Support User",
         )
         self.account_id = self.membership["account_id"]
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_app_path
-        support_db.SUPPORT_DB_PATH = self._orig_support_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_thread_welcome_and_user_message(self) -> None:
         rows = support_store.list_messages(self.account_id)
@@ -84,4 +62,6 @@ class SupportStoreTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import unittest
+
     unittest.main()

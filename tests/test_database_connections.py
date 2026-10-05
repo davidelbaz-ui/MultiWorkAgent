@@ -2,45 +2,29 @@
 
 from __future__ import annotations
 
-import gc
 import sqlite3
-import tempfile
-import unittest
 from pathlib import Path
 
-import app_db
 import business_store
 import database_introspect
 import database_store
+from tests.postgres_test_case import TempDirTestCase
 
 
-class DatabaseConnectionsTest(unittest.TestCase):
+class DatabaseConnectionsTest(TempDirTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
+        super().setUp()
         self._external_db = Path(self._tmpdir.name) / "external.sqlite"
         ext = sqlite3.connect(self._external_db)
         ext.execute("CREATE TABLE widgets (id INTEGER PRIMARY KEY, label TEXT)")
         ext.commit()
         ext.close()
 
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
-
         self.account_id = "acct-test"
         self.business = business_store.create_business(
             self.account_id, name="Test Biz", industry=""
         )
         self.business_id = self.business["id"]
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_introspect_sqlite_file(self) -> None:
         schema = database_introspect.test_and_introspect(
@@ -97,4 +81,6 @@ class DatabaseConnectionsTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import unittest
+
     unittest.main()

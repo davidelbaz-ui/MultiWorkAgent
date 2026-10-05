@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import gc
 import os
-import tempfile
 import unittest
-from pathlib import Path
 
 import app_db
 import business_store
@@ -14,27 +11,16 @@ import run_store
 import subscription_store
 import usage_metering
 from agent_executor import AgentRunResult
+from tests.postgres_test_case import PostgresStoreTestCase
 
 
-class UsageMeteringTest(unittest.TestCase):
+class UsageMeteringTest(PostgresStoreTestCase):
     def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        app_db.init_app_database()
+        super().setUp()
         self.account_id = "acct-usage"
         business_store.create_business(self.account_id, name="Usage Co", industry="")
         os.environ["BILLING_DEV_MOCK"] = "1"
         subscription_store.activate_plan(self.account_id, plan_tier="starter", status="active")
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
 
     def test_meter_plan_then_top_up(self) -> None:
         usage_metering.add_top_up_runs(self.account_id, 2)
@@ -79,7 +65,6 @@ class UsageMeteringTest(unittest.TestCase):
                 """,
                 (self.account_id,),
             )
-            conn.commit()
 
         run_store.record_chat_run(
             account_id=self.account_id,
@@ -108,7 +93,6 @@ class UsageMeteringTest(unittest.TestCase):
                 """,
                 (self.account_id,),
             )
-            conn.commit()
         snap = usage_metering.usage_snapshot(self.account_id)
         self.assertFalse(snap["can_run"])
 

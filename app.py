@@ -29,7 +29,7 @@ from flask import (
 import app_logging
 import http_rate_limit
 from app_config import load_app_config, apply_flask_config, validate_production_secrets
-from remote_sqlite import should_trust_session_membership
+from pg_storage import should_trust_session_membership
 
 import account_lifecycle
 import agent_executor
@@ -130,7 +130,7 @@ def _legal_template_context() -> dict:
 
 @app.context_processor
 def _inject_auth_oauth_context() -> dict:
-    from remote_sqlite import storage_banner_for_ui
+    from pg_storage import storage_banner_for_ui
 
     return {
         **_auth_template_context(),

@@ -2,33 +2,15 @@
 
 from __future__ import annotations
 
-import gc
 import os
-import tempfile
 import unittest
-from pathlib import Path
 from unittest import mock
 
 import auth_store
-import app_db
+from tests.postgres_test_case import PostgresStoreTestCase
 
 
-class LoginOAuthStoreTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self._app_db = Path(self._tmpdir.name) / "app.sqlite"
-        self._orig_path = app_db.APP_DB_PATH
-        app_db.APP_DB_PATH = self._app_db
-        auth_store.bootstrap()
-
-    def tearDown(self) -> None:
-        app_db.APP_DB_PATH = self._orig_path
-        gc.collect()
-        try:
-            self._tmpdir.cleanup()
-        except PermissionError:
-            pass
-
+class LoginOAuthStoreTests(PostgresStoreTestCase):
     def test_create_account_with_oauth_and_relogin(self) -> None:
         user, membership = auth_store.create_account_with_oauth(
             email="owner@example.com",
