@@ -21,8 +21,10 @@
 | 17 | Xero | [17-xero.md](17-xero.md) | done |
 | 18 | Zoom | [18-zoom.md](18-zoom.md) | done |
 | 19 | Airtable | [19-airtable.md](19-airtable.md) | done |
+| 20 | Netlify | [20-netlify.md](20-netlify.md) | wired |
+| 21 | Vercel | [21-vercel.md](21-vercel.md) | wired |
 
-**Wired OAuth walkthrough complete** (registry `_WIRED_OAUTH`). **Bitbucket (#3)** remains deferred. Other catalog slugs still need URLs in `integration_oauth_registry.py` or API-key connect.
+**Next in catalog:** Render (#22) and beyond — wire OAuth URLs in `integration_oauth_registry.py` or use **API key** until wired.
 
 Callback for all integrations: `{APP_BASE_URL}/integrations/oauth/callback`
 

@@ -24,7 +24,7 @@ Use a **different OAuth client** than Google login (`GOOGLE_LOGIN_*`). Integrati
 | File | Purpose |
 |------|---------|
 | `integration_oauth_catalog_data.py` | All **109** catalog `(slug, name)` pairs |
-| `integration_oauth_registry.py` | Env var names for every slug; OAuth URLs in `_WIRED_OAUTH` (19 wired today) |
+| `integration_oauth_registry.py` | Env var names for every slug; OAuth URLs in `_WIRED_OAUTH` (21 wired today) |
 | `integration_oauth_hints.py` | Optional: fetch login/email for credential hint after connect |
 | `integrations_catalog.py` | Product catalog (must stay in sync with catalog data) |
 | `integration_oauth.py` | Generic authorize + token exchange |
@@ -79,6 +79,8 @@ Shared env pairs:
 | `GITHUB_OAUTH_*` | GitHub |
 | `GITLAB_OAUTH_*` | GitLab |
 | `BITBUCKET_OAUTH_*` | Bitbucket |
+| `VERCEL_OAUTH_*` + `VERCEL_OAUTH_INTEGRATION_SLUG` | Vercel |
+| `NETLIFY_OAUTH_*` | Netlify |
 | `GOOGLE_OAUTH_*` | Google Workspace |
 | `MICROSOFT_OAUTH_*` | Microsoft 365 |
 | `SLACK_OAUTH_*` | Slack |

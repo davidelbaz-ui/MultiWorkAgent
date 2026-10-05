@@ -40,6 +40,30 @@ def fetch_credential_hint(provider: OAuthProviderTemplate, access_token: str) ->
             username = user.get("username") or user.get("name") or "gitlab"
             return f"gitlab · {username}"
 
+        if slug == "bitbucket":
+            user = _json_get(
+                "https://api.bitbucket.org/2.0/user",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            username = user.get("username") or user.get("display_name") or "bitbucket"
+            return f"bitbucket · {username}"
+
+        if slug == "netlify":
+            user = _json_get(
+                "https://api.netlify.com/api/v1/user",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            email = user.get("email") or user.get("full_name") or "netlify"
+            return f"netlify · {email}"
+
+        if slug == "vercel":
+            user = _json_get(
+                "https://api.vercel.com/v2/user",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            username = user.get("username") or user.get("email") or "vercel"
+            return f"vercel · {username}"
+
         if slug == "slack":
             data = _json_get(
                 "https://slack.com/api/auth.test",

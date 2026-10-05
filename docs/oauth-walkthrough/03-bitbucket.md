@@ -65,4 +65,4 @@ Restart Flask → **Data & integrations** → **Bitbucket** → **OAuth**.
 
 ## Next
 
-**#4 Google Workspace** after Bitbucket works.
+After Bitbucket works → **[20-netlify.md](20-netlify.md)** (Netlify), then **[21-vercel.md](21-vercel.md)** (Vercel).

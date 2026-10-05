@@ -45,7 +45,11 @@ def is_provider_configured(slug: str) -> bool:
         return False
     client_id = os.environ.get(provider.client_id_env, "").strip()
     client_secret = os.environ.get(provider.client_secret_env, "").strip()
-    return bool(client_id and client_secret)
+    if not client_id or not client_secret:
+        return False
+    if slug == "vercel" and not os.environ.get("VERCEL_OAUTH_INTEGRATION_SLUG", "").strip():
+        return False
+    return True
 
 
 def operator_setup_message(slug: str) -> str | None:
@@ -81,6 +85,20 @@ def build_authorize_url(*, provider_slug: str, redirect_uri: str, state: str) ->
             f"{provider.display_name} OAuth URLs are not wired in integration_oauth_registry.py yet. "
             "Use an API key for now."
         )
+    _client_credentials(provider)
+
+    if provider_slug == "vercel":
+        integration_slug = os.environ.get("VERCEL_OAUTH_INTEGRATION_SLUG", "").strip()
+        if not integration_slug:
+            raise ValueError(
+                "Set VERCEL_OAUTH_INTEGRATION_SLUG from Vercel → Integrations → your integration slug."
+            )
+        params = {"state": state}
+        return (
+            f"https://vercel.com/integrations/{urllib.parse.quote(integration_slug)}/new?"
+            f"{urllib.parse.urlencode(params)}"
+        )
+
     client_id, _ = _client_credentials(provider)
     params: dict[str, str] = {
         "client_id": client_id,
