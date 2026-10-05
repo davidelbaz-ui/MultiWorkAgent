@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% block title %}Page settings — Admin{% endblock %}
+{% block content %}
+<h1 class="admin-page-title">Page settings</h1>
+<p class="meta-row">Changes apply to the public site (start page, maintenance banner, etc.).</p>
+<form method="post" class="admin-form admin-form--wide">
+  {% for page in pages %}
+  <label class="admin-label">{{ page.label }}
+    {% if page.key == 'page.start.hero_lead' or page.key == 'page.maintenance.message' %}
+    <textarea class="admin-textarea" name="{{ page.key }}" rows="3">{{ page.value }}</textarea>
+    {% else %}
+    <input class="admin-input" type="text" name="{{ page.key }}" value="{{ page.value }}">
+    {% endif %}
+    <span class="meta-row">Key: <code>{{ page.key }}</code></span>
+  </label>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">Save all</button>
+</form>
+{% endblock %}

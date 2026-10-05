@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}System — Admin{% endblock %}
+{% block content %}
+<h1 class="admin-page-title">System &amp; database</h1>
+<section class="admin-panel">
+  <h2>Connection</h2>
+  <ul class="admin-kv">
+    <li><span>Configured</span><strong>{{ 'yes' if db.configured else 'no' }}</strong></li>
+    <li><span>Host</span><code>{{ db.host }}</code></li>
+    <li><span>Schema</span><strong>{{ db.schema_version }} / {{ db.expected_schema_version }}</strong></li>
+  </ul>
+  {% if db.env and db.env.env_keys %}
+  <h3>Env keys (no secrets)</h3>
+  <ul class="admin-kv">
+    {% for key, status in db.env.env_keys.items() %}
+    <li><span><code>{{ key }}</code></span><strong>{{ status }}</strong></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+<section class="admin-panel">
+  <h2>Counts</h2>
+  <ul class="admin-kv">
+    {% for key, value in counts.items() %}
+    <li><span>{{ key }}</span><strong>{{ value }}</strong></li>
+    {% endfor %}
+  </ul>
+</section>
+<section class="admin-panel">
+  <h2>Main app</h2>
+  <p class="meta-row">Customer site (default local): <a href="{{ main_app_url }}" target="_blank" rel="noopener">{{ main_app_url }}</a></p>
+  <p class="meta-row">Health: <a href="{{ main_app_url }}/health" target="_blank" rel="noopener">{{ main_app_url }}/health</a></p>
+</section>
+{% endblock %}

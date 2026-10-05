@@ -189,6 +189,83 @@ def add_support_reply(*, account_id: str, body: str) -> dict[str, Any]:
     return _row_to_message(row)
 
 
+def set_thread_status(account_id: str, status: str) -> None:
+    clean = (status or "").strip().lower()
+    if clean not in ("open", "closed"):
+        raise ValueError("status must be open or closed")
+    now = _utc_now()
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE support_threads
+            SET status = ?, updated_at = ?
+            WHERE account_id = ?
+            """,
+            (clean, now, account_id),
+        )
+        conn.commit()
+
+
+def list_inbox(*, limit: int = 100, status: str | None = None) -> list[dict[str, Any]]:
+    cap = max(1, min(limit, 200))
+    params: list[Any] = []
+    where = ""
+    if status:
+        where = "WHERE t.status = ?"
+        params.append(status.strip().lower())
+    params.append(cap)
+    with connect() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT
+                t.id AS thread_id,
+                t.account_id,
+                t.status,
+                t.created_at,
+                t.updated_at,
+                u.email AS owner_email,
+                u.display_name AS owner_name,
+                (
+                    SELECT COUNT(*)
+                    FROM support_messages m
+                    WHERE m.thread_id = t.id AND m.sender_type = ?
+                ) AS user_message_count,
+                (
+                    SELECT body
+                    FROM support_messages m
+                    WHERE m.thread_id = t.id
+                    ORDER BY m.created_at DESC, m.id DESC
+                    LIMIT 1
+                ) AS last_snippet
+            FROM support_threads t
+            LEFT JOIN account_members am
+                ON am.account_id = t.account_id AND am.role = 'owner'
+            LEFT JOIN users u ON u.id = am.user_id
+            {where}
+            ORDER BY t.updated_at DESC
+            LIMIT ?
+            """,
+            tuple([SENDER_USER] + params),
+        ).fetchall()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        snippet = (row["last_snippet"] or "")[:240]
+        out.append(
+            {
+                "thread_id": row["thread_id"],
+                "account_id": row["account_id"],
+                "status": row["status"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "owner_email": row["owner_email"] or "",
+                "owner_name": row["owner_name"] or "",
+                "user_message_count": int(row["user_message_count"] or 0),
+                "last_snippet": snippet,
+            }
+        )
+    return out
+
+
 def message_to_api(row: dict[str, Any], *, viewer_user_id: str | None = None) -> dict[str, Any]:
     sender = row["sender_type"]
     if sender == SENDER_SUPPORT:

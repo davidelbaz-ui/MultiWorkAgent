@@ -39,6 +39,9 @@ def configure_logging(config: AppConfig) -> logging.Logger:
         )
     root.addHandler(handler)
     root.setLevel(getattr(logging, config.log_level, logging.INFO))
+    from admin_log_buffer import install_log_buffer
+
+    install_log_buffer(root)
     logger = logging.getLogger("bma")
     logger.setLevel(getattr(logging, config.log_level, logging.INFO))
     return logger

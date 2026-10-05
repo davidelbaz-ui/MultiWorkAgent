@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<h1 class="admin-page-title">Dashboard</h1>
+<section class="admin-stat-grid">
+  <div class="admin-stat"><span class="admin-stat-value">{{ counts.accounts }}</span><span class="admin-stat-label">Accounts</span></div>
+  <div class="admin-stat"><span class="admin-stat-value">{{ counts.users }}</span><span class="admin-stat-label">Users</span></div>
+  <div class="admin-stat"><span class="admin-stat-value">{{ counts.businesses }}</span><span class="admin-stat-label">Businesses</span></div>
+  <div class="admin-stat"><span class="admin-stat-value">{{ counts.support_open }}</span><span class="admin-stat-label">Open support</span></div>
+  <div class="admin-stat"><span class="admin-stat-value">{{ counts.agent_runs }}</span><span class="admin-stat-label">Agent runs</span></div>
+</section>
+<section class="admin-panel">
+  <h2>Database</h2>
+  <p class="meta-row">
+    Host: <code>{{ db.host }}</code> · Schema v{{ db.schema_version }}/{{ db.expected_schema_version }}
+    {% if db.schema_version == db.expected_schema_version %}<span class="admin-badge admin-badge--ok">Up to date</span>{% else %}<span class="admin-badge admin-badge--warn">Migration pending</span>{% endif %}
+  </p>
+</section>
+<section class="admin-panel">
+  <h2>Open support threads</h2>
+  {% if support_open %}
+  <table class="admin-table">
+    <thead><tr><th>Account</th><th>Updated</th><th></th></tr></thead>
+    <tbody>
+      {% for row in support_open %}
+      <tr>
+        <td>{{ row.owner_email or row.account_id }}<span class="meta-row"> · {{ row.user_message_count }} user msg</span></td>
+        <td>{{ row.updated_at }}</td>
+        <td><a href="{{ url_for('admin_support_thread', account_id=row.account_id) }}">Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="meta-row">No open threads.</p>
+  {% endif %}
+</section>
+{% endblock %}

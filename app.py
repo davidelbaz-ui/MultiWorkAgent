@@ -46,6 +46,7 @@ from app_urls import integration_oauth_callback_url, login_oauth_callback_url
 import invoice_store
 import notification_store
 import settings_store
+import site_settings_store
 import support_store
 import square_billing
 import subscription_store
@@ -145,6 +146,7 @@ def bootstrap_application_stores() -> None:
         notification_store.bootstrap()
         settings_store.bootstrap()
         support_store.bootstrap()
+        site_settings_store.bootstrap()
         chat_store.bootstrap()
         DB_READY = True
         DB_INIT_ERROR = None
@@ -300,6 +302,24 @@ def require_database_ready():
         ),
         503,
     )
+
+
+@app.before_request
+def enforce_maintenance_mode():
+    if not DB_READY:
+        return None
+    try:
+        enabled, message = site_settings_store.maintenance_mode()
+    except Exception:
+        return None
+    if not enabled:
+        return None
+    endpoint = (request.endpoint or "").split(".")[0]
+    if endpoint in {"health", "static", "favicon"}:
+        return None
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "maintenance", "message": message}), 503
+    return render_template("maintenance.html", message=message), 503
 
 
 @app.before_request
@@ -1072,7 +1092,20 @@ def api_auth_me():
 def index():
     if session.get("user_id") and session.get("account_id"):
         return render_template("home.html", **_ctx("home"))
-    return render_template("start.html", **_auth_template_context())
+    ctx = _auth_template_context()
+    copy = site_settings_store.get_many(
+        [
+            "page.start.hero_title",
+            "page.start.hero_lead",
+            "page.start.hero_note",
+        ]
+    )
+    ctx.update(
+        start_hero_title=copy.get("page.start.hero_title", ""),
+        start_hero_lead=copy.get("page.start.hero_lead", ""),
+        start_hero_note=copy.get("page.start.hero_note", ""),
+    )
+    return render_template("start.html", **ctx)
 
 
 @app.get("/privacy-policy")

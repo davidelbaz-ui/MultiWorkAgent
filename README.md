@@ -16,6 +16,8 @@ python app.py
 
 Open http://127.0.0.1:5000
 
+Operator admin (support inbox, page copy, logs, DB status): `python admin_app.py` → http://127.0.0.1:8000 — see [docs/ADMIN.md](docs/ADMIN.md).
+
 ## Deploy on Vercel
 
 See [VERCEL.md](VERCEL.md). Set `APP_BASE_URL=https://multiworkagent.vercel.app` in production.
