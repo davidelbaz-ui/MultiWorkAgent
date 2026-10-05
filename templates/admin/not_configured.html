@@ -1,19 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Admin not configured</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
-</head>
-<body class="admin-page admin-page--center">
-  <div class="admin-login-card">
-    <h1>Set admin credentials</h1>
-    <p>Add to your <code>.env</code>:</p>
-    <pre class="admin-code">ADMIN_EMAIL=you@example.com
-ADMIN_PASSWORD=your-secure-password
-ADMIN_PORT=8000</pre>
-    <p class="meta-row">Restart with <code>python admin_app.py</code></p>
-  </div>
-</body>
-</html>
+    <p>Add to <strong>Vercel → Environment Variables</strong> (Production) or local <code>.env</code>:</p>
+    <pre class="admin-code">ADMIN_EMAIL=operator@example.com
+ADMIN_PASSWORD=long-random-password
+# or ADMIN_PASSWORD_HASH= from werkzeug</pre>
+    <p class="meta-row">Then open <code>/admin</code> on your site (not the customer sign-in page).</p>

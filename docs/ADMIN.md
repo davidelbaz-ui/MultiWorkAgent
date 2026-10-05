@@ -1,30 +1,39 @@
 # Operator admin console
 
-Separate Flask app for local operations. **Not deployed to Vercel.**
+Production and local: **`https://your-domain/admin`** (e.g. [multiworkagent.vercel.app/admin](https://multiworkagent.vercel.app/admin)).
 
-## Run
+Separate from customer **Sign in** — uses operator credentials only.
 
-1. Postgres running and `DATABASE_URL` in `.env` (same as main app).
-2. Set in `.env`:
+## Configure
+
+Set in **Vercel → Production env** (and local `.env`):
 
 ```env
-ADMIN_EMAIL=you@example.com
-ADMIN_PASSWORD=your-local-password
-ADMIN_PORT=8000
-ADMIN_HOST=127.0.0.1
+ADMIN_EMAIL=operator@yourdomain.com
+ADMIN_PASSWORD=use-a-long-random-password
 ```
 
-3. Main app (customers): `python app.py` → http://127.0.0.1:5000  
-4. Admin console: `python admin_app.py` → **http://127.0.0.1:8000**
+Optional: `ADMIN_PASSWORD_HASH` (werkzeug) instead of plain `ADMIN_PASSWORD`.
 
-## Features
+Redeploy after changing env vars on Vercel.
 
-| Area | URL | Purpose |
-|------|-----|---------|
-| Dashboard | `/` | Counts, DB schema version, open support |
-| Contact support | `/support` | Inbox, reply, open/close threads |
-| Page settings | `/pages` | Start page copy, maintenance mode |
-| Logs | `/logs` | In-memory log buffer (this process) |
-| System & DB | `/system` | Connection diagnostics, env key status |
+## Sections
 
-Uses the same PostgreSQL database as the main app.
+| Path | Purpose |
+|------|---------|
+| `/admin` | Operator sign-in |
+| `/admin/` | Dashboard |
+| `/admin/support` | Contact support inbox |
+| `/admin/pages` | Start page copy, maintenance mode |
+| `/admin/logs` | In-memory log buffer (this server process) |
+| `/admin/system` | DB status, table counts |
+
+## Local dev
+
+```bash
+python app.py          # http://127.0.0.1:5000/admin
+# or
+python admin_app.py    # http://127.0.0.1:8000/admin (same app, different port)
+```
+
+Customer app and admin share one database and one deployment on Vercel.

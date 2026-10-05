@@ -4,9 +4,9 @@
 <h1 class="admin-page-title">Application logs</h1>
 <p class="meta-row">In-memory buffer for this process (main app on :5000 shares DB only — run both locally to capture API traffic in the admin process after requests hit admin).</p>
 <div class="admin-toolbar">
-  <a class="btn btn-sm {% if not filter_level %}btn-primary{% endif %}" href="{{ url_for('admin_logs') }}">All</a>
-  <a class="btn btn-sm {% if filter_level == 'ERROR' %}btn-primary{% endif %}" href="{{ url_for('admin_logs', level='ERROR') }}">Errors</a>
-  <a class="btn btn-sm {% if filter_level == 'WARNING' %}btn-primary{% endif %}" href="{{ url_for('admin_logs', level='WARNING') }}">Warnings</a>
+  <a class="btn btn-sm {% if not filter_level %}btn-primary{% endif %}" href="{{ url_for('admin.admin_logs') }}">All</a>
+  <a class="btn btn-sm {% if filter_level == 'ERROR' %}btn-primary{% endif %}" href="{{ url_for('admin.admin_logs', level='ERROR') }}">Errors</a>
+  <a class="btn btn-sm {% if filter_level == 'WARNING' %}btn-primary{% endif %}" href="{{ url_for('admin.admin_logs', level='WARNING') }}">Warnings</a>
 </div>
 <div class="admin-log-view">
   {% for row in logs %}

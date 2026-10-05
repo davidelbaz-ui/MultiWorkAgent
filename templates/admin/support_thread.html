@@ -1,11 +1,11 @@
 {% extends "admin/base.html" %}
 {% block title %}Support thread — Admin{% endblock %}
 {% block content %}
-<p class="admin-back"><a href="{{ url_for('admin_support_inbox') }}">← Inbox</a></p>
+<p class="admin-back"><a href="{{ url_for('admin.admin_support_inbox') }}">← Inbox</a></p>
 <h1 class="admin-page-title">{{ meta.owner_email if meta else account_id }}</h1>
 <p class="meta-row">Account <code>{{ account_id }}</code> · SLA {{ sla_hours }}h · Status <strong>{{ thread.status }}</strong></p>
 <div class="admin-toolbar">
-  <form method="post" action="{{ url_for('admin_support_status', account_id=account_id) }}" class="admin-inline-form">
+  <form method="post" action="{{ url_for('admin.admin_support_status', account_id=account_id) }}" class="admin-inline-form">
     <input type="hidden" name="status" value="{% if thread.status == 'open' %}closed{% else %}open{% endif %}">
     <button type="submit" class="btn btn-sm">Mark {% if thread.status == 'open' %}closed{% else %}open{% endif %}</button>
   </form>
@@ -18,7 +18,7 @@
   </article>
   {% endfor %}
 </div>
-<form method="post" action="{{ url_for('admin_support_reply', account_id=account_id) }}" class="admin-form admin-reply-form">
+<form method="post" action="{{ url_for('admin.admin_support_reply', account_id=account_id) }}" class="admin-form admin-reply-form">
   <label class="admin-label">Reply as support
     <textarea class="admin-textarea" name="body" rows="4" required placeholder="Your reply to the customer…"></textarea>
   </label>

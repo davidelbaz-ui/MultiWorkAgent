@@ -45,3 +45,8 @@ def integration_oauth_callback_url() -> str:
     if base:
         return f"{base}/integrations/oauth/callback"
     return url_for("integrations_oauth_callback", _external=True)
+
+
+def public_app_base_url() -> str:
+    """Customer-facing site URL for links in operator tools."""
+    return app_base_url() or "http://127.0.0.1:5000"

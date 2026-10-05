@@ -286,6 +286,8 @@ def _ensure_account_id() -> str:
 def require_database_ready():
     if DB_READY:
         return None
+    if request.path.startswith("/admin"):
+        return None
     from db_connection import database_env_diagnostics
 
     endpoint = request.endpoint or ""
@@ -316,6 +318,8 @@ def require_database_ready():
 @app.before_request
 def enforce_maintenance_mode():
     if not DB_READY:
+        return None
+    if request.path.startswith("/admin"):
         return None
     try:
         enabled, message = site_settings_store.maintenance_mode()
@@ -386,6 +390,8 @@ def enforce_http_rate_limits():
 
 @app.before_request
 def enforce_auth_and_roles():
+    if request.path.startswith("/admin"):
+        return None
     endpoint = request.endpoint or ""
     if endpoint.split(".")[0] in AUTH_PUBLIC_ENDPOINTS or endpoint == "static":
         return None
@@ -432,6 +438,8 @@ def apply_security_headers(response):
             "Strict-Transport-Security",
             "max-age=31536000; includeSubDomains",
         )
+    if request.path.startswith("/admin"):
+        response.headers.setdefault("X-Robots-Tag", "noindex, nofollow")
     return response
 
 
@@ -2376,6 +2384,18 @@ def api_agent_message_delete(message_id: int):
         return jsonify({"error": "not found or not deletable"}), 404
     state = chat_store.get_thread_state(thread_id)
     return jsonify({"messages": state["messages"]})
+
+
+@app.route("/admin")
+def admin_shortcut():
+    if session.get("admin_authenticated"):
+        return redirect(url_for("admin.admin_dashboard"))
+    return redirect(url_for("admin.admin_login"))
+
+
+from admin_routes import admin_bp
+
+app.register_blueprint(admin_bp)
 
 
 if __name__ == "__main__":

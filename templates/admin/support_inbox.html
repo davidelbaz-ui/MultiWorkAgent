@@ -3,9 +3,9 @@
 {% block content %}
 <h1 class="admin-page-title">Contact support</h1>
 <div class="admin-toolbar">
-  <a class="btn btn-sm {% if not filter_status %}btn-primary{% endif %}" href="{{ url_for('admin_support_inbox') }}">All</a>
-  <a class="btn btn-sm {% if filter_status == 'open' %}btn-primary{% endif %}" href="{{ url_for('admin_support_inbox', status='open') }}">Open</a>
-  <a class="btn btn-sm {% if filter_status == 'closed' %}btn-primary{% endif %}" href="{{ url_for('admin_support_inbox', status='closed') }}">Closed</a>
+  <a class="btn btn-sm {% if not filter_status %}btn-primary{% endif %}" href="{{ url_for('admin.admin_support_inbox') }}">All</a>
+  <a class="btn btn-sm {% if filter_status == 'open' %}btn-primary{% endif %}" href="{{ url_for('admin.admin_support_inbox', status='open') }}">Open</a>
+  <a class="btn btn-sm {% if filter_status == 'closed' %}btn-primary{% endif %}" href="{{ url_for('admin.admin_support_inbox', status='closed') }}">Closed</a>
 </div>
 <table class="admin-table">
   <thead>
@@ -18,7 +18,7 @@
       <td><span class="admin-badge {% if row.status == 'open' %}admin-badge--warn{% endif %}">{{ row.status }}</span></td>
       <td>{{ row.updated_at }}</td>
       <td class="admin-snippet">{{ row.last_snippet }}</td>
-      <td><a href="{{ url_for('admin_support_thread', account_id=row.account_id) }}">View</a></td>
+      <td><a href="{{ url_for('admin.admin_support_thread', account_id=row.account_id) }}">View</a></td>
     </tr>
     {% else %}
     <tr><td colspan="5" class="meta-row">No threads yet.</td></tr>

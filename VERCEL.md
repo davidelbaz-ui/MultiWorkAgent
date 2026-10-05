@@ -25,6 +25,7 @@ Vercel **automatically builds** when you push to `main`. You do **not** pull on 
 | **`DATABASE_URL`** | `postgresql://user:password@host:5432/dbname` (Vercel Postgres, Neon, Supabase, etc.) |
 | `GOOGLE_LOGIN_CLIENT_ID` / `SECRET` | login OAuth (redirect below) |
 | `INTEGRATION_ENCRYPTION_KEY` | optional but recommended |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | operator console at **`/admin`** (see [docs/ADMIN.md](docs/ADMIN.md)) |
 
 Login (see [AUTH_LOGIN.md](AUTH_LOGIN.md)):
 

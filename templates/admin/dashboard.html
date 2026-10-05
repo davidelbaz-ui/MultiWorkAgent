@@ -25,7 +25,7 @@
       <tr>
         <td>{{ row.owner_email or row.account_id }}<span class="meta-row"> · {{ row.user_message_count }} user msg</span></td>
         <td>{{ row.updated_at }}</td>
-        <td><a href="{{ url_for('admin_support_thread', account_id=row.account_id) }}">Open</a></td>
+        <td><a href="{{ url_for('admin.admin_support_thread', account_id=row.account_id) }}">Open</a></td>
       </tr>
       {% endfor %}
     </tbody>
