@@ -18,43 +18,112 @@ async function updateBusiness(businessId, payload) {
   });
 }
 
+function openAddBusinessWizard() {
+  const ctx = { name: "", industry: "" };
+
+  return openAppWizard({
+    title: "Add business",
+    finishLabel: "Create business",
+    ctx,
+    steps: [
+      {
+        id: "intro",
+        title: "Workspace",
+        render(container) {
+          container.appendChild(
+            wizardPanel("What is a business?", [
+              "A business is a workspace with its own integrations, databases, chats, and agent runs.",
+              "You can run many businesses from one login. Data never mixes between them.",
+            ]),
+          );
+        },
+      },
+      {
+        id: "name",
+        title: "Name",
+        render(container, c) {
+          const panel = wizardPanel("Business name", [
+            "Use the legal name, brand, or internal label you will recognize in the switcher.",
+          ]);
+          const field = document.createElement("div");
+          field.className = "app-wizard-field";
+          field.innerHTML =
+            '<label for="business-wizard-name">Name</label>' +
+            '<input type="text" id="business-wizard-name" autocomplete="organization" maxlength="120">';
+          const input = field.querySelector("#business-wizard-name");
+          input.value = c.name;
+          input.addEventListener("input", () => {
+            c.name = input.value;
+          });
+          panel.appendChild(field);
+          container.appendChild(panel);
+        },
+        validate(c) {
+          if (!(c.name || "").trim()) {
+            return "Enter a business name.";
+          }
+          return true;
+        },
+      },
+      {
+        id: "industry",
+        title: "Industry",
+        render(container, c) {
+          const panel = wizardPanel("Industry (optional)", [
+            "Helps you organize cards and gives the agent light context (e.g. E-commerce, Agency, SaaS).",
+          ]);
+          const field = document.createElement("div");
+          field.className = "app-wizard-field";
+          field.innerHTML =
+            '<label for="business-wizard-industry">Industry</label>' +
+            '<input type="text" id="business-wizard-industry" autocomplete="off" maxlength="80">';
+          const input = field.querySelector("#business-wizard-industry");
+          input.value = c.industry;
+          input.addEventListener("input", () => {
+            c.industry = input.value;
+          });
+          panel.appendChild(field);
+          container.appendChild(panel);
+        },
+      },
+      {
+        id: "review",
+        title: "Review",
+        render(container, c) {
+          container.appendChild(
+            wizardPanel("Ready to create", [
+              `Name: ${c.name.trim()}`,
+              c.industry.trim()
+                ? `Industry: ${c.industry.trim()}`
+                : "Industry: (none)",
+              "You can rename or archive this workspace later from the Businesses page.",
+            ]),
+          );
+        },
+      },
+    ],
+    async onFinish(c) {
+      await businessApiJson("/api/businesses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: c.name.trim(),
+          industry: c.industry.trim(),
+        }),
+      });
+      window.location.reload();
+    },
+  });
+}
+
 function initAddBusiness() {
   const button = document.getElementById("add-business-btn");
   if (!button) {
     return;
   }
 
-  button.addEventListener("click", async () => {
-    const name = await openAppPrompt({
-      title: "Add business",
-      label: "Business name",
-      defaultValue: "",
-    });
-    if (name === null) {
-      return;
-    }
-    const trimmed = name.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    const industry = await openAppPrompt({
-      title: "Add business",
-      label: "Industry (optional)",
-      defaultValue: "",
-    });
-    const industryValue = industry === null ? "" : industry.trim();
-
-    try {
-      await businessApiJson("/api/businesses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed, industry: industryValue }),
-      });
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-    }
+  button.addEventListener("click", () => {
+    void openAddBusinessWizard().catch((err) => console.error(err));
   });
 }
 

@@ -1,0 +1,28 @@
+<div class="app-wizard-root" id="app-wizard-root" hidden aria-hidden="true">
+  <div class="app-wizard-backdrop" id="app-wizard-backdrop" tabindex="-1"></div>
+  <div
+    class="app-wizard"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="app-wizard-title"
+    id="app-wizard-panel"
+  >
+    <header class="app-wizard-header">
+      <div>
+        <p class="app-wizard-eyebrow" id="app-wizard-step-label"></p>
+        <h2 class="app-wizard-title" id="app-wizard-title"></h2>
+      </div>
+      <button type="button" class="app-wizard-close btn btn-sm" id="app-wizard-close" aria-label="Close wizard">
+        Close
+      </button>
+    </header>
+    <div class="app-wizard-progress" id="app-wizard-progress" aria-hidden="true"></div>
+    <div class="app-wizard-body" id="app-wizard-body"></div>
+    <footer class="app-wizard-actions">
+      <button type="button" class="btn" id="app-wizard-back" hidden>Back</button>
+      <div class="app-wizard-actions-spacer"></div>
+      <button type="button" class="btn" id="app-wizard-cancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="app-wizard-next">Continue</button>
+    </footer>
+  </div>
+</div>

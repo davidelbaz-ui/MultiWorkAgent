@@ -115,6 +115,8 @@
 
   </div>
 
+  {% include "_app_wizard.html" %}
+
   <div class="app-dialog-root" id="app-dialog-root" hidden aria-hidden="true">
     <div class="app-dialog-backdrop" id="app-dialog-backdrop" tabindex="-1"></div>
     <div class="app-dialog" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title" id="app-dialog">
@@ -132,6 +134,7 @@
   </div>
 
   <script src="{{ url_for('static', filename='ui-motion.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='app-wizard.js') }}" defer></script>
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   <script src="{{ url_for('static', filename='notifications.js') }}" defer></script>
   {% block scripts %}{% endblock %}

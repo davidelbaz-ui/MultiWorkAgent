@@ -1227,9 +1227,235 @@ a:hover {
 
 .app-dialog-actions {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: flex-end;
   margin-top: 1.1rem;
+}
+
+.app-wizard-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.app-wizard-root[hidden] {
+  display: none;
+}
+
+.app-wizard-root:not(.is-open) {
+  pointer-events: none;
+}
+
+.app-wizard-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.78);
+  opacity: 0;
+  transition: opacity var(--motion-duration) var(--motion-ease);
+}
+
+.app-wizard-root.is-open .app-wizard-backdrop {
+  opacity: 1;
+}
+
+.app-wizard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 34rem);
+  max-height: min(90vh, 40rem);
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 28px 56px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: scale(0.97) translateY(12px);
+  transition:
+    opacity var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+.app-wizard-root.is-open .app-wizard {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.app-wizard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.35rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-wizard-eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.app-wizard-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.app-wizard-progress {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.65rem 1.35rem 0;
+}
+
+.app-wizard-progress-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.app-wizard-progress-dot.is-current {
+  background: var(--accent);
+  transform: scale(1.15);
+}
+
+.app-wizard-progress-dot.is-done {
+  background: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+.app-wizard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.35rem 1.25rem;
+}
+
+.app-wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.35rem 1.15rem;
+  border-top: 1px solid var(--border);
+}
+
+.app-wizard-actions-spacer {
+  flex: 1;
+}
+
+.app-wizard-panel-title {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.app-wizard-copy {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.app-wizard-copy:last-of-type {
+  margin-bottom: 0;
+}
+
+.app-wizard-callout {
+  margin-top: 1rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.app-wizard-field {
+  margin-top: 1rem;
+}
+
+.app-wizard-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.app-wizard-field input,
+.app-wizard-field textarea {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.app-wizard-field input:focus,
+.app-wizard-field textarea:focus {
+  outline: none;
+  border-color: rgba(91, 141, 239, 0.55);
+  box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.25);
+}
+
+.app-wizard-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.app-wizard-choice {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.app-wizard-choice:has(input:checked) {
+  border-color: rgba(91, 141, 239, 0.55);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+}
+
+.app-wizard-choice input {
+  margin-top: 0.2rem;
+}
+
+.app-wizard-choice-text strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.app-wizard-choice-text span {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.app-wizard-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.app-wizard-error[hidden] {
+  display: none;
 }
 
 table.data-table {
