@@ -158,6 +158,7 @@ def database_url() -> str:
         for url in candidates:
             if not _is_local_database_host(url):
                 return url
+        return ""
     return candidates[0]
 
 

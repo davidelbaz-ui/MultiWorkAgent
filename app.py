@@ -99,7 +99,17 @@ AUTH_PUBLIC_ENDPOINTS = frozenset(
 
 RATE_LIMITED_AUTH_ENDPOINTS = frozenset({"login", "signup"})
 
-DB_PUBLIC_ENDPOINTS = frozenset({"health", "static", "favicon"})
+DB_PUBLIC_ENDPOINTS = frozenset(
+    {
+        "health",
+        "static",
+        "favicon",
+        "index",
+        "privacy_policy",
+        "terms_and_conditions",
+        "licence_agreement",
+    }
+)
 
 DB_READY = False
 DB_INIT_ERROR: str | None = None
@@ -109,17 +119,17 @@ def bootstrap_application_stores() -> None:
     global DB_READY, DB_INIT_ERROR
     from db_connection import database_url, deployment_database_error
 
+    misconfig = deployment_database_error()
+    if misconfig:
+        DB_INIT_ERROR = misconfig
+        LOGGER.error("database_misconfigured %s", DB_INIT_ERROR)
+        return
     if not database_url():
         DB_INIT_ERROR = (
             "DATABASE_URL is not set. Connect Vercel Postgres (POSTGRES_URL) or set DATABASE_URL "
             "under Project Settings / Environment Variables, then redeploy."
         )
         LOGGER.error("database_unconfigured %s", DB_INIT_ERROR)
-        return
-    misconfig = deployment_database_error()
-    if misconfig:
-        DB_INIT_ERROR = misconfig
-        LOGGER.error("database_misconfigured %s", DB_INIT_ERROR)
         return
     try:
         account_lifecycle.bootstrap()
