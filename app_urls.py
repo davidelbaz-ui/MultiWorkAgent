@@ -50,3 +50,20 @@ def integration_oauth_callback_url() -> str:
 def public_app_base_url() -> str:
     """Customer-facing site URL for links in operator tools."""
     return app_base_url() or "http://127.0.0.1:5000"
+
+
+def billing_checkout_return_url() -> str:
+    """Square redirect after subscription checkout (must match payment link config)."""
+    base = app_base_url()
+    path = url_for("billing", checkout="done", _external=False)
+    if base:
+        return f"{base}{path}"
+    return url_for("billing", checkout="done", _external=True)
+
+
+def square_webhook_notification_url() -> str:
+    """URL registered in Square Developer → Webhooks (used for signature verification)."""
+    base = app_base_url()
+    if base:
+        return f"{base}/webhooks/square"
+    return url_for("square_webhook", _external=True)

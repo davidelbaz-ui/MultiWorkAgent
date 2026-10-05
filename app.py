@@ -44,7 +44,12 @@ import integration_oauth
 import knowledge_store
 import login_oauth
 import login_oauth_state_store
-from app_urls import integration_oauth_callback_url, login_oauth_callback_url
+from app_urls import (
+    billing_checkout_return_url,
+    integration_oauth_callback_url,
+    login_oauth_callback_url,
+    square_webhook_notification_url,
+)
 import invoice_store
 import notification_store
 import settings_store
@@ -1823,9 +1828,7 @@ def api_billing_checkout():
 
     user = auth_store.get_user(session.get("user_id", ""))
     email = user.get("email") if user else None
-    redirect_url = url_for("billing", _external=False)
-    if request.host_url.startswith("http"):
-        redirect_url = request.host_url.rstrip("/") + url_for("billing")
+    redirect_url = billing_checkout_return_url()
 
     try:
         checkout_url = square_billing.create_checkout_url(
@@ -1860,7 +1863,7 @@ def square_webhook():
     signature = request.headers.get("X-Square-Hmacsha256-Signature", "")
     notification_url = os.environ.get("SQUARE_WEBHOOK_NOTIFICATION_URL", "").strip()
     if not notification_url:
-        notification_url = request.url
+        notification_url = square_webhook_notification_url()
 
     signature_key = os.environ.get("SQUARE_WEBHOOK_SIGNATURE_KEY", "").strip()
     if signature_key:
