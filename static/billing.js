@@ -19,14 +19,11 @@ function selectedBillingInterval() {
 }
 
 function applyBillingIntervalDisplay() {
+  const card = document.getElementById("billing-page");
   const interval = selectedBillingInterval();
-  const isAnnual = interval === "annual";
-  document.querySelectorAll(".billing-price-monthly").forEach((el) => {
-    el.hidden = isAnnual;
-  });
-  document.querySelectorAll(".billing-price-annual, .billing-price-annual-note").forEach((el) => {
-    el.hidden = !isAnnual;
-  });
+  if (card) {
+    card.dataset.billingInterval = interval;
+  }
   updateSubscribeButtons();
 }
 
@@ -70,6 +67,11 @@ function initBillingSubscribe() {
     const annualInput = document.querySelector('input[name="billing-interval"][value="annual"]');
     if (annualInput) {
       annualInput.checked = true;
+    }
+  } else {
+    const monthlyInput = document.querySelector('input[name="billing-interval"][value="monthly"]');
+    if (monthlyInput) {
+      monthlyInput.checked = true;
     }
   }
   applyBillingIntervalDisplay();
