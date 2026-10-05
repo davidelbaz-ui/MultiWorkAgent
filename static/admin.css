@@ -284,6 +284,58 @@ body.admin-page .admin-back a:hover {
   max-width: 24rem;
 }
 
+.admin-search-field-wrap {
+  position: relative;
+}
+
+.admin-search-input {
+  padding-right: 2.35rem;
+}
+
+.admin-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease,
+    background 0.15s ease;
+}
+
+.admin-search-clear.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.admin-search-clear:hover {
+  background: var(--bg);
+}
+
+.admin-search-clear svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+}
+
 .admin-filter-input {
   width: 100%;
   min-width: 12rem;
@@ -310,6 +362,12 @@ body.admin-page .admin-back a:hover {
   gap: 0.5rem;
   align-items: center;
   padding-bottom: 0.1rem;
+}
+
+.admin-users-apply {
+  min-height: 2.65rem;
+  padding: 0.55rem 1.45rem;
+  font-size: 0.95rem;
 }
 
 .admin-inline-form {

@@ -9,24 +9,38 @@
 </p>
 
 <form class="admin-users-toolbar" id="admin-users-filters" method="get" action="{{ url_for('admin.admin_users') }}">
-  <div class="admin-filter-field admin-users-search">
+  <div class="admin-filter-field admin-users-search" id="admin-users-search-wrap">
     <label class="admin-filter-label" for="admin-users-q">Search</label>
-    <input
-      class="admin-filter-input"
-      type="search"
-      name="q"
-      id="admin-users-q"
-      value="{{ filters.q }}"
-      placeholder="Name or email…"
-      autocomplete="off"
-    >
+    <div class="admin-search-field-wrap">
+      <input
+        class="admin-filter-input admin-search-input"
+        type="text"
+        name="q"
+        id="admin-users-q"
+        value="{{ filters.q }}"
+        placeholder="Name or email…"
+        autocomplete="off"
+      >
+      <button
+        type="button"
+        class="admin-search-clear{% if filters.q %} is-visible{% endif %}"
+        id="admin-users-search-clear"
+        aria-label="Clear search"
+        aria-hidden="{% if filters.q %}false{% else %}true{% endif %}"
+        tabindex="{% if filters.q %}0{% else %}-1{% endif %}"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M8 8l8 8M16 8l-8 8"/>
+        </svg>
+      </button>
+    </div>
   </div>
   {{ form_switcher("role", "Role", role_options, filters.role, "admin-users-role") }}
   {{ form_switcher("sign_in", "Sign-in", sign_in_options, filters.sign_in, "admin-users-sign-in") }}
   {{ form_switcher("last_login", "Last sign-in", last_login_options, filters.last_login, "admin-users-last-login") }}
   {{ form_switcher("sort", "Sort by", sort_options, filters.sort, "admin-users-sort") }}
   <div class="admin-filter-actions">
-    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+    <button type="submit" class="btn btn-primary admin-users-apply">Apply</button>
     {% if filters_active %}
     <a class="btn btn-sm" href="{{ url_for('admin.admin_users') }}">Clear</a>
     {% endif %}

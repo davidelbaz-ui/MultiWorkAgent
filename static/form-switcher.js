@@ -95,5 +95,41 @@ function initFormSwitchers(form) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initFormSwitchers(document.getElementById("admin-users-filters"));
+  const form = document.getElementById("admin-users-filters");
+  initFormSwitchers(form);
+  initAdminUsersSearch(form);
 });
+
+function initAdminUsersSearch(form) {
+  if (!form) {
+    return;
+  }
+  const input = document.getElementById("admin-users-q");
+  const clearBtn = document.getElementById("admin-users-search-clear");
+  const wrap = document.getElementById("admin-users-search-wrap");
+  if (!input || !clearBtn || !wrap) {
+    return;
+  }
+
+  const syncClear = () => {
+    const hasValue = input.value.length > 0;
+    wrap.classList.toggle("has-value", hasValue);
+    clearBtn.classList.toggle("is-visible", hasValue);
+    clearBtn.setAttribute("aria-hidden", hasValue ? "false" : "true");
+    clearBtn.tabIndex = hasValue ? 0 : -1;
+  };
+
+  syncClear();
+  input.addEventListener("input", syncClear);
+
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    syncClear();
+    input.focus();
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.submit();
+    }
+  });
+}
