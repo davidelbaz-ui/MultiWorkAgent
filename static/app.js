@@ -475,6 +475,7 @@ async function initAgentComposer() {
     attachmentsEl.innerHTML = "";
     if (draftFiles.length === 0) {
       void uiHideElement(attachmentsEl);
+      syncComposerActionButton();
       return;
     }
     void uiShowElement(attachmentsEl);
@@ -506,6 +507,7 @@ async function initAgentComposer() {
       item.append(name, removeBtn);
       attachmentsEl.appendChild(item);
     });
+    syncComposerActionButton();
   };
 
   const appendAttachmentLines = (container, attachments) => {
@@ -672,13 +674,179 @@ async function initAgentComposer() {
     messages.querySelector(".msg.agent.is-streaming")?.remove();
   };
 
-  const setSendStopMode = (stopping) => {
+  let streamRevealBuffer = "";
+  let streamRevealScheduled = false;
+  /** @type {HTMLElement | null} */
+  let streamRevealTextEl = null;
+
+  const scrollAgentToEnd = () => {
+    if (scroll) {
+      scroll.scrollTop = scroll.scrollHeight;
+    }
+  };
+
+  const pumpStreamReveal = () => {
+    streamRevealScheduled = false;
+    const el = streamRevealTextEl;
+    if (!el || !streamRevealBuffer) {
+      return;
+    }
+    const take = Math.min(streamRevealBuffer.length, 32);
+    el.textContent += streamRevealBuffer.slice(0, take);
+    streamRevealBuffer = streamRevealBuffer.slice(take);
+    scrollAgentToEnd();
+    if (streamRevealBuffer.length) {
+      streamRevealScheduled = true;
+      requestAnimationFrame(pumpStreamReveal);
+    }
+  };
+
+  const enqueueStreamReveal = (text, el) => {
+    if (!text) {
+      return;
+    }
+    streamRevealTextEl = el;
+    streamRevealBuffer += text;
+    if (!streamRevealScheduled) {
+      streamRevealScheduled = true;
+      requestAnimationFrame(pumpStreamReveal);
+    }
+  };
+
+  const drainStreamReveal = () =>
+    new Promise((resolve) => {
+      const tick = () => {
+        if (!streamRevealBuffer) {
+          streamRevealTextEl = null;
+          resolve();
+          return;
+        }
+        pumpStreamReveal();
+        requestAnimationFrame(tick);
+      };
+      tick();
+    });
+
+  const composerShowsSend = () =>
+    Boolean(editingMessageId) ||
+    textarea.value.trim().length > 0 ||
+    draftFiles.length > 0;
+
+  const SpeechRecognitionCtor =
+    typeof window !== "undefined"
+      ? window.SpeechRecognition || window.webkitSpeechRecognition
+      : null;
+  /** @type {SpeechRecognition | null} */
+  let voiceRecognition = null;
+  let voiceListening = false;
+
+  const stopVoiceInput = () => {
+    voiceListening = false;
+    sendBtn?.classList.remove("is-listening");
+    try {
+      voiceRecognition?.stop();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const syncComposerActionButton = () => {
     if (!(sendBtn instanceof HTMLButtonElement)) {
       return;
     }
-    sendBtn.classList.toggle("is-stop", stopping);
-    sendBtn.type = stopping ? "button" : "submit";
-    sendBtn.setAttribute("aria-label", stopping ? "Stop response" : "Send message");
+    const running = form.classList.contains("is-agent-running");
+    sendBtn.classList.toggle("is-stop", running);
+    if (running) {
+      sendBtn.classList.remove("is-send-mode", "is-voice-mode");
+      sendBtn.type = "button";
+      sendBtn.setAttribute("aria-label", "Stop response");
+      return;
+    }
+    const showSend = composerShowsSend();
+    sendBtn.classList.toggle("is-send-mode", showSend);
+    sendBtn.classList.toggle("is-voice-mode", !showSend);
+    sendBtn.type = showSend ? "submit" : "button";
+    sendBtn.setAttribute(
+      "aria-label",
+      showSend ? "Send message" : SpeechRecognitionCtor ? "Voice input" : "Voice input unavailable",
+    );
+  };
+
+  const startVoiceInput = async () => {
+    if (!SpeechRecognitionCtor) {
+      await openAppAlert({
+        title: "Voice input unavailable",
+        message: "Your browser does not support speech recognition. Type your message instead.",
+      });
+      return;
+    }
+    if (voiceListening) {
+      stopVoiceInput();
+      return;
+    }
+    if (form.classList.contains("is-agent-running")) {
+      return;
+    }
+    stopVoiceInput();
+    voiceRecognition = new SpeechRecognitionCtor();
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = true;
+    voiceRecognition.lang = document.documentElement.lang || "en-US";
+    let interim = "";
+
+    voiceRecognition.onstart = () => {
+      voiceListening = true;
+      sendBtn?.classList.add("is-listening");
+    };
+    voiceRecognition.onend = () => {
+      voiceListening = false;
+      sendBtn?.classList.remove("is-listening");
+    };
+    voiceRecognition.onerror = async (event) => {
+      voiceListening = false;
+      sendBtn?.classList.remove("is-listening");
+      if (event.error === "not-allowed") {
+        await openAppAlert({
+          title: "Microphone blocked",
+          message: "Allow microphone access for this site in your browser settings, then try again.",
+        });
+      } else if (event.error !== "aborted" && event.error !== "no-speech") {
+        await openAppAlert({
+          title: "Voice input failed",
+          message: "Could not capture speech. Try again or type your message.",
+        });
+      }
+    };
+    voiceRecognition.onresult = (event) => {
+      let finalText = "";
+      interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const part = event.results[i][0]?.transcript || "";
+        if (event.results[i].isFinal) {
+          finalText += part;
+        } else {
+          interim += part;
+        }
+      }
+      const base = textarea.value.replace(/\s+$/, "");
+      if (finalText.trim()) {
+        textarea.value = base ? `${base} ${finalText.trim()}` : finalText.trim();
+        interim = "";
+      } else if (interim.trim()) {
+        textarea.value = base ? `${base} ${interim.trim()}` : interim.trim();
+      }
+      resizeAgentTextarea(textarea);
+      syncComposerActionButton();
+    };
+
+    try {
+      voiceRecognition.start();
+    } catch {
+      await openAppAlert({
+        title: "Voice input failed",
+        message: "Could not start the microphone. Try again.",
+      });
+    }
   };
 
   const stopAgentStream = () => {
@@ -719,6 +887,9 @@ async function initAgentComposer() {
         }
         if (payload.type === "start") {
           activeRunId = payload.run_id || null;
+          streamRevealBuffer = "";
+          streamRevealTextEl = null;
+          streamRevealScheduled = false;
           if (payload.message) {
             messages.appendChild(buildUserMessageBlock(payload.message));
           }
@@ -729,25 +900,25 @@ async function initAgentComposer() {
           draftFiles = [];
           renderAttachments();
           resizeAgentTextarea(textarea);
+          syncComposerActionButton();
         } else if (payload.type === "delta" && payload.text) {
           if (!textEl) {
             const bubble = ensureStreamingBubble();
             textEl = bubble.querySelector(".msg-agent-text");
           }
           if (textEl) {
-            textEl.textContent += payload.text;
-          }
-          if (scroll) {
-            scroll.scrollTop = scroll.scrollHeight;
+            enqueueStreamReveal(payload.text, textEl);
           }
         } else if (payload.type === "done") {
           activeRunId = null;
+          await drainStreamReveal();
           clearStreamingBubble();
           const state = await apiJson("/api/agent/state");
           applyWorkspaceState(state, { scrollToEnd: true });
         }
       }
     }
+    await drainStreamReveal();
   };
 
   const renderMessages = (list) => {
@@ -772,6 +943,7 @@ async function initAgentComposer() {
     lastSavedDraft = draft.body || "";
     renderAttachments();
     resizeAgentTextarea(textarea);
+    syncComposerActionButton();
   };
 
   const uploadDraftFiles = async (fileList) => {
@@ -1036,7 +1208,10 @@ async function initAgentComposer() {
 
   const setAgentRunning = (running) => {
     form.classList.toggle("is-agent-running", running);
-    setSendStopMode(running);
+    if (running) {
+      stopVoiceInput();
+    }
+    syncComposerActionButton();
     if (sendBtn instanceof HTMLButtonElement) {
       sendBtn.disabled = false;
     }
@@ -1260,6 +1435,9 @@ async function initAgentComposer() {
         await reportAgentSendError(err);
       }
     } finally {
+      streamRevealBuffer = "";
+      streamRevealTextEl = null;
+      streamRevealScheduled = false;
       clearStreamingBubble();
       activeRunId = null;
       streamAbort = null;
@@ -1271,6 +1449,7 @@ async function initAgentComposer() {
 
   textarea.addEventListener("input", () => {
     resizeAgentTextarea(textarea);
+    syncComposerActionButton();
     if (!editingMessageId) {
       queueDraftSave(textarea.value);
     }
@@ -1293,8 +1472,16 @@ async function initAgentComposer() {
       e.preventDefault();
       e.stopPropagation();
       stopAgentStream();
+      return;
+    }
+    if (sendBtn.classList.contains("is-voice-mode")) {
+      e.preventDefault();
+      e.stopPropagation();
+      void startVoiceInput();
     }
   });
+
+  syncComposerActionButton();
 
   window.addEventListener("beforeunload", () => {
     if (!editingMessageId && textarea.value !== lastSavedDraft) {

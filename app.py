@@ -897,7 +897,12 @@ def _persist_agent_run_result(
 def _agent_sse(payload: dict) -> str:
     import json
 
-    return f"data: {json.dumps(payload, default=str)}\n\n"
+    # Pad frames so proxies (e.g. Vercel) flush incremental chunks instead of buffering the whole stream.
+    data = f"data: {json.dumps(payload, default=str)}\n\n"
+    min_frame = 2048
+    if len(data) < min_frame:
+        data += ":" + (" " * (min_frame - len(data) - 1)) + "\n"
+    return data + "\n"
 
 
 def _execute_agent_turn(thread_id: str, *, trigger_summary: str) -> dict:

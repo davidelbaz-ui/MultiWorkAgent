@@ -57,13 +57,20 @@
           </svg>
         </button>
         <textarea id="agent-message-input" rows="1" placeholder="Message agent…" aria-label="Message"></textarea>
-        <button type="submit" class="agent-prompt-btn agent-send-btn" id="agent-send-btn" aria-label="Send message">
-          <svg class="agent-prompt-icon agent-send-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 19V7M7 12l5-5 5 5"/>
-          </svg>
-          <svg class="agent-prompt-icon agent-stop-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>
-          </svg>
+        <button type="button" class="agent-prompt-btn agent-send-btn is-voice-mode" id="agent-send-btn" aria-label="Voice input">
+          <span class="agent-action-icons" aria-hidden="true">
+            <svg class="agent-prompt-icon agent-send-icon" viewBox="0 0 24 24" focusable="false">
+              <path d="M12 19V7M7 12l5-5 5 5"/>
+            </svg>
+            <svg class="agent-prompt-icon agent-voice-icon" viewBox="0 0 24 24" focusable="false">
+              <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"/>
+              <path d="M19 11a7 7 0 0 1-14 0"/>
+              <path d="M12 18v3"/>
+            </svg>
+            <svg class="agent-prompt-icon agent-stop-icon" viewBox="0 0 24 24" focusable="false">
+              <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
         </button>
       </form>
     </div>

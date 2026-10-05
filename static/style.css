@@ -1875,28 +1875,66 @@ table.data-table {
   position: relative;
   background: var(--accent);
   color: #fff;
+  overflow: hidden;
+}
+
+.agent-action-icons {
+  position: relative;
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .agent-send-btn .agent-send-icon,
+.agent-send-btn .agent-voice-icon,
 .agent-send-btn .agent-stop-icon {
   position: absolute;
   inset: 0;
   margin: auto;
+  transition:
+    opacity 0.22s var(--motion-ease),
+    transform 0.22s var(--motion-ease);
+}
+
+.agent-send-btn .agent-send-icon,
+.agent-send-btn .agent-voice-icon {
+  opacity: 0;
+  transform: translateY(6px) scale(0.9);
+  pointer-events: none;
+}
+
+.agent-send-btn.is-send-mode .agent-send-icon {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.agent-send-btn.is-voice-mode .agent-voice-icon {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .agent-send-btn .agent-stop-icon {
-  display: none;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
 }
 
-.agent-send-btn.is-stop .agent-send-icon {
-  display: none;
+.agent-send-btn.is-stop .agent-send-icon,
+.agent-send-btn.is-stop .agent-voice-icon {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.9);
 }
 
 .agent-send-btn.is-stop .agent-stop-icon {
-  display: block;
+  opacity: 1;
+  transform: scale(1);
 }
 
-.agent-send-btn:hover {
+.agent-send-btn.is-listening {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.agent-send-btn:hover:not(:disabled) {
   background: var(--accent-dim);
 }
 
@@ -1906,13 +1944,13 @@ table.data-table {
 }
 
 .agent-send-btn.is-stop {
-  background: var(--text);
-  color: var(--surface);
+  background: var(--accent);
+  color: #fff;
 }
 
-.agent-send-btn.is-stop:hover {
-  background: var(--text);
-  opacity: 0.88;
+.agent-send-btn.is-stop:hover:not(:disabled) {
+  background: var(--accent-dim);
+  opacity: 1;
 }
 
 .agent-prompt-icon {
@@ -2069,34 +2107,19 @@ table.data-table {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: var(--muted);
-  opacity: 0.25;
-  animation: agent-stream-dot-pulse 1s linear infinite;
+  background: var(--accent);
+  opacity: 0.35;
+  animation: agent-stream-dot-pulse 1s ease-in-out infinite;
 }
 
 @keyframes agent-stream-dot-pulse {
   from {
-    opacity: 0.2;
-    background: var(--muted);
+    opacity: 0.35;
+    transform: scale(0.92);
   }
   to {
     opacity: 1;
-    background: #000;
-  }
-}
-
-[data-theme="dark"] .agent-stream-dot {
-  animation-name: agent-stream-dot-pulse-dark;
-}
-
-@keyframes agent-stream-dot-pulse-dark {
-  from {
-    opacity: 0.2;
-    background: var(--muted);
-  }
-  to {
-    opacity: 1;
-    background: #fff;
+    transform: scale(1);
   }
 }
 
