@@ -1,0 +1,44 @@
+{% macro admin_nav_icon(name) -%}
+{% if name == 'dashboard' %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/>
+  <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/>
+  <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/>
+  <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>
+</svg>
+{% elif name == 'users' %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <circle cx="12" cy="8.5" r="3.25"/>
+  <path d="M5.5 20v-1a4.5 4.5 0 0 1 9 0v1"/>
+  <circle cx="18" cy="9" r="2.25"/>
+  <path d="M16.2 20v-.75a3.2 3.2 0 0 1 4.3-3"/>
+</svg>
+{% elif name == 'support' %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <rect x="4" y="6" width="16" height="12" rx="2"/>
+  <path d="M4 9l8 5.5L20 9"/>
+</svg>
+{% elif name == 'pages' %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d="M8 4h7l4 4v13H8V4z"/>
+  <path d="M15 4v4h4"/>
+  <path d="M10 13h8M10 17h6"/>
+</svg>
+{% elif name == 'logs' %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <rect x="5" y="4" width="14" height="16" rx="2"/>
+  <path d="M9 9h6M9 13h6M9 17h4"/>
+</svg>
+{% elif name == 'system' %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <ellipse cx="12" cy="6.5" rx="6.5" ry="2.2"/>
+  <path d="M5.5 6.5v4c0 1.2 2.9 2.2 6.5 2.2s6.5-1 6.5-2.2v-4"/>
+  <path d="M5.5 10.5v4c0 1.2 2.9 2.2 6.5 2.2s6.5-1 6.5-2.2v-4"/>
+  <path d="M8 18.5h8M10 21h4"/>
+</svg>
+{% else %}
+<svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <circle cx="12" cy="12" r="8.5"/>
+</svg>
+{% endif %}
+{%- endmacro %}

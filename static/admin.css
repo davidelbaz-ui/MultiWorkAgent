@@ -64,10 +64,38 @@ body.admin-page {
 }
 
 .admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   padding: 0.5rem 0.65rem;
   border-radius: 0.5rem;
   color: var(--text);
   text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.admin-nav-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  display: block;
+  line-height: 0;
+  color: inherit;
+}
+
+.admin-nav-icon .nav-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-nav-label {
+  min-width: 0;
 }
 
 .admin-nav-link:hover {

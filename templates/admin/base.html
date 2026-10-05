@@ -1,5 +1,6 @@
 {% from "_brand.html" import brand_lockup %}
 {% from "_favicon.html" import favicon_tags %}
+{% from "_admin_nav_icon.html" import admin_nav_icon %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,12 +18,30 @@
         {{ brand_lockup(href=public_site_url, size='sm', class='admin-brand-lockup') }}
       </div>
       <nav class="admin-nav">
-        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_dashboard' %}is-active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>
-        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_users' %}is-active{% endif %}" href="{{ url_for('admin.admin_users') }}">Users</a>
-        <a class="admin-nav-link {% if request.endpoint and request.endpoint.startswith('admin.admin_support') %}is-active{% endif %}" href="{{ url_for('admin.admin_support_inbox') }}">Contact support</a>
-        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_pages' %}is-active{% endif %}" href="{{ url_for('admin.admin_pages') }}">Page settings</a>
-        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_logs' %}is-active{% endif %}" href="{{ url_for('admin.admin_logs') }}">Logs</a>
-        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_system' %}is-active{% endif %}" href="{{ url_for('admin.admin_system') }}">System &amp; DB</a>
+        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_dashboard' %}is-active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">
+          <span class="admin-nav-icon">{{ admin_nav_icon('dashboard') }}</span>
+          <span class="admin-nav-label">Dashboard</span>
+        </a>
+        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_users' %}is-active{% endif %}" href="{{ url_for('admin.admin_users') }}">
+          <span class="admin-nav-icon">{{ admin_nav_icon('users') }}</span>
+          <span class="admin-nav-label">Users</span>
+        </a>
+        <a class="admin-nav-link {% if request.endpoint and request.endpoint.startswith('admin.admin_support') %}is-active{% endif %}" href="{{ url_for('admin.admin_support_inbox') }}">
+          <span class="admin-nav-icon">{{ admin_nav_icon('support') }}</span>
+          <span class="admin-nav-label">Contact support</span>
+        </a>
+        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_pages' %}is-active{% endif %}" href="{{ url_for('admin.admin_pages') }}">
+          <span class="admin-nav-icon">{{ admin_nav_icon('pages') }}</span>
+          <span class="admin-nav-label">Page settings</span>
+        </a>
+        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_logs' %}is-active{% endif %}" href="{{ url_for('admin.admin_logs') }}">
+          <span class="admin-nav-icon">{{ admin_nav_icon('logs') }}</span>
+          <span class="admin-nav-label">Logs</span>
+        </a>
+        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_system' %}is-active{% endif %}" href="{{ url_for('admin.admin_system') }}">
+          <span class="admin-nav-icon">{{ admin_nav_icon('system') }}</span>
+          <span class="admin-nav-label">System &amp; DB</span>
+        </a>
       </nav>
       <div class="admin-sidebar-foot">
         <p class="meta-row">{{ g.admin_email }}</p>
