@@ -1900,6 +1900,11 @@ table.data-table {
   background: var(--accent-dim);
 }
 
+.agent-send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .agent-send-btn.is-stop {
   background: var(--text);
   color: var(--surface);

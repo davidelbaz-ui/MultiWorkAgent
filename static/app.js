@@ -38,6 +38,10 @@ function initAppDialog() {
       closeAppDialog(true);
       return;
     }
+    if (mode === "alert") {
+      closeAppDialog(true);
+      return;
+    }
     closeAppDialog(input?.value ?? "");
   });
 
@@ -68,6 +72,7 @@ function openAppPrompt(options) {
   const labelEl = document.getElementById("app-dialog-label");
   const input = document.getElementById("app-dialog-input");
   const confirmBtn = document.getElementById("app-dialog-confirm");
+  const cancelBtn = document.getElementById("app-dialog-cancel");
   if (!root || !titleEl || !messageEl || !fieldWrap || !labelEl || !input || !confirmBtn) {
     return Promise.resolve(null);
   }
@@ -79,6 +84,9 @@ function openAppPrompt(options) {
     titleEl.textContent = options.title;
     messageEl.hidden = true;
     fieldWrap.hidden = false;
+    if (cancelBtn) {
+      cancelBtn.hidden = false;
+    }
     labelEl.textContent = options.label;
     input.value = options.defaultValue ?? "";
     confirmBtn.textContent = "Save";
@@ -100,6 +108,7 @@ function openAppConfirm(options) {
   const titleEl = document.getElementById("app-dialog-title");
   const messageEl = document.getElementById("app-dialog-message");
   const fieldWrap = document.getElementById("app-dialog-field");
+  const cancelBtn = document.getElementById("app-dialog-cancel");
   const confirmBtn = document.getElementById("app-dialog-confirm");
   if (!root || !titleEl || !messageEl || !fieldWrap || !confirmBtn) {
     return Promise.resolve(false);
@@ -113,8 +122,46 @@ function openAppConfirm(options) {
     messageEl.textContent = options.message;
     messageEl.hidden = false;
     fieldWrap.hidden = true;
+    if (cancelBtn) {
+      cancelBtn.hidden = false;
+    }
     confirmBtn.textContent = options.confirmLabel ?? "Confirm";
     confirmBtn.className = "btn btn-danger";
+    void (async () => {
+      await uiOpenOverlay(root, "is-open");
+      confirmBtn.focus();
+    })();
+  });
+}
+
+/**
+ * @param {{ title: string, message: string, confirmLabel?: string }} options
+ * @returns {Promise<void>}
+ */
+function openAppAlert(options) {
+  const root = document.getElementById("app-dialog-root");
+  const titleEl = document.getElementById("app-dialog-title");
+  const messageEl = document.getElementById("app-dialog-message");
+  const fieldWrap = document.getElementById("app-dialog-field");
+  const cancelBtn = document.getElementById("app-dialog-cancel");
+  const confirmBtn = document.getElementById("app-dialog-confirm");
+  if (!root || !titleEl || !messageEl || !fieldWrap || !confirmBtn) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    appDialogPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    appDialogResolve = () => resolve();
+    root.dataset.mode = "alert";
+    titleEl.textContent = options.title;
+    messageEl.textContent = options.message;
+    messageEl.hidden = false;
+    fieldWrap.hidden = true;
+    if (cancelBtn) {
+      cancelBtn.hidden = true;
+    }
+    confirmBtn.textContent = options.confirmLabel ?? "OK";
+    confirmBtn.className = "btn btn-primary";
     void (async () => {
       await uiOpenOverlay(root, "is-open");
       confirmBtn.focus();
@@ -347,6 +394,41 @@ async function initAgentComposer() {
   /** @type {AbortController | null} */
   let streamAbort = null;
   let activeRunId = null;
+  /** @type {Record<string, unknown> | null} */
+  let lastLimits = null;
+
+  const agentSendBlockedMessage = () => {
+    if (lastLimits && lastLimits.can_run === false) {
+      return (
+        (typeof lastLimits.blocked_message === "string" && lastLimits.blocked_message) ||
+        "Run limit reached. Try again later or upgrade your plan."
+      );
+    }
+    if (limitsBanner?.textContent?.trim()) {
+      return limitsBanner.textContent.trim();
+    }
+    return "Sending is temporarily unavailable. Refresh the page or check Billing for run limits.";
+  };
+
+  const reportAgentSendError = async (err) => {
+    const data = err?.data || {};
+    let message =
+      (typeof data.error === "string" && data.error) ||
+      (typeof err?.message === "string" && err.message) ||
+      "Could not send your message.";
+    if (data.code === "database_unconfigured") {
+      message =
+        "The app database is not connected. Set DATABASE_URL on the server (Vercel project env) and redeploy.";
+    } else if (err?.status === 401) {
+      message = "Your session expired. Sign in again and retry.";
+    } else if (err?.status === 403) {
+      message = data.error || "You do not have permission to send agent messages.";
+    } else if (err?.status === 503) {
+      message = data.error || "The server is unavailable. Check database configuration.";
+    }
+    console.error(err);
+    await openAppAlert({ title: "Message not sent", message });
+  };
 
   const apiJson = async (url, options = {}) => {
     const res = await fetch(url, {
@@ -850,6 +932,7 @@ async function initAgentComposer() {
     if (!limits) {
       return;
     }
+    lastLimits = limits;
     const concurrentEl = document.getElementById("agent-concurrent-line");
     const runsTodayEl = document.getElementById("agent-runs-today");
     if (concurrentEl) {
@@ -1101,6 +1184,10 @@ async function initAgentComposer() {
 
       if (editingMessageId) {
         if (!trimmed && editingMessageAttachments === 0) {
+          await openAppAlert({
+            title: "Nothing to save",
+            message: "Add text or keep an attachment before saving this edit.",
+          });
           return;
         }
         await apiJson(`/api/agent/messages/${editingMessageId}`, {
@@ -1115,7 +1202,18 @@ async function initAgentComposer() {
         if (!trimmed && draftFiles.length === 0) {
           return;
         }
-        setAgentRunning(true);
+        if (
+          sendBtn instanceof HTMLButtonElement &&
+          sendBtn.disabled &&
+          !form.classList.contains("is-agent-running")
+        ) {
+          updateLimitsUI(lastLimits || {}, agentSendBlockedMessage());
+          await openAppAlert({
+            title: "Cannot send",
+            message: agentSendBlockedMessage(),
+          });
+          return;
+        }
         streamAbort = new AbortController();
         const res = await fetch("/api/agent/messages/stream", {
           method: "POST",
@@ -1135,6 +1233,7 @@ async function initAgentComposer() {
         if (!contentType.includes("text/event-stream") || !res.body) {
           throw new Error("Unexpected response from agent stream.");
         }
+        setAgentRunning(true);
         await consumeAgentStream(res);
       }
 
@@ -1153,8 +1252,12 @@ async function initAgentComposer() {
         }
       } else if (err?.status === 429 && err?.data?.limits) {
         updateLimitsUI(err.data.limits, err.data.error);
+        await openAppAlert({
+          title: "Run limit reached",
+          message: err.data.error || agentSendBlockedMessage(),
+        });
       } else {
-        console.error(err);
+        await reportAgentSendError(err);
       }
     } finally {
       clearStreamingBubble();
@@ -1222,10 +1325,12 @@ async function initAgentComposer() {
 
   try {
     requestAnimationFrame(() => {
-      void loadState().catch((err) => console.error(err));
+      void loadState().catch(async (err) => {
+        await reportAgentSendError(err);
+      });
     });
   } catch (err) {
-    console.error(err);
+    void reportAgentSendError(err);
   }
 }
 
