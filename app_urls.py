@@ -12,9 +12,11 @@ PRODUCTION_APP_BASE_URL = "https://multiworkagent.vercel.app"
 
 def app_base_url() -> str | None:
     raw = os.environ.get("APP_BASE_URL", "").strip()
-    if not raw:
-        return None
-    return raw.rstrip("/")
+    if raw:
+        return raw.rstrip("/")
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        return PRODUCTION_APP_BASE_URL.rstrip("/")
+    return None
 
 
 def login_oauth_callback_url(provider: str) -> str:

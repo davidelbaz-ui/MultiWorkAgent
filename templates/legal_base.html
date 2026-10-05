@@ -1,0 +1,37 @@
+{% from "_brand.html" import brand_lockup %}
+{% from "_favicon.html" import favicon_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MultiWorkAgent{% endblock %}</title>
+  {% block meta_description %}{% endblock %}
+  {{ favicon_tags() }}
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="legal-page">
+  <header class="legal-header">
+    {{ brand_lockup(href=url_for('index'), size='sm') }}
+    <nav class="legal-header-nav" aria-label="Legal">
+      <a class="btn btn-sm" href="{{ legal_back_href }}">{{ legal_back_label }}</a>
+    </nav>
+  </header>
+
+  <main class="legal-main">
+    <article class="card legal-document">
+      {% block legal_content %}{% endblock %}
+    </article>
+    <nav class="legal-doc-nav" aria-label="Related policies">
+    <a class="btn btn-sm" href="{{ url_for('privacy_policy') }}">Privacy policy</a>
+    <a class="btn btn-sm" href="{{ url_for('terms_and_conditions') }}">Terms &amp; conditions</a>
+    <a class="btn btn-sm" href="{{ url_for('licence_agreement') }}">Licence agreement</a>
+    </nav>
+  </main>
+
+  <footer class="legal-footer">
+    <p class="meta-row">&copy; {{ legal_year }} MultiWorkAgent</p>
+  </footer>
+</body>
+</html>

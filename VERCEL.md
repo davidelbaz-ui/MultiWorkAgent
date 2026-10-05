@@ -16,8 +16,9 @@ Set **`APP_BASE_URL`** to that exact value in Vercel (no trailing slash). All lo
 | Variable | Value |
 |----------|--------|
 | `APP_ENV` | `production` |
-| `APP_BASE_URL` | `https://multiworkagent.vercel.app` |
 | `FLASK_SECRET_KEY` | long random string |
+| `APP_BASE_URL` | `https://multiworkagent.vercel.app` |
+| `GOOGLE_LOGIN_CLIENT_ID` / `SECRET` | login OAuth (redirect below) |
 | `INTEGRATION_ENCRYPTION_KEY` | optional but recommended |
 
 Login (see [AUTH_LOGIN.md](AUTH_LOGIN.md)):

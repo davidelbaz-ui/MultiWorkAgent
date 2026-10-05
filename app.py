@@ -89,6 +89,9 @@ AUTH_PUBLIC_ENDPOINTS = frozenset(
         "favicon",
         "login_oauth_start",
         "login_oauth_callback",
+        "privacy_policy",
+        "terms_and_conditions",
+        "licence_agreement",
     }
 )
 
@@ -103,6 +106,24 @@ def _safe_next_url(raw: str | None) -> str:
 
 def _auth_template_context() -> dict:
     return {"oauth_providers": login_oauth.configured_login_providers()}
+
+
+def _legal_template_context() -> dict:
+    if session.get("user_id") and session.get("account_id"):
+        back_href = url_for("settings")
+        back_label = "Back to settings"
+    elif session.get("user_id"):
+        back_href = url_for("index")
+        back_label = "Back to home"
+    else:
+        back_href = url_for("index")
+        back_label = "Back to home"
+    return {
+        "legal_back_href": back_href,
+        "legal_back_label": back_label,
+        "legal_last_updated": "October 4, 2026",
+        "legal_year": 2026,
+    }
 
 
 @app.context_processor
@@ -898,6 +919,21 @@ def index():
     if session.get("user_id") and session.get("account_id"):
         return render_template("home.html", **_ctx("home"))
     return render_template("start.html", **_auth_template_context())
+
+
+@app.get("/privacy-policy")
+def privacy_policy():
+    return render_template("privacy_policy.html", **_legal_template_context())
+
+
+@app.get("/terms-and-conditions")
+def terms_and_conditions():
+    return render_template("terms_and_conditions.html", **_legal_template_context())
+
+
+@app.get("/licence-agreement")
+def licence_agreement():
+    return render_template("licence_agreement.html", **_legal_template_context())
 
 
 @app.route("/businesses")

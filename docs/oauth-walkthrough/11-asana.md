@@ -1,6 +1,6 @@
 # OAuth walkthrough #11 — Asana
 
-Status: **your turn**
+Status: **done**
 
 Registry scopes: `default` (full app permissions as configured in the Asana app).
 
@@ -67,4 +67,4 @@ Doc: [Asana OAuth](https://developers.asana.com/docs/oauth)
 
 ## Next
 
-**#12 Discord** — `DISCORD_OAUTH_*`
+**#12 Discord** — [12-discord.md](12-discord.md)

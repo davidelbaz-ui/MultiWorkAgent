@@ -1,0 +1,76 @@
+{% extends "legal_base.html" %}
+{% block title %}Licence Agreement — MultiWorkAgent{% endblock %}
+{% block meta_description %}
+<meta name="description" content="MultiWorkAgent licence agreement for use of the Service.">
+{% endblock %}
+{% block legal_content %}
+<header class="legal-document-head">
+  <p class="legal-eyebrow">Legal</p>
+  <h1 class="legal-document-title">Licence Agreement</h1>
+  <p class="legal-document-meta">Last updated: {{ legal_last_updated }}</p>
+</header>
+
+<div class="legal-prose">
+  <p>
+    This Licence Agreement (“Agreement”) is between you (“Licensee”) and MultiWorkAgent (“Licensor”) and governs
+    your use of the MultiWorkAgent software and hosted service (the “Software” or “Service”). By accessing or
+    using the Service, you agree to this Agreement in addition to our
+    <a href="{{ url_for('terms_and_conditions') }}">Terms &amp; Conditions</a> and
+    <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>.
+  </p>
+
+  <h2>Grant of licence</h2>
+  <p>
+    Subject to your compliance with this Agreement and applicable plan limits, Licensor grants you a limited,
+    non-exclusive, non-transferable, revocable licence to access and use the Service for your internal business
+    operations during your subscription or free-tier period.
+  </p>
+
+  <h2>Restrictions</h2>
+  <p>You may not, and may not permit others to:</p>
+  <ul>
+    <li>Copy, modify, or create derivative works of the Service except as allowed by normal use through the product UI.</li>
+    <li>Reverse engineer, decompile, or attempt to extract source code except where prohibited by law.</li>
+    <li>Sublicense, resell, or offer the Service as a hosted service to third parties without written permission.</li>
+    <li>Remove proprietary notices or circumvent technical limits, metering, or access controls.</li>
+    <li>Use the Service to build a competing product using non-public interfaces or scraped data from the Service.</li>
+  </ul>
+
+  <h2>Ownership</h2>
+  <p>
+    Licensor retains all rights in the Service, including software, documentation, branding, and updates.
+    You retain ownership of your data and content you submit. Connected third-party systems remain subject to
+    their own licences.
+  </p>
+
+  <h2>Open-source and third-party components</h2>
+  <p>
+    The Service may include open-source or third-party components governed by separate licences. Where those
+    licences grant you additional rights, they apply only to the covered components.
+  </p>
+
+  <h2>Updates</h2>
+  <p>
+    Licensor may update the Service, including features, limits, and security changes. Material licence changes
+    will be reflected on this page with an updated “Last updated” date.
+  </p>
+
+  <h2>Termination</h2>
+  <p>
+    This licence ends when your account is closed or your access is suspended for breach. Upon termination, your
+    right to use the Service stops; data handling follows the Privacy Policy and account deletion controls in Settings.
+  </p>
+
+  <h2>Disclaimer and limitation</h2>
+  <p>
+    THE SERVICE IS PROVIDED “AS IS.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, LICENSOR DISCLAIMS WARRANTIES AND
+    LIMITS LIABILITY AS DESCRIBED IN THE TERMS &amp; CONDITIONS.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about this Licence Agreement may be sent to
+    <a href="mailto:legal@multiworkagent.com">legal@multiworkagent.com</a>.
+  </p>
+</div>
+{% endblock %}

@@ -24,7 +24,7 @@ Register these **exact** callback URLs in Google Cloud (must match `APP_BASE_URL
 
 Microsoft login uses the same host: `https://multiworkagent.vercel.app/auth/microsoft/callback`.
 
-Set **`APP_BASE_URL=https://multiworkagent.vercel.app`** on Vercel (Production).
+Set **`APP_BASE_URL=https://multiworkagent.vercel.app`** on Vercel (Production). Also set **`FLASK_SECRET_KEY`** to a stable random value (OAuth state is signed with it). If `APP_BASE_URL` is missing on Vercel, the app defaults to `https://multiworkagent.vercel.app` when `VERCEL` is set—you must still register that callback in Google Cloud.
 
 ## Google Cloud
 

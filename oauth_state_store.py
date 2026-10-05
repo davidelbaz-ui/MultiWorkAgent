@@ -2,30 +2,16 @@
 
 from __future__ import annotations
 
-import secrets
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from app_db import connect, init_app_database
+import signed_oauth_state
 
-STATE_TTL_SECONDS = 900
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+STATE_TTL_SECONDS = signed_oauth_state.DEFAULT_MAX_AGE_SECONDS
+_INTEGRATION_STATE_SALT = "multiworkagent-integration-oauth-state"
 
 
 def bootstrap() -> None:
-    init_app_database()
-
-
-def _cleanup_expired(conn) -> None:
-    cutoff = datetime.now(timezone.utc) - timedelta(seconds=STATE_TTL_SECONDS)
-    cutoff_iso = cutoff.replace(microsecond=0).isoformat()
-    conn.execute(
-        "DELETE FROM integration_oauth_states WHERE created_at < ?",
-        (cutoff_iso,),
-    )
+    """No-op (state is signed; no database required)."""
 
 
 def create_state(
@@ -34,46 +20,34 @@ def create_state(
     business_id: str,
     provider_slug: str,
 ) -> str:
-    token = secrets.token_urlsafe(32)
-    now = _utc_now()
-    with connect() as conn:
-        _cleanup_expired(conn)
-        conn.execute(
-            """
-            INSERT INTO integration_oauth_states (
-                state_token, account_id, business_id, provider_slug, created_at
-            ) VALUES (?, ?, ?, ?, ?)
-            """,
-            (token, account_id, business_id, provider_slug, now),
-        )
-        conn.commit()
-    return token
+    return signed_oauth_state.issue_signed_state(
+        salt=_INTEGRATION_STATE_SALT,
+        payload={
+            "account_id": account_id,
+            "business_id": business_id,
+            "provider_slug": provider_slug,
+        },
+        max_age_seconds=STATE_TTL_SECONDS,
+    )
 
 
 def pop_state(state_token: str) -> dict[str, Any] | None:
-    if not state_token:
+    data = signed_oauth_state.loads_signed_state(
+        salt=_INTEGRATION_STATE_SALT,
+        token=state_token,
+        max_age_seconds=STATE_TTL_SECONDS,
+    )
+    if not data:
         return None
-    with connect() as conn:
-        _cleanup_expired(conn)
-        row = conn.execute(
-            """
-            SELECT state_token, account_id, business_id, provider_slug, created_at
-            FROM integration_oauth_states
-            WHERE state_token = ?
-            """,
-            (state_token,),
-        ).fetchone()
-        if not row:
-            return None
-        conn.execute(
-            "DELETE FROM integration_oauth_states WHERE state_token = ?",
-            (state_token,),
-        )
-        conn.commit()
+    account_id = str(data.get("account_id") or "")
+    business_id = str(data.get("business_id") or "")
+    provider_slug = str(data.get("provider_slug") or "")
+    if not account_id or not business_id or not provider_slug:
+        return None
     return {
-        "state_token": row["state_token"],
-        "account_id": row["account_id"],
-        "business_id": row["business_id"],
-        "provider_slug": row["provider_slug"],
-        "created_at": row["created_at"],
+        "state_token": state_token,
+        "account_id": account_id,
+        "business_id": business_id,
+        "provider_slug": provider_slug,
+        "created_at": "",
     }
