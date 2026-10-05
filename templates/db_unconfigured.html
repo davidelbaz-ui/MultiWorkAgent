@@ -11,6 +11,11 @@
   {% if db_error %}
   <p class="meta-row">{{ db_error }}</p>
   {% endif %}
+  <h2>Common mistake</h2>
+  <p class="legal-prose">
+    If the error mentions <strong>127.0.0.1</strong>, you pasted your <em>local</em> <code>DATABASE_URL</code> into Vercel.
+    Delete that variable on Vercel and use <strong>Storage → Postgres</strong> so <code>POSTGRES_URL</code> points to a remote host.
+  </p>
   <h2>Vercel (production)</h2>
   <ol class="legal-prose">
     <li>Vercel project → <strong>Storage</strong> → create or connect <strong>Postgres</strong>.</li>

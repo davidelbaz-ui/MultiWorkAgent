@@ -107,7 +107,7 @@ DB_INIT_ERROR: str | None = None
 
 def bootstrap_application_stores() -> None:
     global DB_READY, DB_INIT_ERROR
-    from db_connection import database_url
+    from db_connection import database_url, deployment_database_error
 
     if not database_url():
         DB_INIT_ERROR = (
@@ -115,6 +115,11 @@ def bootstrap_application_stores() -> None:
             "under Project Settings / Environment Variables, then redeploy."
         )
         LOGGER.error("database_unconfigured %s", DB_INIT_ERROR)
+        return
+    misconfig = deployment_database_error()
+    if misconfig:
+        DB_INIT_ERROR = misconfig
+        LOGGER.error("database_misconfigured %s", DB_INIT_ERROR)
         return
     try:
         account_lifecycle.bootstrap()

@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Any, Iterator
+from typing import Any
+from urllib.parse import urlparse
 
 import psycopg
 from psycopg.rows import dict_row
+
+from app_config import is_vercel_runtime
 
 _PLACEHOLDER_RE = re.compile(r"\?")
 
@@ -111,20 +114,72 @@ class DBConnection:
             self.rollback()
 
 
-def database_url() -> str:
-    for key in (
+def _normalize_postgres_url(raw: str) -> str:
+    url = raw.strip()
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
+    return url
+
+
+def _url_host(url: str) -> str:
+    return (urlparse(url).hostname or "").strip().lower()
+
+
+def _is_local_database_host(url: str) -> bool:
+    host = _url_host(url)
+    return host in ("127.0.0.1", "localhost", "::1")
+
+
+def _env_url_keys() -> tuple[str, ...]:
+    if is_vercel_runtime():
+        return (
+            "POSTGRES_URL",
+            "POSTGRES_PRISMA_URL",
+            "POSTGRES_URL_NON_POOLING",
+            "DATABASE_URL",
+        )
+    return (
         "DATABASE_URL",
         "POSTGRES_URL",
         "POSTGRES_PRISMA_URL",
         "POSTGRES_URL_NON_POOLING",
-    ):
+    )
+
+
+def database_url() -> str:
+    candidates: list[str] = []
+    for key in _env_url_keys():
         raw = os.environ.get(key, "").strip()
-        if not raw:
-            continue
-        if raw.startswith("postgres://"):
-            raw = "postgresql://" + raw[len("postgres://") :]
-        return raw
-    return ""
+        if raw:
+            candidates.append(_normalize_postgres_url(raw))
+    if not candidates:
+        return ""
+    if is_vercel_runtime():
+        for url in candidates:
+            if not _is_local_database_host(url):
+                return url
+    return candidates[0]
+
+
+def deployment_database_error() -> str | None:
+    """Explain misconfiguration before connecting (especially localhost on Vercel)."""
+    if not is_vercel_runtime():
+        return None
+    raw_urls = [
+        _normalize_postgres_url(os.environ.get(key, ""))
+        for key in _env_url_keys()
+        if os.environ.get(key, "").strip()
+    ]
+    if not raw_urls:
+        return None
+    remote = [u for u in raw_urls if not _is_local_database_host(u)]
+    if remote:
+        return None
+    return (
+        "DATABASE_URL points to 127.0.0.1 (localhost). That only works on your computer, not on Vercel. "
+        "In Vercel: Storage → connect Postgres (uses POSTGRES_URL with a remote host), then remove any "
+        "DATABASE_URL that copies your local .env, and redeploy."
+    )
 
 
 def require_database_url() -> str:
