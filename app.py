@@ -29,6 +29,7 @@ from flask import (
 import app_logging
 import http_rate_limit
 from app_config import load_app_config, apply_flask_config, validate_production_secrets
+from remote_sqlite import should_trust_session_membership
 
 import account_lifecycle
 import agent_executor
@@ -134,9 +135,50 @@ def _inject_auth_oauth_context() -> dict:
 
 def _login_session(user: dict, membership: dict) -> None:
     session.clear()
+    session.permanent = True
     session["user_id"] = user["id"]
     session["account_id"] = membership["account_id"]
     session["role"] = membership["role"]
+    session["user_email"] = user.get("email") or ""
+    session["user_display_name"] = user.get("display_name") or user.get("name") or ""
+
+
+def _membership_from_session(user_id: str, account_id: str) -> dict | None:
+    role = session.get("role")
+    if role not in auth_store.ROLES:
+        return None
+    return {
+        "account_id": account_id,
+        "user_id": user_id,
+        "role": role,
+        "role_label": auth_store.ROLE_LABELS.get(role, role),
+    }
+
+
+def _resolve_membership(user_id: str, account_id: str) -> dict | None:
+    membership = auth_store.get_membership(account_id, user_id)
+    if membership:
+        return membership
+    if should_trust_session_membership():
+        return _membership_from_session(user_id, account_id)
+    return None
+
+
+def _session_user_profile(user_id: str) -> dict | None:
+    user = auth_store.get_user(user_id)
+    if user:
+        return user
+    email = (session.get("user_email") or "").strip()
+    if not email:
+        return None
+    name = (session.get("user_display_name") or "").strip()
+    return {
+        "id": user_id,
+        "email": email,
+        "display_name": name,
+        "name": name or email,
+        "created_at": "",
+    }
 
 
 def _auth_context() -> dict:
@@ -149,8 +191,8 @@ def _auth_context() -> dict:
             "account_role_label": None,
             "team_members": [],
         }
-    user = auth_store.get_user(user_id)
-    membership = auth_store.get_membership(account_id, user_id)
+    user = _session_user_profile(user_id)
+    membership = _resolve_membership(user_id, account_id)
     team = auth_store.list_account_members(account_id) if account_id else []
     return {
         "current_user": user,
@@ -236,7 +278,7 @@ def enforce_auth_and_roles():
             next_url = request.path
         return redirect(url_for("login", next=next_url))
 
-    membership = auth_store.get_membership(account_id, user_id)
+    membership = _resolve_membership(user_id, account_id)
     if not membership:
         session.clear()
         if request.path.startswith("/api/"):
@@ -908,8 +950,8 @@ def logout():
 def api_auth_me():
     user_id = session["user_id"]
     account_id = session["account_id"]
-    user = auth_store.get_user(user_id)
-    membership = auth_store.get_membership(account_id, user_id)
+    user = _session_user_profile(user_id)
+    membership = _resolve_membership(user_id, account_id)
     if not user or not membership:
         return jsonify({"error": "authentication required"}), 401
     return jsonify(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from datetime import timedelta
 
 DEV_SECRET_PLACEHOLDER = "dev-change-me-in-production"
 
@@ -90,6 +91,10 @@ def apply_flask_config(app, config: AppConfig) -> None:
     app.config["SESSION_COOKIE_SECURE"] = config.session_cookie_secure
     app.config["SESSION_COOKIE_HTTPONLY"] = config.session_cookie_httponly
     app.config["SESSION_COOKIE_SAMESITE"] = config.session_cookie_samesite
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
+        days=_env_int("SESSION_LIFETIME_DAYS", 30)
+    )
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = True
     app.config["APP_ENV"] = config.app_env
     app.config["DEBUG"] = config.debug
     app.config["MAX_CONTENT_LENGTH"] = _env_int("MAX_UPLOAD_BYTES", 16 * 1024 * 1024)
@@ -103,5 +108,17 @@ def validate_production_secrets(config: AppConfig) -> list[str]:
     if not os.environ.get("INTEGRATION_ENCRYPTION_KEY", "").strip():
         warnings.append(
             "INTEGRATION_ENCRYPTION_KEY is not set; integration credentials derive from FLASK_SECRET_KEY"
+        )
+    from remote_sqlite import ephemeral_local_storage, uses_remote_database
+
+    if is_production_env(config.app_env) and ephemeral_local_storage():
+        warnings.append(
+            "App data uses ephemeral storage (e.g. Vercel /tmp); set TURSO_DATABASE_URL and "
+            "TURSO_AUTH_TOKEN for durable login and data. Session cookies are trusted between "
+            "requests until Turso is configured."
+        )
+    elif is_production_env(config.app_env) and not uses_remote_database():
+        warnings.append(
+            "No TURSO_DATABASE_URL configured; SQLite is local-only and not shared across serverless instances."
         )
     return warnings

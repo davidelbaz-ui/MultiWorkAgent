@@ -55,9 +55,22 @@ With `APP_BASE_URL=https://multiworkagent.vercel.app`, integration OAuth uses HT
 
 Operator rule: for the walkthrough, register **`https://multiworkagent.vercel.app/integrations/oauth/callback`** (and login URLs above) in each provider app unless you intentionally maintain separate local OAuth clients.
 
-## Storage caveat
+## Storage and login on Vercel
 
-On Vercel, SQLite and uploads live under **`/tmp/multiworkagent/storage`** (ephemeral). Data can reset on cold starts or redeploys. For durable production data, plan Postgres/Turso and object storage later.
+Without a remote database, SQLite under **`/tmp`** is **ephemeral** (each serverless instance has its own empty file). The app **keeps you signed in via the session cookie** between page loads, but businesses, chats, and OAuth-linked accounts do not persist across instances until you add Turso.
+
+**Recommended:** create a [Turso](https://turso.tech) database and set on Vercel (Production):
+
+| Variable | Value |
+|----------|--------|
+| `TURSO_DATABASE_URL` | `libsql://…` from Turso dashboard |
+| `TURSO_AUTH_TOKEN` | Turso database token |
+
+All app, agent chat, and support tables use that single remote database automatically.
+
+Also set **`FLASK_SECRET_KEY`** to a stable random value (never change it casually — changing it logs everyone out).
+
+Chat file uploads still use local `/tmp` until object storage is added.
 
 ## Local vs production commands
 

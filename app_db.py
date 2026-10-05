@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 from app_migrations import APP_SCHEMA_VERSION, current_schema_version, run_migrations
+from remote_sqlite import connect_sqlite
 from storage_paths import storage_dir
 
 STORAGE_DIR = storage_dir()
@@ -32,7 +33,4 @@ def expected_app_schema_version() -> int:
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(APP_DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    return connect_sqlite(path=APP_DB_PATH)
