@@ -1,7 +1,7 @@
 {% extends "legal_base.html" %}
 {% block title %}Licence Agreement — MultiWorkAgent{% endblock %}
 {% block meta_description %}
-<meta name="description" content="MultiWorkAgent licence agreement for use of the Service.">
+<meta name="description" content="MultiWorkAgent licence to use the hosted Service.">
 {% endblock %}
 {% block legal_content %}
 <header class="legal-document-head">
@@ -12,65 +12,66 @@
 
 <div class="legal-prose">
   <p>
-    This Licence Agreement (“Agreement”) is between you (“Licensee”) and MultiWorkAgent (“Licensor”) and governs
-    your use of the MultiWorkAgent software and hosted service (the “Software” or “Service”). By accessing or
-    using the Service, you agree to this Agreement in addition to our
+    This Licence Agreement (“Agreement”) is between you (“Licensee”) and the operator of MultiWorkAgent
+    (“Licensor”) and applies to your use of the MultiWorkAgent hosted software (the “Service”). By using the
+    Service, you agree to this Agreement together with our
     <a href="{{ url_for('terms_and_conditions') }}">Terms &amp; Conditions</a> and
     <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>.
   </p>
 
-  <h2>Grant of licence</h2>
+  <h2>Grant</h2>
   <p>
-    Subject to your compliance with this Agreement and applicable plan limits, Licensor grants you a limited,
-    non-exclusive, non-transferable, revocable licence to access and use the Service for your internal business
-    operations during your subscription or free-tier period.
+    Subject to your compliance with this Agreement, the Terms, and your plan limits, Licensor grants you a limited,
+    non-exclusive, non-transferable, revocable licence to access and use the Service through the web interface for
+    your internal business operations during your free-tier period or active paid subscription.
+  </p>
+
+  <h2>What you receive</h2>
+  <p>
+    The Service includes the MultiWorkAgent web application: business workspaces, agent chat, integration and database
+    connection management UI, knowledge file uploads, usage metering, notifications, and related features described
+    in the product at the time of use. Licensor may update features, limits, and UI without notice, consistent with
+    the Terms.
   </p>
 
   <h2>Restrictions</h2>
-  <p>You may not, and may not permit others to:</p>
+  <p>You may not, and may not allow others to:</p>
   <ul>
-    <li>Copy, modify, or create derivative works of the Service except as allowed by normal use through the product UI.</li>
-    <li>Reverse engineer, decompile, or attempt to extract source code except where prohibited by law.</li>
-    <li>Sublicense, resell, or offer the Service as a hosted service to third parties without written permission.</li>
-    <li>Remove proprietary notices or circumvent technical limits, metering, or access controls.</li>
-    <li>Use the Service to build a competing product using non-public interfaces or scraped data from the Service.</li>
+    <li>Copy, modify, or create derivative works of the Service except through normal use in the browser.</li>
+    <li>Reverse engineer or attempt to extract source code except where prohibited by law.</li>
+    <li>Resell, sublicense, or host the Service for third parties as a standalone product without written permission.</li>
+    <li>Remove proprietary notices or bypass metering, concurrency limits, or access controls.</li>
+    <li>Scrape non-public APIs or use the Service to build a competing product from non-public behavior.</li>
   </ul>
 
-  <h2>Ownership</h2>
+  <h2>Your data</h2>
   <p>
-    Licensor retains all rights in the Service, including software, documentation, branding, and updates.
-    You retain ownership of your data and content you submit. Connected third-party systems remain subject to
-    their own licences.
+    You retain ownership of content and data you submit. Licensor processes it as described in the Privacy Policy.
+    Third-party systems you connect remain under their own licences and terms.
   </p>
 
-  <h2>Open-source and third-party components</h2>
+  <h2>Open-source components</h2>
   <p>
-    The Service may include open-source or third-party components governed by separate licences. Where those
-    licences grant you additional rights, they apply only to the covered components.
-  </p>
-
-  <h2>Updates</h2>
-  <p>
-    Licensor may update the Service, including features, limits, and security changes. Material licence changes
-    will be reflected on this page with an updated “Last updated” date.
+    The Service may include open-source components subject to separate licences. Those licences apply only to the
+    covered components.
   </p>
 
   <h2>Termination</h2>
   <p>
-    This licence ends when your account is closed or your access is suspended for breach. Upon termination, your
-    right to use the Service stops; data handling follows the Privacy Policy and account deletion controls in Settings.
+    This licence ends when your account is closed, your subscription lapses without free-tier access, or your access
+    is suspended for breach. After termination you must stop using the Service; data handling follows the Privacy
+    Policy and Settings deletion controls.
   </p>
 
-  <h2>Disclaimer and limitation</h2>
+  <h2>Disclaimer</h2>
   <p>
-    THE SERVICE IS PROVIDED “AS IS.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, LICENSOR DISCLAIMS WARRANTIES AND
-    LIMITS LIABILITY AS DESCRIBED IN THE TERMS &amp; CONDITIONS.
+    THE SERVICE IS PROVIDED “AS IS.” WARRANTIES AND LIABILITY LIMITS ARE SET OUT IN THE TERMS &amp; CONDITIONS.
   </p>
 
   <h2>Contact</h2>
   <p>
-    Questions about this Licence Agreement may be sent to
-    <a href="mailto:legal@multiworkagent.com">legal@multiworkagent.com</a>.
+    Questions about this Agreement: sign in and use
+    <a href="{{ url_for('contact_support') }}">Contact support</a>.
   </p>
 </div>
 {% endblock %}

@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 _stream_cancel_events: dict[str, threading.Event] = {}
@@ -20,6 +21,11 @@ _stream_cancel_events: dict[str, threading.Event] = {}
 import agent_tool_trace
 import chat_store
 import knowledge_store
+
+APP_DIR = Path(__file__).resolve().parent
+_AGENT_PRODUCT_KNOWLEDGE_PATH = APP_DIR / "docs" / "AGENT_PRODUCT_KNOWLEDGE.md"
+_MAX_PRODUCT_KNOWLEDGE_CHARS = 100_000
+_product_knowledge_cache: tuple[int, str] | None = None
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
@@ -201,6 +207,25 @@ def _mock_enabled() -> bool:
     return os.environ.get("AGENT_MOCK", "").strip().lower() in ("1", "true", "yes")
 
 
+def _load_product_knowledge() -> str:
+    global _product_knowledge_cache
+    path = _AGENT_PRODUCT_KNOWLEDGE_PATH
+    try:
+        mtime_ns = path.stat().st_mtime_ns
+    except OSError:
+        return ""
+    if _product_knowledge_cache and _product_knowledge_cache[0] == mtime_ns:
+        return _product_knowledge_cache[1]
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+    if len(text) > _MAX_PRODUCT_KNOWLEDGE_CHARS:
+        text = text[:_MAX_PRODUCT_KNOWLEDGE_CHARS] + "\n\n[… product reference truncated …]"
+    _product_knowledge_cache = (mtime_ns, text)
+    return text
+
+
 def _system_prompt(
     *,
     scope_label: str,
@@ -210,15 +235,23 @@ def _system_prompt(
     scope = business_name or scope_label
     prompt = (
         "You are MultiWorkAgent, an operations assistant for accounts "
-        "that manage one or many businesses.\n\n"
+        "that manage one or more businesses.\n\n"
         f"Active workspace scope: {scope}.\n"
-        "Integrations, databases, and tools are not connected in this environment yet. "
-        "When the user asks you to change external systems, explain what you would do "
-        "and note that a connection is required.\n"
+        "Answer questions about the MultiWorkAgent product using the product reference below. "
+        "Do not invent features, integrations, or automated actions the reference marks as unavailable. "
+        "When the user asks you to change an external system, explain what they can do in the app "
+        "(connect integrations on Data & integrations, upload knowledge, run the agent for advice) "
+        "and that chat does not automatically call third-party APIs today.\n"
         "When the user attaches images, describe and use what you see in them.\n"
         "When the user attaches text files (or business knowledge files below), use their contents.\n"
         "Be concise, practical, and use plain language."
     )
+    product = _load_product_knowledge()
+    if product:
+        prompt += (
+            "\n\n--- MultiWorkAgent product reference (authoritative for how the app works) ---\n\n"
+            f"{product}"
+        )
     if knowledge_block:
         prompt += (
             "\n\nBusiness knowledge files for this workspace:\n"

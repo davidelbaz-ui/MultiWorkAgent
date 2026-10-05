@@ -1,7 +1,7 @@
 {% extends "legal_base.html" %}
 {% block title %}Privacy Policy — MultiWorkAgent{% endblock %}
 {% block meta_description %}
-<meta name="description" content="MultiWorkAgent privacy policy — how we collect, use, and protect your data.">
+<meta name="description" content="MultiWorkAgent privacy policy — what we collect, how we use it, and your choices.">
 {% endblock %}
 {% block legal_content %}
 <header class="legal-document-head">
@@ -12,71 +12,95 @@
 
 <div class="legal-prose">
   <p>
-    MultiWorkAgent (“we,” “us,” or “our”) operates the MultiWorkAgent web application and related services
-    (the “Service”). This Privacy Policy explains how we collect, use, disclose, and safeguard information when
-    you use the Service.
+    This Privacy Policy describes how <strong>MultiWorkAgent</strong> (the “Service”) handles information when you
+    use our website and signed-in product. The Service is a multi-business workspace with an AI agent chat,
+    integration and database connection management, usage metering, and optional paid subscriptions.
+  </p>
+
+  <h2>Who we are</h2>
+  <p>
+    MultiWorkAgent is operated as a hosted web application (for example at
+    <strong>multiworkagent.vercel.app</strong> when deployed on Vercel). For privacy questions, use
+    <a href="{{ url_for('contact_support') }}">Contact support</a> in Settings after you sign in, or the support
+    path linked from the marketing site.
   </p>
 
   <h2>Information we collect</h2>
   <ul>
-    <li><strong>Account information</strong> — name, email address, authentication identifiers (including from Google or Microsoft sign-in), and team role.</li>
-    <li><strong>Business workspace data</strong> — business names, settings, agent preferences, chat messages, execution runs, and usage metering records tied to your account.</li>
-    <li><strong>Integration and connection data</strong> — OAuth tokens and API credentials you authorize per business, stored encrypted; we do not share credentials across businesses or accounts.</li>
-    <li><strong>Database connection metadata</strong> — connection settings and schema information you configure for read or read/write access.</li>
-    <li><strong>Billing information</strong> — subscription status and payment-related events processed through our payment providers (for example Square); we do not store full card numbers on our servers.</li>
-    <li><strong>Technical data</strong> — IP address, browser type, device information, logs, and cookies or similar technologies used for sessions and security.</li>
+    <li><strong>Account data</strong> — email address, display name, password hash (if you sign up with email and password), and sign-in method (for example Google OAuth subject id when Google sign-in is enabled).</li>
+    <li><strong>Team data</strong> — team members you invite, their roles (owner, operator, viewer), and membership status.</li>
+    <li><strong>Workspace data</strong> — business names and settings, agent chat messages and thread metadata, agent execution run records (status, token counts, summaries), in-app notifications, and support conversation messages you send through Contact support.</li>
+    <li><strong>Files you upload</strong> — chat attachments and per-business knowledge files stored on the application server filesystem; binary metadata is stored in PostgreSQL.</li>
+    <li><strong>Integration and database configuration</strong> — which providers you connect per business, connection status, and encrypted OAuth tokens or API keys when encryption is configured on the server (<code>INTEGRATION_SECRETS_KEY</code>). We do not mix credentials across businesses or accounts.</li>
+    <li><strong>Billing data</strong> — subscription tier, usage counters, Square customer/subscription identifiers, and invoice metadata synced from Square. Card payments are handled by Square; we do not store full payment card numbers on our servers.</li>
+    <li><strong>Technical data</strong> — IP address, browser type, request logs, session cookies, and similar data needed to operate and secure the Service.</li>
   </ul>
 
   <h2>How we use information</h2>
   <ul>
-    <li>Provide, operate, and improve the Service, including AI agent runs and integrations you request.</li>
-    <li>Authenticate users, enforce roles (owner, operator, viewer), and protect against abuse.</li>
-    <li>Meter usage, apply plan limits, and process billing where applicable.</li>
-    <li>Send in-app notifications and service-related communications you configure.</li>
-    <li>Comply with law and respond to lawful requests.</li>
+    <li>Provide the Service: authentication, business workspaces, agent chat, file uploads, integration OAuth flows, billing, and notifications.</li>
+    <li>Send your chat content and eligible attachments to <strong>AI providers</strong> (Google Gemini and/or Anthropic, depending on server configuration) to generate agent replies.</li>
+    <li>Enforce plan limits (free tier monthly runs, paid quotas, daily run caps, concurrency limits) and display usage in the header and Billing page.</li>
+    <li>Process subscriptions and webhooks through <strong>Square</strong>.</li>
+    <li>Maintain security, debug errors, and comply with applicable law.</li>
   </ul>
 
-  <h2>Third-party services</h2>
+  <h2>Third parties</h2>
   <p>
-    When you connect integrations (for example GitHub, Google Workspace, HubSpot, QuickBooks, or Stripe), we exchange
-    data with those providers only as needed to perform actions you authorize. Their use of your data is governed by
-    their privacy policies. We use infrastructure and AI providers to host the Service and run agent requests; those
-    providers process data according to their terms and our configuration.
+    When you connect an integration, we exchange data with that provider only as needed to complete OAuth or store
+    credentials you supply. Those providers have their own privacy policies. We also rely on hosting and database
+    providers (for example Vercel and PostgreSQL), Google and/or Anthropic for AI inference, and Square for
+    payments, each under their respective terms.
   </p>
 
-  <h2>Data retention and security</h2>
+  <h2>Where data is stored</h2>
+  <ul>
+    <li><strong>PostgreSQL</strong> — accounts, businesses, chats, runs, billing records, notifications, and most metadata.</li>
+    <li><strong>Application file storage</strong> — chat attachments and knowledge files on disk (<code>storage/</code> locally; on Vercel, under <code>/tmp/multiworkagent/storage</code>). Files on ephemeral hosting may not survive redeploys or cold starts; do not rely on them as your only copy of important documents.</li>
+    <li><strong>Support chat</strong> — stored in a separate SQLite database file under the same storage root.</li>
+  </ul>
+
+  <h2>Retention and deletion</h2>
   <p>
-    We retain information while your account is active and as needed for legal, billing, or security purposes.
-    You may delete workspace data or your account from Settings (owner-only for account deletion).
-    We use encryption for integration secrets, access controls, and industry-standard measures appropriate to a hosted SaaS product.
+    We keep data while your account is active. Account <strong>owners</strong> can delete all workspace data or delete
+    the entire account from Settings (danger zone). Deletion removes associated businesses, chats, runs, connections,
+    and related records subject to backup and legal retention limits. Support threads for the account are removed as
+    part of account deletion flows implemented in the product.
+  </p>
+
+  <h2>Security</h2>
+  <p>
+    We use HTTPS in production, session-based authentication, role checks on API requests, and Fernet encryption for
+    integration secrets when configured. No online service is perfectly secure; use strong passwords and limit team
+    access appropriately.
   </p>
 
   <h2>Your choices</h2>
   <ul>
-    <li>Update account and notification preferences in Settings.</li>
-    <li>Disconnect integrations or database connections per business.</li>
-    <li>Request account deletion, which removes associated data subject to backup and legal retention limits.</li>
+    <li>Update profile and notification preferences in Settings.</li>
+    <li>Disconnect integrations or database connections per business on Data &amp; integrations.</li>
+    <li>Delete workspace data or your account (owner only) in Settings.</li>
   </ul>
 
   <h2>Children</h2>
-  <p>The Service is not directed to children under 16, and we do not knowingly collect their personal information.</p>
+  <p>The Service is not intended for users under 16, and we do not knowingly collect their personal information.</p>
 
   <h2>International users</h2>
   <p>
-    If you access the Service from outside the United States, your information may be processed in the United States
-    or other locations where we or our providers operate.
+    If you use the Service from outside the United States, your information may be processed in the United States
+    or other countries where we or our subprocessors operate.
   </p>
 
   <h2>Changes</h2>
   <p>
-    We may update this Privacy Policy from time to time. We will post the revised policy on this page and update the
-    “Last updated” date. Continued use of the Service after changes constitutes acceptance of the updated policy.
+    We may update this policy by posting a new version on this page and changing the “Last updated” date. Continued
+    use after changes means you accept the updated policy.
   </p>
 
   <h2>Contact</h2>
   <p>
-    Questions about this Privacy Policy or your data may be sent to
-    <a href="mailto:privacy@multiworkagent.com">privacy@multiworkagent.com</a>.
+    Privacy questions: sign in and use
+    <a href="{{ url_for('contact_support') }}">Contact support</a>, or the support channel described on the site.
   </p>
 </div>
 {% endblock %}

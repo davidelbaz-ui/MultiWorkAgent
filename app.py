@@ -227,7 +227,7 @@ def _legal_template_context() -> dict:
     return {
         "legal_back_href": back_href,
         "legal_back_label": back_label,
-        "legal_last_updated": "October 4, 2026",
+        "legal_last_updated": "October 5, 2026",
         "legal_year": 2026,
     }
 
