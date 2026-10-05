@@ -114,6 +114,17 @@ class DBConnection:
             self.rollback()
 
 
+def insert_returning_id(cur: DBCursor, column: str = "id") -> int:
+    """Read BIGINT id from INSERT … RETURNING (PostgreSQL does not set lastrowid)."""
+    row = cur.fetchone()
+    if not row or row.get(column) is None:
+        fallback = cur.lastrowid
+        if fallback is not None:
+            return int(fallback)
+        raise RuntimeError(f"INSERT did not return {column}")
+    return int(row[column])
+
+
 def _normalize_postgres_url(raw: str) -> str:
     url = raw.strip()
     if url.startswith("postgres://"):

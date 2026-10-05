@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from chat_db import STORAGE_DIR, connect, init_chat_database
+from db_connection import insert_returning_id
 
 CHAT_FILES_DIR = STORAGE_DIR / "chat_files"
 MAX_DRAFT_FILE_BYTES = 25 * 1024 * 1024
@@ -198,10 +199,11 @@ def add_draft_file(
             INSERT INTO chat_draft_files (
                 thread_id, stored_name, original_name, mime_type, size_bytes, created_at
             ) VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING id
             """,
             (thread_id, stored_name, original_name, mime_type, size_bytes, now),
         )
-        file_id = int(cur.lastrowid)
+        file_id = insert_returning_id(cur)
         conn.execute(
             "UPDATE chat_threads SET updated_at = ? WHERE id = ?",
             (now, thread_id),
@@ -246,10 +248,11 @@ def create_user_message(thread_id: str, content: str) -> dict[str, Any]:
             """
             INSERT INTO chat_messages (thread_id, role, content, created_at)
             VALUES (?, 'user', ?, ?)
+            RETURNING id
             """,
             (thread_id, content, now),
         )
-        message_id = int(cur.lastrowid)
+        message_id = insert_returning_id(cur)
 
         draft_files = conn.execute(
             """
@@ -381,10 +384,11 @@ def create_system_message(thread_id: str, content: str) -> dict[str, Any]:
             """
             INSERT INTO chat_messages (thread_id, role, content, created_at)
             VALUES (?, 'system', ?, ?)
+            RETURNING id
             """,
             (thread_id, content, now),
         )
-        message_id = int(cur.lastrowid)
+        message_id = insert_returning_id(cur)
         conn.execute(
             "UPDATE chat_threads SET updated_at = ? WHERE id = ?",
             (now, thread_id),
@@ -406,10 +410,11 @@ def create_agent_message(thread_id: str, content: str) -> dict[str, Any]:
             """
             INSERT INTO chat_messages (thread_id, role, content, created_at)
             VALUES (?, 'agent', ?, ?)
+            RETURNING id
             """,
             (thread_id, content, now),
         )
-        message_id = int(cur.lastrowid)
+        message_id = insert_returning_id(cur)
         conn.execute(
             "UPDATE chat_threads SET updated_at = ? WHERE id = ?",
             (now, thread_id),
