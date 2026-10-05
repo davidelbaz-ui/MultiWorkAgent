@@ -181,6 +181,10 @@ def bootstrap_application_stores() -> None:
 
 bootstrap_application_stores()
 
+from admin_routes import admin_bp
+
+app.register_blueprint(admin_bp)
+
 
 def _safe_next_url(raw: str | None) -> str:
     if not raw or not raw.startswith("/") or raw.startswith("//"):
@@ -212,6 +216,8 @@ def _legal_template_context() -> dict:
 
 @app.context_processor
 def _inject_auth_oauth_context() -> dict:
+    if request.path.startswith("/admin"):
+        return {}
     from pg_storage import storage_banner_for_ui
 
     return {
@@ -494,6 +500,9 @@ def health():
     }
     if DB_INIT_ERROR:
         payload["database_error"] = DB_INIT_ERROR
+    import admin_auth
+
+    payload["admin_configured"] = admin_auth.admin_configured()
     status = 200 if DB_READY else 503
     return jsonify(payload), status
 
@@ -2405,11 +2414,6 @@ def admin_shortcut():
     if session.get("admin_authenticated"):
         return redirect(url_for("admin.admin_dashboard"))
     return redirect(url_for("admin.admin_login"))
-
-
-from admin_routes import admin_bp
-
-app.register_blueprint(admin_bp)
 
 
 if __name__ == "__main__":

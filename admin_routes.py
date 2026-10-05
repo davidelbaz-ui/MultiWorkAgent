@@ -6,6 +6,7 @@ import logging
 
 from flask import (
     Blueprint,
+    current_app,
     flash,
     g,
     redirect,
@@ -28,34 +29,59 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 _ADMIN_LOGGER = logging.getLogger("bma")
 
 
+def _db_ready() -> bool:
+    if current_app.config.get("DB_READY") is not None:
+        return bool(current_app.config.get("DB_READY"))
+    return app_state.DB_READY
+
+
+def _db_error() -> str | None:
+    err = current_app.config.get("DB_INIT_ERROR")
+    if err is not None:
+        return str(err) if err else None
+    return app_state.DB_INIT_ERROR
+
+
 @admin_bp.before_request
 def admin_gate():
-    endpoint = request.endpoint or ""
+    try:
+        endpoint = request.endpoint or ""
 
-    if not app_state.DB_READY:
-        if endpoint == "admin.admin_login":
+        if endpoint == "admin.admin_ping":
             return None
-        return (
-            render_template(
-                "admin/db_required.html",
-                db_error=app_state.DB_INIT_ERROR,
-            ),
-            503,
-        )
 
-    if not admin_auth.admin_configured():
-        if endpoint == "admin.admin_login":
+        if not _db_ready():
+            if endpoint == "admin.admin_login":
+                return None
+            return (
+                render_template(
+                    "admin/db_required.html",
+                    db_error=_db_error(),
+                ),
+                503,
+            )
+
+        if not admin_auth.admin_configured():
+            if endpoint == "admin.admin_login":
+                return None
+            return render_template("admin/not_configured.html"), 503
+
+        if endpoint in {"admin.admin_login", "admin.admin_health", "admin.admin_ping"}:
             return None
-        return render_template("admin/not_configured.html"), 503
 
-    if endpoint in {"admin.admin_login", "admin.admin_health"}:
+        if not session.get("admin_authenticated"):
+            return redirect(url_for("admin.admin_login", next=request.path))
+
+        g.admin_email = session.get("admin_email") or admin_auth.admin_email()
         return None
+    except Exception:
+        _ADMIN_LOGGER.exception("admin_gate_failed path=%s", request.path)
+        raise
 
-    if not session.get("admin_authenticated"):
-        return redirect(url_for("admin.admin_login", next=request.path))
 
-    g.admin_email = session.get("admin_email") or admin_auth.admin_email()
-    return None
+@admin_bp.get("/ping")
+def admin_ping():
+    return {"ok": True, "admin": admin_auth.admin_configured(), "db": _db_ready()}
 
 
 @admin_bp.route("/login", methods=["GET", "POST"])
