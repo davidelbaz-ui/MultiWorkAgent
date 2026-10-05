@@ -18,6 +18,7 @@
       </div>
       <nav class="admin-nav">
         <a class="admin-nav-link {% if request.endpoint == 'admin.admin_dashboard' %}is-active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>
+        <a class="admin-nav-link {% if request.endpoint == 'admin.admin_users' %}is-active{% endif %}" href="{{ url_for('admin.admin_users') }}">Users</a>
         <a class="admin-nav-link {% if request.endpoint and request.endpoint.startswith('admin.admin_support') %}is-active{% endif %}" href="{{ url_for('admin.admin_support_inbox') }}">Contact support</a>
         <a class="admin-nav-link {% if request.endpoint == 'admin.admin_pages' %}is-active{% endif %}" href="{{ url_for('admin.admin_pages') }}">Page settings</a>
         <a class="admin-nav-link {% if request.endpoint == 'admin.admin_logs' %}is-active{% endif %}" href="{{ url_for('admin.admin_logs') }}">Logs</a>

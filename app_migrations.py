@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 19
+APP_SCHEMA_VERSION = 20
 
 
 def _utc_now() -> str:
@@ -541,6 +541,11 @@ def migration_019_site_settings(conn: DBConnection) -> None:
     )
 
 
+def migration_020_users_last_login(conn: DBConnection) -> None:
+    if "last_login_at" not in _column_names(conn, "users"):
+        conn.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
+
+
 MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (1, "core_accounts_businesses", migration_001_core_accounts_businesses),
     (2, "business_archived_at", migration_002_business_archived_at),
@@ -561,6 +566,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (17, "agent_chat", migration_017_agent_chat),
     (18, "contact_support", migration_018_contact_support),
     (19, "site_settings", migration_019_site_settings),
+    (20, "users_last_login", migration_020_users_last_login),
 ]
 
 

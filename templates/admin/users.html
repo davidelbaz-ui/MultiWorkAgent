@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Users — Admin — MultiWorkAgent{% endblock %}
+{% block content %}
+<h1 class="admin-page-title">Users</h1>
+<p class="meta-row">{{ users|length }} registered user{{ 's' if users|length != 1 else '' }}. Last login updates on each customer sign-in.</p>
+<section class="admin-panel">
+  {% if users %}
+  <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Account created</th>
+          <th>User created</th>
+          <th>Last login</th>
+          <th>Businesses</th>
+          <th>Sign-in</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in users %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td><code>{{ row.email }}</code></td>
+          <td>{{ row.role_label or '—' }}</td>
+          <td>{{ row.account_created_at or '—' }}</td>
+          <td>{{ row.created_at }}</td>
+          <td>{{ row.last_login_at or '—' }}</td>
+          <td>{{ row.business_count }}</td>
+          <td>{{ row.sign_in_methods }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+  <p class="meta-row">No users yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

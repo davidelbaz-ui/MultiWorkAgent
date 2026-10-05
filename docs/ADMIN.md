@@ -23,6 +23,7 @@ Redeploy after changing env vars on Vercel.
 |------|---------|
 | `/admin` | Operator sign-in |
 | `/admin/` | Dashboard |
+| `/admin/users` | Customer accounts (name, email, created, last login) |
 | `/admin/support` | Contact support inbox |
 | `/admin/pages` | Start page copy, maintenance mode |
 | `/admin/logs` | In-memory log buffer (this server process) |

@@ -21,6 +21,7 @@ import admin_log_buffer
 import admin_stats
 import app_logging
 import app_state
+import auth_store
 import http_rate_limit
 import site_settings_store
 import support_store
@@ -187,6 +188,14 @@ def admin_support_status(account_id: str):
     except ValueError as exc:
         flash(str(exc), "error")
     return redirect(url_for("admin.admin_support_thread", account_id=account_id))
+
+
+@admin_bp.get("/users")
+def admin_users():
+    return render_template(
+        "admin/users.html",
+        users=auth_store.list_users_for_admin(),
+    )
 
 
 @admin_bp.get("/logs")

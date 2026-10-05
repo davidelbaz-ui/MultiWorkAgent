@@ -52,7 +52,7 @@ def get_user(user_id: str) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute(
             """
-            SELECT id, email, display_name, created_at
+            SELECT id, email, display_name, created_at, last_login_at
             FROM users
             WHERE id = ?
             """,
@@ -398,6 +398,78 @@ def _update_display_name(user_id: str, display_name: str) -> None:
         conn.commit()
 
 
+def touch_last_login(user_id: str) -> None:
+    now = _utc_now()
+    with connect() as conn:
+        conn.execute(
+            "UPDATE users SET last_login_at = ? WHERE id = ?",
+            (now, user_id),
+        )
+        conn.commit()
+
+
+def list_users_for_admin() -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                u.id,
+                u.email,
+                u.display_name,
+                u.created_at,
+                u.last_login_at,
+                m.role,
+                a.id AS account_id,
+                a.created_at AS account_created_at,
+                (
+                    SELECT COUNT(*)
+                    FROM businesses b
+                    WHERE b.account_id = a.id
+                      AND b.archived_at IS NULL
+                ) AS business_count,
+                (
+                    SELECT string_agg(i.provider, ', ' ORDER BY i.provider)
+                    FROM user_auth_identities i
+                    WHERE i.user_id = u.id
+                ) AS oauth_providers
+            FROM users u
+            LEFT JOIN account_members m ON m.user_id = u.id
+            LEFT JOIN accounts a ON a.id = m.account_id
+            ORDER BY u.created_at DESC
+            """
+        ).fetchall()
+    users: list[dict[str, Any]] = []
+    for row in rows:
+        name = (row["display_name"] or "").strip() or row["email"]
+        oauth = (row["oauth_providers"] or "").strip()
+        sign_in: list[str] = []
+        if oauth:
+            for part in oauth.split(", "):
+                label = part.strip().capitalize()
+                if label:
+                    sign_in.append(label)
+        sign_in.append("Password")
+        users.append(
+            {
+                "id": row["id"],
+                "name": name,
+                "email": row["email"],
+                "display_name": row["display_name"] or "",
+                "created_at": row["created_at"],
+                "last_login_at": row["last_login_at"],
+                "role": row["role"],
+                "role_label": ROLE_LABELS.get(row["role"], row["role"])
+                if row["role"]
+                else "",
+                "account_id": row["account_id"],
+                "account_created_at": row["account_created_at"],
+                "business_count": int(row["business_count"] or 0),
+                "sign_in_methods": ", ".join(sign_in),
+            }
+        )
+    return users
+
+
 def authenticate(email: str, password: str) -> tuple[dict[str, Any], dict[str, Any]] | None:
     record = get_user_by_email(email)
     if not record:
@@ -415,10 +487,13 @@ def authenticate(email: str, password: str) -> tuple[dict[str, Any], dict[str, A
 
 def _row_to_user(row: Any) -> dict[str, Any]:
     name = (row["display_name"] or "").strip()
+    keys = row.keys() if hasattr(row, "keys") else ()
+    last_login = row["last_login_at"] if "last_login_at" in keys else None
     return {
         "id": row["id"],
         "email": row["email"],
         "display_name": name,
         "name": name or row["email"],
         "created_at": row["created_at"],
+        "last_login_at": last_login,
     }

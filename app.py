@@ -237,6 +237,7 @@ def _inject_auth_oauth_context() -> dict:
 
 
 def _login_session(user: dict, membership: dict) -> None:
+    auth_store.touch_last_login(user["id"])
     session.clear()
     session.permanent = True
     session["user_id"] = user["id"]
