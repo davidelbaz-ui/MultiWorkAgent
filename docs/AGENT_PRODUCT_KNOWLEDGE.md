@@ -1,6 +1,6 @@
 # MultiWorkAgent — product reference for the in-app agent
 
-This document describes what the **live MultiWorkAgent web app** actually does today. Use it when users ask how the product works, where to click, or what limits apply. Do **not** promise features listed here as “planned” or “not yet available,” and do **not** claim the agent can call third-party APIs on its own unless the user has connected an integration and the product explicitly performs that action (the chat agent does **not** execute integration tools automatically).
+This document describes what the **MultiWorkAgent web app** does and how to guide users. MultiWorkAgent is an **operations agent**: users connect integrations and databases per business so the agent can **perform work** in those systems when asked, not only chat. Always tie actions to the **selected business**, connections on **Data & integrations**, and remind users to **review outcomes** — the agent can be wrong even when it acts in connected tools.
 
 ---
 
@@ -10,7 +10,7 @@ MultiWorkAgent is a hosted SaaS control surface for **one account, many business
 
 - Create **business** workspaces (name, industry, etc.).
 - Chat with an **AI agent** scoped to “All businesses” or a **single selected business**.
-- Connect **third-party integrations** and **SQL databases** per business (credentials stored per business).
+- Connect **third-party integrations** and **SQL databases** per business so the **agent can operate those systems** on the user’s behalf when they ask (credentials stored per business).
 - Upload **knowledge files** (reference documents) per business for the agent to read.
 - Track **execution runs** (metered usage), **billing**, and **in-app notifications**.
 
@@ -63,13 +63,15 @@ Production URL (when deployed on Vercel): **https://multiworkagent.vercel.app** 
   - Images (and SVG as text) sent to the vision-capable model when using Gemini.
 - **Business knowledge files** (text only) when a single business is selected and files exist on Data.
 
-### What the agent does **not** do today
+### Acting through integrations and databases
 
-- It does **not** automatically invoke connected integrations (GitHub, Square, etc.) during chat.
-- It does **not** run SQL against connected databases unless that capability is added elsewhere; database connections are configured in the UI for future/agent tooling, not direct chat SQL by default.
-- Tool lines in the run inspector are **metadata** (scope, model usage), not proof that external APIs were called.
+- **Purpose:** Integrations exist so the agent can **execute tasks** (API calls, reads/writes, queries) in connected systems during agent runs when the user instructs it.
+- **Per business:** Only connections for the **selected business** (or scope rules shown in the app) apply. If scope is **All businesses**, guide the user to select one business and connect tools on Data.
+- **Setup:** **Data & integrations** → select business → connect OAuth or API key for each provider → then ask the agent to do the work in chat or structured runs.
+- **Responsibility:** Users must review what they ask the agent to do and verify results in external systems; actions can be wrong or destructive.
+- **Run inspector:** Tool call traces in the run details drawer show integration/tool activity when a run uses them (alongside scope and model usage metadata).
 
-When users ask to “post to Slack” or “update QuickBooks,” explain the steps in the UI (connect integration on Data) and that they should perform or approve changes themselves unless a future product feature executes tools.
+When users ask to “post to Slack,” “update QuickBooks,” etc., confirm the integration is connected for that business, then help them phrase the task for the agent to perform — do not tell them the product is advice-only or that integrations are never invoked from chat.
 
 ### AI provider
 
@@ -129,7 +131,7 @@ When limits block a run, the UI shows a banner and the header usage chip updates
 ### Databases
 
 - Add database connections (host, credentials) scoped to a business via wizard on Data page.
-- Used for product data features; agent chat does not automatically query them.
+- The agent can use connected databases as part of operational tasks when the product exposes that capability for the run; connections are always per business.
 
 ---
 
@@ -183,6 +185,7 @@ Viewers cannot send agent messages (API returns 403).
 - Privacy policy: `/privacy-policy`
 - Terms & conditions: `/terms-and-conditions`
 - Licence agreement: `/licence-agreement`
+- Agent notes: `/agent-notes`
 
 Summarize accurately; do not invent company addresses or emails. Direct users to **Contact support** for legal or privacy requests handled by the operator.
 
