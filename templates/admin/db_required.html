@@ -10,6 +10,7 @@
   <div class="admin-login-card">
     <h1>PostgreSQL required</h1>
     <p>{{ db_error or 'Start Docker Postgres and set DATABASE_URL in .env' }}</p>
+    <p class="meta-row">Local: <code>docker compose up -d</code> then <code>DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/multiworkagent</code></p>
   </div>
 </body>
 </html>

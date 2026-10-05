@@ -14,18 +14,21 @@ _INSTALLED = False
 
 class AdminLogBufferHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
-        payload: dict[str, Any] = {
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
-        extra = getattr(record, "structured", None)
-        if isinstance(extra, dict):
-            payload["fields"] = extra
-        if record.exc_info:
-            payload["exc_info"] = self.formatException(record.exc_info)
-        with _LOCK:
-            _BUFFER.appendleft(payload)
+        try:
+            payload: dict[str, Any] = {
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+            }
+            extra = getattr(record, "structured", None)
+            if isinstance(extra, dict):
+                payload["fields"] = extra
+            if record.exc_info:
+                payload["exc_info"] = logging.Formatter().formatException(record.exc_info)
+            with _LOCK:
+                _BUFFER.appendleft(payload)
+        except Exception:
+            self.handleError(record)
 
 
 def install_log_buffer(root: logging.Logger | None = None) -> None:

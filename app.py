@@ -152,7 +152,16 @@ def bootstrap_application_stores() -> None:
         DB_INIT_ERROR = None
         LOGGER.info("database_bootstrap_ok")
     except Exception as exc:
-        DB_INIT_ERROR = f"Database setup failed: {exc}"
+        err_text = str(exc).strip() or repr(exc)
+        if "ConnectionTimeout" in type(exc).__name__ or "timeout" in err_text.lower():
+            DB_INIT_ERROR = (
+                "Could not reach PostgreSQL (connection timed out). "
+                "For local dev: run `docker compose up -d` and set DATABASE_URL to "
+                "postgresql://postgres:postgres@127.0.0.1:5432/multiworkagent in .env. "
+                "If .env has a remote Vercel/Neon URL, use that only when the network can reach it."
+            )
+        else:
+            DB_INIT_ERROR = f"Database setup failed: {exc}"
         LOGGER.exception("database_bootstrap_failed")
 
 
