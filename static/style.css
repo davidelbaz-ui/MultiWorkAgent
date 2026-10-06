@@ -721,12 +721,7 @@ a:hover {
 .nav-icon .nav-svg--agent {
   transform: scale(1.05);
   transform-origin: center;
-  stroke-width: 2.15;
-}
-
-.nav-icon .nav-svg--agent .agent-prompt-underscore {
-  fill: currentColor;
-  stroke: none;
+  stroke-width: 2;
 }
 
 .nav-label {
