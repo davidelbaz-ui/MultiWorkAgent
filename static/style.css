@@ -718,6 +718,23 @@ a:hover {
   stroke-linejoin: round;
 }
 
+.nav-icon .nav-svg--fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.nav-icon .nav-svg--home {
+  stroke-width: 1.5;
+}
+
+.nav-icon .nav-svg--businesses {
+  stroke-width: 1.5;
+}
+
+.nav-icon .nav-svg--billing {
+  stroke-width: 2;
+}
+
 .nav-icon .nav-svg--agent {
   transform: scale(1.05);
   transform-origin: center;
