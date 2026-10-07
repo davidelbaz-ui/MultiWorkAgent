@@ -1,5 +1,6 @@
 {% extends "auth_base.html" %}
 {% from "_auth_oauth.html" import auth_oauth_buttons with context %}
+{% from "_password_field.html" import password_field %}
 {% block title %}Sign in — MultiWorkAgent{% endblock %}
 {% block content %}
 <section class="auth-card">
@@ -17,10 +18,7 @@
       <span>Email</span>
       <input class="auth-input" type="email" name="email" autocomplete="email" required>
     </label>
-    <label class="auth-label">
-      <span>Password</span>
-      <input class="auth-input" type="password" name="password" autocomplete="current-password" required>
-    </label>
+    {{ password_field('password', autocomplete='current-password', required=true, label='Password') }}
     <button type="submit" class="btn btn-primary auth-submit">Sign in</button>
   </form>
   <p class="auth-footer">

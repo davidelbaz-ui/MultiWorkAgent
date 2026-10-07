@@ -80,12 +80,154 @@ body.admin-page {
   word-break: break-word;
 }
 
-.admin-mobile-bar {
+.admin-main-header {
   display: none;
 }
 
 .admin-nav-backdrop {
   display: none;
+}
+
+.admin-mobile-only {
+  display: none;
+}
+
+.admin-above-desktop-only {
+  display: block;
+}
+
+.admin-below-desktop {
+  display: none;
+}
+
+.admin-mobile-bar-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.admin-users-tool-btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.admin-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-sheet-root[hidden] {
+  display: none;
+}
+
+.admin-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.45);
+}
+
+.admin-sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-top: 0;
+  background: var(--bg);
+}
+
+.admin-sheet[hidden] {
+  display: none;
+}
+
+.admin-sheet-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0));
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.admin-sheet-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 0.85rem;
+}
+
+.admin-sheet-foot {
+  flex-shrink: 0;
+  padding: 0.75rem 0.85rem calc(0.85rem + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.admin-sheet-foot .btn {
+  width: 100%;
+}
+
+.admin-sheet-section-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.admin-sheet-section-title:not(:first-child) {
+  margin-top: 1.25rem;
+}
+
+.admin-sheet-option-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-sheet-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.admin-sheet-option.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.admin-main-scroll {
+  min-height: 0;
 }
 
 .admin-nav-link {
@@ -761,8 +903,96 @@ body.admin-page .admin-back a:hover {
     padding: 0.35rem 0.25rem;
   }
 
+}
+
+@media (max-width: 1200px) {
+  .admin-sheet-option:hover {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: inherit;
+  }
+
+  .admin-sheet-option.is-selected:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .admin-users-tool-btn:hover {
+    filter: none;
+  }
+
+  .admin-above-desktop-only {
+    display: none !important;
+  }
+
+  .admin-below-desktop {
+    display: flex;
+  }
+
+  .admin-below-desktop-hide.admin-page-title {
+    display: none;
+  }
+
   .admin-main {
-    padding: 1.25rem clamp(0.85rem, 2vw, 1.5rem);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .admin-main-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 0.5rem 0.75rem;
+    padding-top: calc(0.5rem + env(safe-area-inset-top, 0));
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .admin-mobile-bar-title {
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+
+  .admin-main-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.85rem 0.75rem calc(1rem + env(safe-area-inset-bottom, 0));
+  }
+
+  body.admin-nav-open,
+  body.admin-sheet-open {
+    overflow: hidden;
+  }
+
+  .admin-shell.admin-nav-open {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1201px) {
+  .admin-below-desktop {
+    display: none !important;
   }
 }
 
@@ -832,28 +1062,12 @@ body.admin-page .admin-back a:hover {
     box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
   }
 
-  .admin-mobile-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: -0.25rem 0 1rem;
-    padding-bottom: 0.25rem;
+  .admin-mobile-only {
+    display: block;
   }
 
-  .admin-mobile-bar-title {
-    font-size: 1rem;
-    font-weight: 600;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .admin-main {
-    height: auto;
-    min-height: 100dvh;
-    padding: 1rem 0.85rem calc(1.25rem + env(safe-area-inset-bottom, 0));
-    padding-top: calc(0.85rem + env(safe-area-inset-top, 0));
+  .admin-nav-backdrop {
+    display: block;
   }
 
   .admin-page-title {
@@ -884,34 +1098,6 @@ body.admin-page .admin-back a:hover {
 
   .admin-snippet {
     max-width: 12rem;
-  }
-
-  .admin-users-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.85rem;
-  }
-
-  .admin-users-search,
-  .admin-filter-switcher {
-    width: 100%;
-    max-width: none;
-    min-width: 0;
-  }
-
-  .admin-filter-switcher .business-switcher-trigger {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .admin-filter-actions-inner {
-    width: 100%;
-  }
-
-  .admin-users-apply,
-  .admin-users-clear {
-    flex: 1;
-    justify-content: center;
   }
 
   .admin-settings-grid {

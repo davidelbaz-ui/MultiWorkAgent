@@ -9,6 +9,7 @@ function initAdminMobileShell() {
 
   const close = () => {
     shell.classList.remove("admin-nav-open");
+    document.body.classList.remove("admin-nav-open");
     toggle.setAttribute("aria-expanded", "false");
     toggle.setAttribute("aria-label", "Open admin menu");
     backdrop.setAttribute("hidden", "");
@@ -17,6 +18,7 @@ function initAdminMobileShell() {
 
   const open = () => {
     shell.classList.add("admin-nav-open");
+    document.body.classList.add("admin-nav-open");
     toggle.setAttribute("aria-expanded", "true");
     toggle.setAttribute("aria-label", "Close admin menu");
     backdrop.removeAttribute("hidden");

@@ -1,4 +1,5 @@
 {% from "_brand.html" import brand_lockup %}
+{% from "_password_field.html" import password_field %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +8,7 @@
   <title>Sign in — Admin</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <script src="{{ url_for('static', filename='password-toggle.js') }}" defer></script>
 </head>
 <body class="admin-page admin-page--center">
   <div class="admin-login-card">
@@ -20,9 +22,7 @@
       <label class="admin-label">Email
         <input class="admin-input" type="email" name="email" autocomplete="username" required>
       </label>
-      <label class="admin-label">Password
-        <input class="admin-input" type="password" name="password" autocomplete="current-password" required>
-      </label>
+      {{ password_field('password', autocomplete='current-password', required=true, input_class='admin-input', label='Password', label_class='admin-label') }}
       <button type="submit" class="btn btn-primary">Sign in</button>
     </form>
   </div>

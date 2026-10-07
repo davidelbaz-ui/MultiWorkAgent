@@ -2,14 +2,21 @@
 {% from "_form_switcher.html" import form_switcher %}
 {% block title %}Users — Admin — MultiWorkAgent{% endblock %}
 {% block admin_mobile_title %}Users{% endblock %}
+{% block admin_mobile_tools %}
+<div class="admin-mobile-bar-tools">
+  <button type="button" class="btn btn-sm admin-users-tool-btn{% if filters.q %} is-active{% endif %}" data-admin-users-sheet="search" aria-expanded="false">Search</button>
+  <button type="button" class="btn btn-sm admin-users-tool-btn{% if filters.role or filters.sign_in or filters.last_login %} is-active{% endif %}" data-admin-users-sheet="filters" aria-expanded="false">Filters</button>
+  <button type="button" class="btn btn-sm admin-users-tool-btn{% if filters.sort != 'created_desc' %} is-active{% endif %}" data-admin-users-sheet="sort" aria-expanded="false">Sort</button>
+</div>
+{% endblock %}
 {% block content %}
-<h1 class="admin-page-title">Users</h1>
+<h1 class="admin-page-title admin-below-desktop-hide">Users</h1>
 <p class="meta-row">
   Showing {{ users|length }} of {{ total }} user{{ 's' if total != 1 else '' }}.
   Last sign-in is stored on each customer login.
 </p>
 
-<form class="admin-users-toolbar" id="admin-users-filters" method="get" action="{{ url_for('admin.admin_users') }}">
+<form class="admin-users-toolbar admin-users-toolbar--inline admin-above-desktop-only" id="admin-users-filters" method="get" action="{{ url_for('admin.admin_users') }}">
   <div class="admin-filter-field admin-users-search" id="admin-users-search-wrap">
     <label class="admin-filter-label" for="admin-users-q">Search</label>
     <div class="admin-search-field-wrap">
@@ -51,6 +58,74 @@
   </div>
 </form>
 
+<div class="admin-sheet-root admin-below-desktop" id="admin-users-sheets" hidden aria-hidden="true">
+  <div class="admin-sheet-backdrop" data-admin-sheet-close></div>
+  <div class="admin-sheet" id="admin-users-sheet-search" role="dialog" aria-modal="true" aria-labelledby="admin-users-sheet-search-title" hidden>
+    <header class="admin-sheet-head">
+      <button type="button" class="icon-btn admin-sheet-back" data-admin-sheet-close aria-label="Back">
+        <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5L9 12l5.5 5.5"/></svg>
+      </button>
+      <h2 class="admin-sheet-title" id="admin-users-sheet-search-title">Search</h2>
+    </header>
+    <div class="admin-sheet-body">
+      <label class="admin-label" for="admin-users-q-sheet">Name or email</label>
+      <input class="admin-input" type="search" id="admin-users-q-sheet" value="{{ filters.q }}" autocomplete="off" placeholder="Name or email…">
+    </div>
+    <footer class="admin-sheet-foot">
+      <button type="button" class="btn btn-primary" data-admin-users-apply="search">Apply</button>
+    </footer>
+  </div>
+  <div class="admin-sheet" id="admin-users-sheet-filters" role="dialog" aria-modal="true" aria-labelledby="admin-users-sheet-filters-title" hidden>
+    <header class="admin-sheet-head">
+      <button type="button" class="icon-btn admin-sheet-back" data-admin-sheet-close aria-label="Back">
+        <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5L9 12l5.5 5.5"/></svg>
+      </button>
+      <h2 class="admin-sheet-title" id="admin-users-sheet-filters-title">Filters</h2>
+    </header>
+    <div class="admin-sheet-body admin-sheet-options">
+      <h3 class="admin-sheet-section-title">Role</h3>
+      <ul class="admin-sheet-option-list" data-filter-name="role">
+        {% for opt in role_options %}
+        <li><button type="button" class="admin-sheet-option{% if opt.value == filters.role %} is-selected{% endif %}" data-value="{{ opt.value }}">{{ opt.label }}</button></li>
+        {% endfor %}
+      </ul>
+      <h3 class="admin-sheet-section-title">Sign-in</h3>
+      <ul class="admin-sheet-option-list" data-filter-name="sign_in">
+        {% for opt in sign_in_options %}
+        <li><button type="button" class="admin-sheet-option{% if opt.value == filters.sign_in %} is-selected{% endif %}" data-value="{{ opt.value }}">{{ opt.label }}</button></li>
+        {% endfor %}
+      </ul>
+      <h3 class="admin-sheet-section-title">Last sign-in</h3>
+      <ul class="admin-sheet-option-list" data-filter-name="last_login">
+        {% for opt in last_login_options %}
+        <li><button type="button" class="admin-sheet-option{% if opt.value == filters.last_login %} is-selected{% endif %}" data-value="{{ opt.value }}">{{ opt.label }}</button></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <footer class="admin-sheet-foot">
+      <button type="button" class="btn btn-primary" data-admin-users-apply="filters">Apply</button>
+    </footer>
+  </div>
+  <div class="admin-sheet" id="admin-users-sheet-sort" role="dialog" aria-modal="true" aria-labelledby="admin-users-sheet-sort-title" hidden>
+    <header class="admin-sheet-head">
+      <button type="button" class="icon-btn admin-sheet-back" data-admin-sheet-close aria-label="Back">
+        <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5L9 12l5.5 5.5"/></svg>
+      </button>
+      <h2 class="admin-sheet-title" id="admin-users-sheet-sort-title">Sort</h2>
+    </header>
+    <div class="admin-sheet-body admin-sheet-options">
+      <ul class="admin-sheet-option-list" data-filter-name="sort">
+        {% for opt in sort_options %}
+        <li><button type="button" class="admin-sheet-option{% if opt.value == filters.sort %} is-selected{% endif %}" data-value="{{ opt.value }}">{{ opt.label }}</button></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <footer class="admin-sheet-foot">
+      <button type="button" class="btn btn-primary" data-admin-users-apply="sort">Apply</button>
+    </footer>
+  </div>
+</div>
+
 <section class="admin-panel">
   {% if users %}
   <table class="admin-table">
@@ -90,4 +165,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='form-switcher.js') }}" defer></script>
+<script src="{{ url_for('static', filename='admin-users-sheets.js') }}" defer></script>
 {% endblock %}

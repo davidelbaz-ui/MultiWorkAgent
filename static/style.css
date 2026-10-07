@@ -4269,6 +4269,56 @@ table.data-table {
   border-color: var(--accent);
 }
 
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field .password-input,
+.password-field .auth-input,
+.password-field .admin-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 2.65rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.password-toggle-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.password-toggle-icon[hidden] {
+  display: none;
+}
+
 .auth-submit {
   margin-top: 0.35rem;
   width: 100%;
