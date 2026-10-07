@@ -1,8 +1,8 @@
 /** Thin overlapping-documents copy icon (stroke, currentColor). */
 (function initCopyIcon(global) {
   const COPY_ICON_PATHS = [
-    "M9.25 6.75h8.25a1.25 1.25 0 0 1 1.25 1.25v9.25a1.25 1.25 0 0 1-1.25 1.25H9.25",
-    "M5.75 9.75h8.25a1.25 1.25 0 0 1 1.25 1.25v9.25a1.25 1.25 0 0 1-1.25 1.25H6.75A1.25 1.25 0 0 1 5.5 18.25V11A1.25 1.25 0 0 1 6.75 9.75H5.75",
+    "M8.5 7.5H7A1.5 1.5 0 0 0 5.5 9v11A1.5 1.5 0 0 0 7 21.5h9A1.5 1.5 0 0 0 17.5 20V18.5",
+    "M15.5 5.5h1.5A1.5 1.5 0 0 1 18.5 7v11a1.5 1.5 0 0 1-1.5 1.5H8.5A1.5 1.5 0 0 1 7 18V7a1.5 1.5 0 0 1 1.5-1.5h7",
   ];
 
   function createCopyIconSvg() {
@@ -18,10 +18,13 @@
     COPY_ICON_PATHS.forEach((d) => {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", d);
+      path.setAttribute("stroke", "currentColor");
+      path.setAttribute("fill", "none");
       svg.appendChild(path);
     });
     return svg;
   }
 
   global.createCopyIconSvg = createCopyIconSvg;
+  global.COPY_ICON_PATHS = COPY_ICON_PATHS;
 })(window);

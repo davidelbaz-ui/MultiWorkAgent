@@ -2106,6 +2106,11 @@ table.data-table {
   width: 1rem;
   height: 1rem;
   stroke-width: 1.35;
+  color: var(--muted);
+}
+
+.msg-action-btn:hover .msg-action-icon--copy {
+  color: var(--text);
 }
 
 .msg-action-btn.is-copied {
