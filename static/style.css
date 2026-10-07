@@ -2105,12 +2105,13 @@ table.data-table {
 .msg-action-icon--copy {
   width: 1.05rem;
   height: 1.05rem;
-  stroke-width: 2;
   color: var(--muted);
+  fill: currentColor;
+  stroke: none;
 }
 
 .msg-action-icon--copy path {
-  stroke-width: 2;
+  fill: currentColor;
 }
 
 .msg-action-btn:hover .msg-action-icon--copy {
