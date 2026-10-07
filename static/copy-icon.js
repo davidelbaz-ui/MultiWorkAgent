@@ -19,6 +19,7 @@
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", d);
       path.setAttribute("stroke", "currentColor");
+      path.setAttribute("stroke-width", "2");
       path.setAttribute("fill", "none");
       svg.appendChild(path);
     });
