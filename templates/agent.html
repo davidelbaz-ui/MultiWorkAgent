@@ -4,7 +4,8 @@
 {% block main_class %}main--agent{% endblock %}
 {% block content %}
 {% set token_pct = ((run_input_tokens / run_input_cap * 100) if run_input_cap else 0)|int %}
-<div class="agent-layout">
+<div class="agent-layout" id="agent-layout">
+  <div class="agent-chats-backdrop" id="agent-chats-backdrop" hidden aria-hidden="true"></div>
   <aside class="agent-chats-panel" id="agent-chats-panel" aria-label="Chats">
     <div class="agent-chats-head">
       <h2 class="agent-chats-title">Chats</h2>
@@ -21,9 +22,16 @@
   <div class="agent-limits-banner" id="agent-limits-banner" role="alert" hidden></div>
   <div class="agent-drop-overlay" id="agent-drop-overlay" aria-hidden="true">Drop files to attach</div>
   <div class="agent-chat-bar">
-    <div class="agent-chat-bar-titles">
-      <span class="agent-scope-chip {% if not selected_business %}agent-scope-chip--all{% endif %}" id="agent-scope-chip">{% if selected_business %}{{ selected_business.name }}{% else %}All businesses{% endif %}</span>
-      <span class="agent-thread-label" id="agent-thread-label">Main chat</span>
+    <div class="agent-chat-bar-leading">
+      <button type="button" class="icon-btn agent-chats-toggle" id="agent-chats-toggle" aria-label="Open chats" aria-expanded="false" aria-controls="agent-chats-panel">
+        <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+        </svg>
+      </button>
+      <div class="agent-chat-bar-titles">
+        <span class="agent-scope-chip {% if not selected_business %}agent-scope-chip--all{% endif %}" id="agent-scope-chip">{% if selected_business %}{{ selected_business.name }}{% else %}All businesses{% endif %}</span>
+        <span class="agent-thread-label" id="agent-thread-label">Main chat</span>
+      </div>
     </div>
     <button type="button" class="agent-menu-btn" id="agent-menu-btn" aria-label="Open run details" aria-expanded="false" aria-controls="agent-drawer">
       <span class="agent-menu-icon" aria-hidden="true">

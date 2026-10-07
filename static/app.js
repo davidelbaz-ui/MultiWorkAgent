@@ -226,6 +226,110 @@ function openAppAlert(options) {
   });
 }
 
+function closeMobileAgentChats() {
+  const layout = document.getElementById("agent-layout");
+  const toggle = document.getElementById("agent-chats-toggle");
+  const backdrop = document.getElementById("agent-chats-backdrop");
+  if (!layout || !window.matchMedia("(max-width: 960px)").matches) {
+    return;
+  }
+  layout.classList.remove("chats-open");
+  toggle?.setAttribute("aria-expanded", "false");
+  backdrop?.setAttribute("hidden", "");
+  backdrop?.setAttribute("aria-hidden", "true");
+}
+
+function initAgentChatsPanel() {
+  const layout = document.getElementById("agent-layout");
+  const toggle = document.getElementById("agent-chats-toggle");
+  const backdrop = document.getElementById("agent-chats-backdrop");
+  const panel = document.getElementById("agent-chats-panel");
+  if (!layout || !toggle || !backdrop || !panel) {
+    return;
+  }
+
+  const open = () => {
+    layout.classList.add("chats-open");
+    toggle.setAttribute("aria-expanded", "true");
+    backdrop.removeAttribute("hidden");
+    backdrop.setAttribute("aria-hidden", "false");
+  };
+
+  const close = () => {
+    layout.classList.remove("chats-open");
+    toggle.setAttribute("aria-expanded", "false");
+    backdrop.setAttribute("hidden", "");
+    backdrop.setAttribute("aria-hidden", "true");
+  };
+
+  toggle.addEventListener("click", () => {
+    if (layout.classList.contains("chats-open")) {
+      close();
+    } else {
+      open();
+    }
+  });
+  backdrop.addEventListener("click", close);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && layout.classList.contains("chats-open")) {
+      close();
+    }
+  });
+  window.matchMedia("(min-width: 961px)").addEventListener("change", (e) => {
+    if (e.matches) {
+      close();
+    }
+  });
+}
+
+function initMobileShell() {
+  const shell = document.querySelector(".app-shell");
+  const toggle = document.getElementById("mobile-nav-toggle");
+  const backdrop = document.getElementById("mobile-nav-backdrop");
+  const sidebar = document.getElementById("app-sidebar");
+  if (!shell || !toggle || !backdrop || !sidebar) {
+    return;
+  }
+
+  const close = () => {
+    shell.classList.remove("nav-open");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Open navigation menu");
+    backdrop.setAttribute("hidden", "");
+    backdrop.setAttribute("aria-hidden", "true");
+  };
+
+  const open = () => {
+    shell.classList.add("nav-open");
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Close navigation menu");
+    backdrop.removeAttribute("hidden");
+    backdrop.setAttribute("aria-hidden", "false");
+  };
+
+  toggle.addEventListener("click", () => {
+    if (shell.classList.contains("nav-open")) {
+      close();
+    } else {
+      open();
+    }
+  });
+  backdrop.addEventListener("click", close);
+  sidebar.querySelectorAll(".nav-link").forEach((link) => {
+    link.addEventListener("click", () => close());
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && shell.classList.contains("nav-open")) {
+      close();
+    }
+  });
+  window.matchMedia("(min-width: 961px)").addEventListener("change", (e) => {
+    if (e.matches) {
+      close();
+    }
+  });
+}
+
 function initAgentDrawer() {
   const shell = document.getElementById("agent-shell");
   const menuBtn = document.getElementById("agent-menu-btn");
@@ -1185,6 +1289,7 @@ async function initAgentComposer() {
           }
           const data = await apiJson(`/api/agent/threads/${thread.id}/activate`, { method: "POST" });
           applyWorkspaceState(data, { scrollToEnd: true });
+          closeMobileAgentChats();
         } catch (err) {
           console.error(err);
         }
@@ -1233,8 +1338,7 @@ async function initAgentComposer() {
         deleteBtn.type = "button";
         deleteBtn.className = "agent-chat-action agent-chat-action--danger";
         deleteBtn.setAttribute("aria-label", "Delete chat");
-        deleteBtn.innerHTML =
-          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+        deleteBtn.appendChild(createDeleteIconSvg());
         deleteBtn.addEventListener("click", async (e) => {
           e.stopPropagation();
           const ok = await openAppConfirm({
@@ -1952,6 +2056,8 @@ function initGlobalSearch() {
 document.addEventListener("DOMContentLoaded", () => {
   initAppDialog();
   initGlobalSearch();
+  initMobileShell();
+  initAgentChatsPanel();
   initAgentDrawer();
   initBusinessSwitcher();
   initAccountMenu();

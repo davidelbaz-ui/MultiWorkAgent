@@ -14,6 +14,11 @@
 <body class="{% block body_class %}{% endblock %}">
   <div class="app-shell">
     <header class="topbar">
+      <button type="button" class="icon-btn mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="app-sidebar">
+        <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M5 7h14M5 12h14M5 17h14"/>
+        </svg>
+      </button>
       {{ brand_lockup(href=url_for('index'), size='sm', class='topbar-brand') }}
       <div class="topbar-workspace">
         <div class="business-switcher" data-business-switcher>
@@ -100,7 +105,9 @@
     </div>
     {% endif %}
 
-    <aside class="sidebar">
+    <div class="mobile-nav-backdrop" id="mobile-nav-backdrop" hidden aria-hidden="true"></div>
+
+    <aside class="sidebar" id="app-sidebar">
       {% for item in nav %}
       <a href="{{ item.href }}" class="nav-link {% if active_nav == item.id %}active{% endif %}">
         <span class="nav-icon">{{ nav_icon(item.icon) }}</span>
