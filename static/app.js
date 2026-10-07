@@ -587,12 +587,85 @@ async function initAgentComposer() {
     svg.setAttribute("class", "msg-action-icon");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
     paths.forEach((d) => {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", d);
       svg.appendChild(path);
     });
     return svg;
+  };
+
+  const COPY_ICON_PATHS = [
+    "M8 8H6a2 2 0 0 0-2-2V6a2 2 0 0 0 2-2h8a2 2 0 0 0 2 2v2",
+    "M16 16H8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z",
+  ];
+
+  const createMsgCopyButton = (getText) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "msg-action-btn";
+    btn.setAttribute("aria-label", "Copy message");
+    btn.appendChild(svgIcon(COPY_ICON_PATHS));
+    btn.addEventListener("click", async () => {
+      const text = typeof getText === "function" ? getText() : String(getText || "");
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.classList.add("is-copied");
+        window.setTimeout(() => btn.classList.remove("is-copied"), 1600);
+      } catch {
+        await openAppAlert({
+          title: "Copy failed",
+          message: "Could not copy to the clipboard.",
+        });
+      }
+    });
+    return btn;
+  };
+
+  let pendingBranchFadeCleanup = false;
+
+  const fadeOutBranchAfterUserMessage = (userMessageId) => {
+    const block = messages.querySelector(`.msg-user-block[data-message-id="${userMessageId}"]`);
+    if (!block) {
+      return;
+    }
+    let next = block.nextElementSibling;
+    while (next) {
+      next.classList.add("msg-branch-fade-out");
+      next = next.nextElementSibling;
+    }
+    pendingBranchFadeCleanup = true;
+  };
+
+  const removeFadedBranchMessages = () => {
+    messages.querySelectorAll(".msg-branch-fade-out").forEach((el) => el.remove());
+    pendingBranchFadeCleanup = false;
+  };
+
+  const waitMs = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  const updateUserMessageBubbleText = (messageId, content) => {
+    const block = messages.querySelector(`.msg-user-block[data-message-id="${messageId}"]`);
+    const bubble = block?.querySelector(".msg.user");
+    if (!bubble) {
+      return;
+    }
+    let span = bubble.querySelector(".msg-user-text");
+    if (!content) {
+      span?.remove();
+      return;
+    }
+    if (!span) {
+      span = document.createElement("span");
+      span.className = "msg-user-text";
+      bubble.prepend(span);
+    }
+    span.textContent = content;
   };
 
   const clearEditMode = async ({ restoreDraft = true } = {}) => {
@@ -650,6 +723,7 @@ async function initAgentComposer() {
     bubble.className = "msg user";
     if (msg.content) {
       const text = document.createElement("span");
+      text.className = "msg-user-text";
       text.textContent = msg.content;
       bubble.appendChild(text);
     }
@@ -684,7 +758,8 @@ async function initAgentComposer() {
     );
     deleteBtn.addEventListener("click", () => deleteMessage(msg.id));
 
-    actions.append(editBtn, deleteBtn);
+    const copyBtn = createMsgCopyButton(() => msg.content || "");
+    actions.append(copyBtn, editBtn, deleteBtn);
     block.appendChild(actions);
     return block;
   };
@@ -702,6 +777,11 @@ async function initAgentComposer() {
     if (msg.role === "user") {
       return buildUserMessageBlock(msg);
     }
+    const wrap = document.createElement("div");
+    wrap.className = "msg-agent-block";
+    if (msg.id != null) {
+      wrap.dataset.messageId = String(msg.id);
+    }
     const div = document.createElement("div");
     div.className = `msg ${msg.role}`;
     if (msg.content) {
@@ -710,7 +790,12 @@ async function initAgentComposer() {
       div.appendChild(body);
     }
     appendAttachmentLines(div, msg.attachments);
-    return div;
+    wrap.appendChild(div);
+    const actions = document.createElement("div");
+    actions.className = "msg-agent-actions";
+    actions.appendChild(createMsgCopyButton(() => msg.content || ""));
+    wrap.appendChild(actions);
+    return wrap;
   };
 
   const removeEmptyState = () => {
@@ -963,8 +1048,15 @@ async function initAgentComposer() {
           streamRevealTextEl = null;
           streamMarkdownScheduled = false;
           streamReceivedFull = "";
+          if (pendingBranchFadeCleanup) {
+            removeFadedBranchMessages();
+          }
           if (payload.message) {
-            messages.appendChild(buildUserMessageBlock(payload.message));
+            if (payload.regenerate) {
+              updateUserMessageBubbleText(payload.message.id, payload.message.content || "");
+            } else {
+              messages.appendChild(buildUserMessageBlock(payload.message));
+            }
           }
           const bubble = ensureStreamingBubble();
           textEl = bubble.querySelector(".msg-agent-text");
@@ -1000,6 +1092,7 @@ async function initAgentComposer() {
           clearStreamingBubble();
           const state = await apiJson("/api/agent/state");
           applyWorkspaceState(state, { scrollToEnd: true });
+          setAgentRunning(false);
         }
       }
     }
@@ -1442,6 +1535,30 @@ async function initAgentComposer() {
     }
   });
 
+  const runAgentMessageStream = async (url, body) => {
+    streamAbort = new AbortController();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+      signal: streamAbort.signal,
+    });
+    const contentType = res.headers.get("content-type") || "";
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const err = new Error(data.error || `Request failed (${res.status})`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    if (!contentType.includes("text/event-stream") || !res.body) {
+      throw new Error("Unexpected response from agent stream.");
+    }
+    setAgentRunning(true);
+    await consumeAgentStream(res);
+  };
+
   const submitMessage = async () => {
     const text = textarea.value;
     const trimmed = text.trim();
@@ -1457,14 +1574,14 @@ async function initAgentComposer() {
           });
           return;
         }
-        await apiJson(`/api/agent/messages/${editingMessageId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: text }),
-        });
-        const state = await apiJson("/api/agent/state");
-        applyWorkspaceState(state, { scrollToEnd: true });
+        const messageId = editingMessageId;
+        fadeOutBranchAfterUserMessage(messageId);
+        await waitMs(340);
+        updateUserMessageBubbleText(messageId, text);
         await clearEditMode({ restoreDraft: true });
+        await runAgentMessageStream(`/api/agent/messages/${messageId}/stream`, {
+          content: text,
+        });
       } else {
         if (!trimmed && draftFiles.length === 0) {
           return;
@@ -1481,27 +1598,7 @@ async function initAgentComposer() {
           });
           return;
         }
-        streamAbort = new AbortController();
-        const res = await fetch("/api/agent/messages/stream", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-          credentials: "same-origin",
-          body: JSON.stringify({ content: text }),
-          signal: streamAbort.signal,
-        });
-        const contentType = res.headers.get("content-type") || "";
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          const err = new Error(data.error || `Request failed (${res.status})`);
-          err.status = res.status;
-          err.data = data;
-          throw err;
-        }
-        if (!contentType.includes("text/event-stream") || !res.body) {
-          throw new Error("Unexpected response from agent stream.");
-        }
-        setAgentRunning(true);
-        await consumeAgentStream(res);
+        await runAgentMessageStream("/api/agent/messages/stream", { content: text });
       }
 
       if (scroll) {
@@ -1527,13 +1624,13 @@ async function initAgentComposer() {
         await reportAgentSendError(err);
       }
     } finally {
-      streamRevealBuffer = "";
       streamRevealTextEl = null;
-      streamRevealScheduled = false;
+      streamMarkdownScheduled = false;
       streamReceivedFull = "";
       clearStreamingBubble();
       activeRunId = null;
       streamAbort = null;
+      pendingBranchFadeCleanup = false;
       setAgentRunning(false);
     }
   };

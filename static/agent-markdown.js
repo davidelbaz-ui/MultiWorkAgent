@@ -112,21 +112,35 @@
       toolbar.appendChild(label);
       const copyBtn = document.createElement("button");
       copyBtn.type = "button";
-      copyBtn.className = "agent-code-copy btn btn-sm";
-      copyBtn.textContent = "Copy";
+      copyBtn.className = "agent-code-copy msg-action-btn";
+      copyBtn.setAttribute("aria-label", "Copy code");
+      const copySvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      copySvg.setAttribute("class", "msg-action-icon");
+      copySvg.setAttribute("viewBox", "0 0 24 24");
+      copySvg.setAttribute("aria-hidden", "true");
+      copySvg.setAttribute("fill", "none");
+      copySvg.setAttribute("stroke", "currentColor");
+      copySvg.setAttribute("stroke-width", "2");
+      copySvg.setAttribute("stroke-linecap", "round");
+      copySvg.setAttribute("stroke-linejoin", "round");
+      [
+        "M8 8H6a2 2 0 0 0-2-2V6a2 2 0 0 0 2-2h8a2 2 0 0 0 2 2v2",
+        "M16 16H8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z",
+      ].forEach((d) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", d);
+        copySvg.appendChild(path);
+      });
+      copyBtn.appendChild(copySvg);
       copyBtn.addEventListener("click", async () => {
         const text = code?.textContent || pre.textContent || "";
         try {
           await navigator.clipboard.writeText(text);
-          copyBtn.textContent = "Copied";
-          window.setTimeout(() => {
-            copyBtn.textContent = "Copy";
-          }, 1600);
+          copyBtn.classList.add("is-copied");
+          window.setTimeout(() => copyBtn.classList.remove("is-copied"), 1600);
         } catch {
-          copyBtn.textContent = "Failed";
-          window.setTimeout(() => {
-            copyBtn.textContent = "Copy";
-          }, 1600);
+          copyBtn.classList.add("is-copy-failed");
+          window.setTimeout(() => copyBtn.classList.remove("is-copy-failed"), 1600);
         }
       });
       toolbar.appendChild(copyBtn);

@@ -2652,6 +2652,134 @@ def api_agent_message_stream():
     )
 
 
+@app.post("/api/agent/messages/<int:message_id>/stream")
+def api_agent_message_regenerate_stream(message_id: int):
+    """Update a user message, drop later thread messages, and stream a new agent reply."""
+    thread_id = _active_thread_id()
+    payload = request.get_json(silent=True) or {}
+    content = payload.get("content")
+    if content is None or not isinstance(content, str):
+        return jsonify({"error": "content must be a string"}), 400
+
+    if not chat_store.get_user_message(thread_id, message_id):
+        return jsonify({"error": "not found or not editable"}), 404
+
+    chat_store.update_user_message(thread_id, message_id, content)
+    chat_store.delete_messages_after(thread_id, message_id)
+    user_message = chat_store.get_user_message(thread_id, message_id)
+    if not user_message:
+        return jsonify({"error": "not found"}), 404
+
+    account_id = _ensure_account_id()
+    summary = content.strip()[:120] if content.strip() else "Edited message"
+    try:
+        run_limits.assert_can_start(account_id)
+    except RunLimitError as exc:
+        run_store.record_blocked_run(
+            account_id=account_id,
+            user_id=session.get("user_id"),
+            business_id=_get_selected_business_id(),
+            thread_id=thread_id,
+            summary=summary,
+            error_code=exc.code,
+        )
+        import notification_events
+
+        notification_events.notify_run_blocked(
+            account_id,
+            error_code=exc.code,
+            summary=summary,
+        )
+        limits = run_limits.limits_snapshot(account_id)
+        return (
+            jsonify(
+                {
+                    "error": exc.message,
+                    "code": exc.code,
+                    "limits": limits,
+                }
+            ),
+            429,
+        )
+
+    run = run_store.begin_chat_run(
+        account_id=account_id,
+        user_id=session.get("user_id"),
+        business_id=_get_selected_business_id(),
+        thread_id=thread_id,
+        summary=summary,
+    )
+    run_id = run["id"]
+    session["last_agent_run_id"] = run_id
+    cancel_event = agent_executor.attach_stream_cancel(run_id)
+
+    scope_label = _business_switcher_label()
+    business_name = _business_name_for_agent()
+
+    def event_stream():
+        accumulated: list[str] = []
+        final_result = None
+        persisted = False
+        try:
+            yield _agent_sse(
+                {
+                    "type": "start",
+                    "run_id": run_id,
+                    "message": user_message,
+                    "regenerate": True,
+                }
+            )
+            for event in agent_executor.stream_generate_reply(
+                thread_id,
+                scope_label=scope_label,
+                business_name=business_name,
+                account_id=account_id,
+                business_id=_get_selected_business_id(),
+                cancel_event=cancel_event,
+            ):
+                if event.get("event") == "delta":
+                    piece = event.get("text") or ""
+                    accumulated.append(piece)
+                    yield _agent_sse({"type": "delta", "text": piece})
+                elif event.get("event") == "done":
+                    final_result = event.get("result")
+            if final_result is None:
+                final_result = agent_executor.AgentRunResult(
+                    status="error",
+                    content="Stream ended without a result.",
+                    error_code="http_error",
+                )
+            _persist_agent_run_result(thread_id, account_id, run_id, final_result)
+            persisted = True
+            yield _agent_sse({"type": "done"})
+        except GeneratorExit:
+            if not persisted:
+                partial = "".join(accumulated)
+                _persist_agent_run_result(
+                    thread_id,
+                    account_id,
+                    run_id,
+                    agent_executor.AgentRunResult(
+                        status="error",
+                        content=partial,
+                        error_code="cancelled",
+                    ),
+                )
+            raise
+        finally:
+            agent_executor.detach_stream_cancel(run_id)
+
+    return Response(
+        stream_with_context(event_stream()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @app.post("/api/agent/runs/<run_id>/cancel")
 def api_agent_run_cancel(run_id: str):
     account_id = _ensure_account_id()

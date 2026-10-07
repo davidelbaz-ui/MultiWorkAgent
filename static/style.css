@@ -2102,6 +2102,57 @@ table.data-table {
   stroke-linejoin: round;
 }
 
+.msg-action-btn.is-copied {
+  color: var(--accent);
+}
+
+.msg-agent-block {
+  align-self: flex-start;
+  width: 100%;
+  max-width: min(92%, 44rem);
+  margin-bottom: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.msg-agent-block .msg.agent {
+  margin-bottom: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.msg-agent-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding-left: 0.1rem;
+}
+
+.msg-branch-fade-out {
+  animation: msg-branch-fade-out 0.34s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes msg-branch-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 2000px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+}
+
 .agent-editing-hint {
   margin: 0 0 0.35rem;
   font-size: 0.8rem;
@@ -2139,6 +2190,7 @@ table.data-table {
   padding: 0.35rem 0;
   background: transparent;
   border-radius: 0;
+  white-space: normal;
 }
 
 .agent-md {
@@ -2235,8 +2287,9 @@ table.data-table {
 }
 
 .agent-code-copy {
-  padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  flex-shrink: 0;
 }
 
 .agent-code-wrap pre {

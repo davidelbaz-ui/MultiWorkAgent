@@ -346,6 +346,45 @@ def update_user_message(thread_id: str, message_id: int, content: str) -> dict[s
     return get_user_message(thread_id, message_id)
 
 
+def delete_messages_after(thread_id: str, after_message_id: int) -> int:
+    """Remove all messages in the thread with id greater than after_message_id."""
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT id FROM chat_messages
+            WHERE thread_id = ? AND id > ?
+            ORDER BY id ASC
+            """,
+            (thread_id, after_message_id),
+        ).fetchall()
+        if not rows:
+            return 0
+        message_ids = [int(row["id"]) for row in rows]
+        file_rows = conn.execute(
+            f"""
+            SELECT stored_name FROM chat_message_files
+            WHERE message_id IN ({",".join("?" * len(message_ids))})
+            """,
+            message_ids,
+        ).fetchall()
+        conn.execute(
+            """
+            DELETE FROM chat_messages
+            WHERE thread_id = ? AND id > ?
+            """,
+            (thread_id, after_message_id),
+        )
+        conn.execute(
+            "UPDATE chat_threads SET updated_at = ? WHERE id = ?",
+            (_utc_now(), thread_id),
+        )
+        conn.commit()
+
+    for file_row in file_rows:
+        (_thread_dir(thread_id) / file_row["stored_name"]).unlink(missing_ok=True)
+    return len(message_ids)
+
+
 def delete_user_message(thread_id: str, message_id: int) -> bool:
     with connect() as conn:
         row = conn.execute(
