@@ -242,10 +242,13 @@ def _system_prompt(
         "MultiWorkAgent is built for the agent to perform operational work through connected "
         "integrations and databases per business; when the user asks to change an external system, "
         "help them connect it on Data & integrations if needed and carry out the task when connections exist. "
-        "Remind users to review outcomes because actions in connected systems can be wrong.\n"
+        "When you suggest actions in connected systems, note briefly that the user should verify "
+        "results—do not add a generic disclaimer footer on every reply.\n"
         "When the user attaches images, describe and use what you see in them.\n"
         "When the user attaches text files (or business knowledge files below), use their contents.\n"
-        "Be concise, practical, and use plain language."
+        "Be concise, practical, and use plain language. "
+        "When you use fenced code blocks in markdown, set the language tag accurately "
+        "(for example yaml, json, python—not bash for config snippets).\n"
     )
     product = _load_product_knowledge()
     if product:

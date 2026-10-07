@@ -2208,6 +2208,12 @@ table.data-table {
 .agent-code-wrap {
   position: relative;
   margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-1, var(--bg));
 }
 
 .agent-code-toolbar {
@@ -2215,11 +2221,10 @@ table.data-table {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 0.35rem 0.55rem;
+  border-bottom: 1px solid var(--border);
   background: var(--surface-2);
+  flex-shrink: 0;
 }
 
 .agent-code-lang {
@@ -2234,12 +2239,23 @@ table.data-table {
   font-size: 0.72rem;
 }
 
-.agent-md pre {
+.agent-code-wrap pre {
   margin: 0;
   padding: 0.85rem 1rem;
   overflow-x: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.agent-md pre:not(.agent-code-wrap pre) {
+  margin: 0.75rem 0;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 0 0 var(--radius) var(--radius);
+  border-radius: var(--radius);
   background: var(--surface-1, var(--bg));
   font-size: 0.82rem;
   line-height: 1.45;

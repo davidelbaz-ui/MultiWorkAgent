@@ -36,6 +36,41 @@
     });
   }
 
+  function fenceLanguage(codeEl) {
+    if (!codeEl) {
+      return "";
+    }
+    const fromClass = codeEl.className.match(/language-([\w-]+)/)?.[1];
+    if (fromClass && fromClass !== "plaintext" && fromClass !== "text") {
+      return fromClass;
+    }
+    const fromData = codeEl.dataset.agentLang;
+    return fromData || "";
+  }
+
+  function displayLanguageLabel(lang) {
+    if (!lang) {
+      return "Code";
+    }
+    const normalized = lang.toLowerCase();
+    const aliases = {
+      shell: "Shell",
+      sh: "Shell",
+      bash: "Bash",
+      yml: "YAML",
+      yaml: "YAML",
+      js: "JavaScript",
+      ts: "TypeScript",
+      py: "Python",
+      rb: "Ruby",
+      md: "Markdown",
+      json: "JSON",
+      plaintext: "Code",
+      text: "Code",
+    };
+    return aliases[normalized] || normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  }
+
   function highlightCodeBlocks(root) {
     if (!hljs) {
       return;
@@ -44,7 +79,16 @@
       if (block.dataset.hljsDone === "1") {
         return;
       }
-      hljs.highlightElement(block);
+      const explicitLang = fenceLanguage(block);
+      if (explicitLang) {
+        try {
+          hljs.highlightElement(block);
+        } catch {
+          block.classList.add("language-plaintext");
+        }
+      } else {
+        block.classList.add("language-plaintext");
+      }
       block.dataset.hljsDone = "1";
     });
   }
@@ -58,17 +102,14 @@
       const wrap = document.createElement("div");
       wrap.className = "agent-code-wrap";
       pre.parentNode.insertBefore(wrap, pre);
-      wrap.appendChild(pre);
 
       const toolbar = document.createElement("div");
       toolbar.className = "agent-code-toolbar";
-      const lang = code?.className?.match(/language-([\w-]+)/)?.[1];
-      if (lang) {
-        const label = document.createElement("span");
-        label.className = "agent-code-lang";
-        label.textContent = lang;
-        toolbar.appendChild(label);
-      }
+      const lang = fenceLanguage(code);
+      const label = document.createElement("span");
+      label.className = "agent-code-lang";
+      label.textContent = displayLanguageLabel(lang);
+      toolbar.appendChild(label);
       const copyBtn = document.createElement("button");
       copyBtn.type = "button";
       copyBtn.className = "agent-code-copy btn btn-sm";
@@ -90,6 +131,7 @@
       });
       toolbar.appendChild(copyBtn);
       wrap.appendChild(toolbar);
+      wrap.appendChild(pre);
     });
   }
 
