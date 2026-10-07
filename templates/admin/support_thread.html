@@ -1,5 +1,6 @@
 {% extends "admin/base.html" %}
 {% block title %}Support thread — Admin{% endblock %}
+{% block admin_mobile_title %}Support thread{% endblock %}
 {% block content %}
 <p class="admin-back"><a href="{{ url_for('admin.admin_support_inbox') }}">← Inbox</a></p>
 <h1 class="admin-page-title">{{ meta.owner_email if meta else account_id }}</h1>
