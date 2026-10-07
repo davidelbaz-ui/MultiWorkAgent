@@ -14,12 +14,13 @@
 <body class="{% block body_class %}{% endblock %}">
   <div class="app-shell">
     <header class="topbar">
-      <div class="topbar-toolbar">
-        <button type="button" class="icon-btn mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="app-sidebar">
-          <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M5 7h14M5 12h14M5 17h14"/>
-          </svg>
-        </button>
+      <button type="button" class="icon-btn mobile-nav-toggle mobile-only" id="mobile-nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="app-sidebar">
+        <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M5 7h14M5 12h14M5 17h14"/>
+        </svg>
+      </button>
+      {{ brand_lockup(href=url_for('index'), size='sm', class='topbar-brand desktop-only') }}
+      <div class="topbar-workspace">
         <div class="business-switcher" data-business-switcher>
           <button type="button" class="business-switcher-trigger" aria-label="Switch business" aria-expanded="false" aria-haspopup="listbox" id="business-switcher-trigger">
             <span class="business-switcher-label">{{ business_switcher_label }}</span>
@@ -32,13 +33,34 @@
             {% endfor %}
           </ul>
         </div>
-        <button type="button" class="icon-btn global-search-open" id="global-search-open" aria-label="Search">
+        <div class="global-search-column desktop-only" id="global-search-column">
+          <div class="global-search-wrap global-search-pill global-search-field-wrap" id="global-search-wrap-desktop">
+            <input type="text" id="global-search-desktop" class="global-search" placeholder="Search…" aria-label="Search" autocomplete="off" aria-controls="global-search-results-list-desktop" aria-expanded="false" aria-autocomplete="list">
+            <button type="button" class="global-search-clear" id="global-search-clear-desktop" aria-label="Clear search" aria-hidden="true" tabindex="-1">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M8 8l8 8M16 8l-8 8"/>
+              </svg>
+            </button>
+            <span class="global-search-shortcut" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+          </div>
+          <div class="global-search-results ui-motion-fade" id="global-search-results-desktop" role="listbox" aria-label="Search results" hidden>
+            <p class="global-search-status" id="global-search-status-desktop" hidden></p>
+            <ul class="global-search-results-list" id="global-search-results-list-desktop"></ul>
+          </div>
+        </div>
+        <button type="button" class="icon-btn global-search-open mobile-only" id="global-search-open" aria-label="Search">
           <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <circle cx="11" cy="11" r="6.5"/>
             <path d="M16 16l4.5 4.5"/>
           </svg>
         </button>
-        <div class="notifications-menu topbar-notifications" data-notifications-menu>
+        {% set pct = (usage_used / usage_quota * 100) if usage_quota else 0 %}
+        <a href="{{ url_for('billing') }}" class="usage-chip desktop-only {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" data-usage-chip id="header-usage-chip" data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}">
+          {% if plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
+        </a>
+      </div>
+      <div class="topbar-actions">
+        <div class="notifications-menu" data-notifications-menu>
           <button type="button" class="icon-btn notifications-trigger" id="notifications-trigger" aria-label="Notifications" aria-expanded="false" aria-haspopup="menu">
             <svg class="icon-btn-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M8 10.5a4 4 0 0 1 8 0c0 4.2 1.4 5.8 1.5 6H6.5c.1-.2 1.5-1.8 1.5-6"/>
@@ -55,6 +77,30 @@
             <p class="empty-state notifications-empty" id="notifications-empty" hidden>No notifications yet.</p>
           </div>
         </div>
+        <div class="account-menu desktop-only" data-account-menu>
+          <button type="button" class="avatar account-menu-trigger" id="account-menu-trigger-desktop" aria-label="Account menu" aria-expanded="false" aria-haspopup="menu">
+            {% if current_user %}
+            {{ current_user.name[:1]|upper }}
+            {% else %}
+            ?
+            {% endif %}
+          </button>
+          <div class="account-menu-panel" id="account-menu-panel-desktop" role="menu" hidden>
+            {% if current_user %}
+            <div class="account-menu-head">
+              <span class="account-menu-name">{{ current_user.name }}</span>
+              <span class="account-menu-email">{{ current_user.email }}</span>
+              {% if account_role_label %}
+              <span class="account-menu-role">{{ account_role_label }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+            <a class="account-menu-item" role="menuitem" href="{{ url_for('settings') }}">Settings</a>
+            <form class="account-menu-logout" method="post" action="{{ url_for('logout') }}">
+              <button type="submit" class="account-menu-item account-menu-item--button" role="menuitem">Sign out</button>
+            </form>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -68,7 +114,7 @@
     <div class="mobile-nav-backdrop" id="mobile-nav-backdrop" hidden aria-hidden="true"></div>
 
     <aside class="sidebar" id="app-sidebar">
-      <div class="sidebar-head">
+      <div class="sidebar-head mobile-only">
         {{ brand_lockup(href=url_for('index'), size='sm', class='sidebar-brand') }}
       </div>
       <nav class="sidebar-nav" aria-label="Main">
@@ -79,9 +125,8 @@
         </a>
         {% endfor %}
       </nav>
-      <div class="sidebar-foot">
-        {% set pct = (usage_used / usage_quota * 100) if usage_quota else 0 %}
-        <a href="{{ url_for('billing') }}" class="usage-chip sidebar-usage-chip {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" id="header-usage-chip" data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}">
+      <div class="sidebar-foot mobile-only">
+        <a href="{{ url_for('billing') }}" class="usage-chip sidebar-usage-chip {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" data-usage-chip data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}">
           {% if plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
         </a>
         <div class="account-menu sidebar-account-menu" data-account-menu>
@@ -129,7 +174,7 @@
 
   </div>
 
-  <div class="global-search-overlay" id="global-search-overlay" hidden aria-hidden="true">
+  <div class="global-search-overlay mobile-only" id="global-search-overlay" hidden aria-hidden="true">
     <div class="global-search-page" role="dialog" aria-modal="true" aria-label="Search">
       <header class="global-search-page-head">
         <button type="button" class="icon-btn global-search-back" id="global-search-back" aria-label="Back">

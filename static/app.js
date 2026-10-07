@@ -18,10 +18,11 @@ function formatHeaderUsageRuns(value) {
  * @param {{ usage_used?: number, usage_quota?: number, plan?: string | null, runs_limit_free_tier?: boolean, limits?: { usage?: Record<string, unknown> } }} data
  */
 function updateHeaderUsageChip(data) {
-  const chip = document.getElementById("header-usage-chip");
-  if (!chip || !data) {
+  const chips = document.querySelectorAll("[data-usage-chip]");
+  if (!chips.length || !data) {
     return;
   }
+  const chip = chips[0];
   const usage = data.limits?.usage || {};
   const usedRaw = data.usage_used ?? usage.usage_used;
   const quotaRaw = data.usage_quota ?? usage.usage_quota;
@@ -33,12 +34,10 @@ function updateHeaderUsageChip(data) {
   const freeTier = Boolean(data.runs_limit_free_tier ?? usage.free_tier);
   let planLabel = data.plan ?? chip.dataset.planLabel ?? "";
   if (data.plan !== undefined && data.plan !== null) {
-    chip.dataset.planLabel = String(data.plan);
     planLabel = String(data.plan);
   }
   if (!planLabel && freeTier) {
     planLabel = "Free";
-    chip.dataset.planLabel = "Free";
   }
   let label;
   if (planLabel && planLabel !== "Free") {
@@ -50,14 +49,21 @@ function updateHeaderUsageChip(data) {
   } else {
     label = "No active plan";
   }
-  chip.textContent = label;
   const pct = Number(quotaRaw) ? (Number(usedRaw) / Number(quotaRaw)) * 100 : 0;
-  chip.classList.remove("ok", "warn");
-  if (Number(quotaRaw) && pct >= 75) {
-    chip.classList.add("warn");
-  } else if (planLabel && planLabel !== "Free") {
-    chip.classList.add("ok");
-  }
+  chips.forEach((el) => {
+    if (data.plan !== undefined && data.plan !== null) {
+      el.dataset.planLabel = String(data.plan);
+    } else if (freeTier) {
+      el.dataset.planLabel = "Free";
+    }
+    el.textContent = label;
+    el.classList.remove("ok", "warn");
+    if (Number(quotaRaw) && pct >= 75) {
+      el.classList.add("warn");
+    } else if (planLabel && planLabel !== "Free") {
+      el.classList.add("ok");
+    }
+  });
 }
 
 function closeAppDialog(result) {
@@ -374,54 +380,51 @@ function initAgentDrawer() {
 }
 
 function initAccountMenu() {
-  const root = document.querySelector("[data-account-menu]");
-  if (!root) {
-    return;
-  }
+  document.querySelectorAll("[data-account-menu]").forEach((root) => {
+    const trigger = root.querySelector(".account-menu-trigger");
+    const panel = root.querySelector(".account-menu-panel");
+    if (!trigger || !panel) {
+      return;
+    }
 
-  const trigger = root.querySelector(".account-menu-trigger");
-  const panel = root.querySelector(".account-menu-panel");
-  if (!trigger || !panel) {
-    return;
-  }
+    const close = () => {
+      root.classList.remove("is-open");
+      trigger.setAttribute("aria-expanded", "false");
+      window.setTimeout(() => {
+        if (!root.classList.contains("is-open")) {
+          panel.hidden = true;
+        }
+      }, 220);
+    };
 
-  const close = () => {
-    root.classList.remove("is-open");
-    trigger.setAttribute("aria-expanded", "false");
-    window.setTimeout(() => {
-      if (!root.classList.contains("is-open")) {
-        panel.hidden = true;
+    const open = () => {
+      panel.hidden = false;
+      requestAnimationFrame(() => {
+        root.classList.add("is-open");
+        trigger.setAttribute("aria-expanded", "true");
+      });
+    };
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (root.classList.contains("is-open")) {
+        close();
+      } else {
+        open();
       }
-    }, 220);
-  };
-
-  const open = () => {
-    panel.hidden = false;
-    requestAnimationFrame(() => {
-      root.classList.add("is-open");
-      trigger.setAttribute("aria-expanded", "true");
     });
-  };
 
-  trigger.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (root.classList.contains("is-open")) {
-      close();
-    } else {
-      open();
-    }
-  });
+    document.addEventListener("click", (e) => {
+      if (!root.contains(e.target)) {
+        close();
+      }
+    });
 
-  document.addEventListener("click", (e) => {
-    if (!root.contains(e.target)) {
-      close();
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      close();
-    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && root.classList.contains("is-open")) {
+        close();
+      }
+    });
   });
 }
 
@@ -1802,21 +1805,29 @@ async function initAgentComposer() {
   }
 }
 
-function initGlobalSearch() {
-  const wrap = document.getElementById("global-search-wrap");
-  const input = document.getElementById("global-search");
-  const clearBtn = document.getElementById("global-search-clear");
-  const resultsList = document.getElementById("global-search-results-list");
-  const statusEl = document.getElementById("global-search-status");
-  const overlay = document.getElementById("global-search-overlay");
-  const openBtn = document.getElementById("global-search-open");
-  const backBtn = document.getElementById("global-search-back");
-  const hintEl = document.getElementById("global-search-hint");
-  if (!wrap || !input || !resultsList || !overlay) {
-    return;
+/**
+ * @param {"inline" | "overlay"} mode
+ */
+function bindGlobalSearchSurface(mode) {
+  const isOverlay = mode === "overlay";
+  const wrap = document.getElementById(isOverlay ? "global-search-wrap" : "global-search-wrap-desktop");
+  const input = document.getElementById(isOverlay ? "global-search" : "global-search-desktop");
+  const clearBtn = document.getElementById(isOverlay ? "global-search-clear" : "global-search-clear-desktop");
+  const resultsList = document.getElementById(
+    isOverlay ? "global-search-results-list" : "global-search-results-list-desktop",
+  );
+  const statusEl = document.getElementById(isOverlay ? "global-search-status" : "global-search-status-desktop");
+  const resultsPanel = isOverlay ? null : document.getElementById("global-search-results-desktop");
+  const column = isOverlay ? document.getElementById("global-search-column") : document.getElementById("global-search-column");
+  const overlay = isOverlay ? document.getElementById("global-search-overlay") : null;
+  const hintEl = isOverlay ? document.getElementById("global-search-hint") : null;
+  const idPrefix = isOverlay ? "global-search-option" : "global-search-option-desktop";
+
+  if (!wrap || !input || !resultsList || !statusEl || (isOverlay && !overlay) || (!isOverlay && !resultsPanel)) {
+    return null;
   }
 
-  /** @type {Array<{ id: string, type: string, label: string, meta: string, href: string, thread_id?: string, message_id?: number }>} */
+  /** @type {Array<{ id: string, type: string, label: string, meta: string, href: string, thread_id?: string, message_id?: number, run_id?: string }>} */
   let resultItems = [];
   let activeIndex = -1;
   let searchTimer = null;
@@ -1840,7 +1851,23 @@ function initGlobalSearch() {
     hintEl.hidden = Boolean(trimmed || loading || resultsCount > 0);
   };
 
+  const setDropdownOpen = (open) => {
+    if (!resultsPanel) {
+      return;
+    }
+    input.setAttribute("aria-expanded", open ? "true" : "false");
+    if (!open) {
+      activeIndex = -1;
+      void uiHideElement(resultsPanel);
+      return;
+    }
+    void uiShowElement(resultsPanel);
+  };
+
   const openSearchPage = () => {
+    if (!overlay) {
+      return;
+    }
     overlay.removeAttribute("hidden");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("search-overlay-open");
@@ -1853,6 +1880,9 @@ function initGlobalSearch() {
   };
 
   const closeSearchPage = () => {
+    if (!overlay) {
+      return;
+    }
     overlay.setAttribute("hidden", "");
     overlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("search-overlay-open");
@@ -1870,12 +1900,18 @@ function initGlobalSearch() {
       statusEl.textContent = scopeLabel ? `Searching… · ${scopeLabel}` : "Searching…";
       statusEl.hidden = false;
       syncHint(query, true, 0);
+      if (!isOverlay) {
+        setDropdownOpen(true);
+      }
       return;
     }
 
     if (!query) {
       statusEl.hidden = true;
       syncHint("", false, 0);
+      if (!isOverlay) {
+        setDropdownOpen(false);
+      }
       return;
     }
 
@@ -1884,6 +1920,9 @@ function initGlobalSearch() {
       statusEl.textContent = `No results for “${query}”${scopeSuffix}`;
       statusEl.hidden = false;
       syncHint(query, false, 0);
+      if (!isOverlay) {
+        setDropdownOpen(true);
+      }
       return;
     }
 
@@ -1905,7 +1944,7 @@ function initGlobalSearch() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "global-search-result-btn";
-      btn.id = `global-search-option-${index}`;
+      btn.id = `${idPrefix}-${index}`;
 
       const label = document.createElement("span");
       label.className = "global-search-result-label";
@@ -1924,6 +1963,9 @@ function initGlobalSearch() {
     });
 
     highlightActive();
+    if (!isOverlay) {
+      setDropdownOpen(true);
+    }
   };
 
   const highlightActive = () => {
@@ -1931,7 +1973,7 @@ function initGlobalSearch() {
       row.classList.toggle("is-active", index === activeIndex);
     });
     if (activeIndex >= 0) {
-      const active = resultsList.querySelector(`#global-search-option-${activeIndex}`);
+      const active = resultsList.querySelector(`#${idPrefix}-${activeIndex}`);
       active?.scrollIntoView({ block: "nearest" });
     }
   };
@@ -1951,7 +1993,11 @@ function initGlobalSearch() {
         console.error(err);
       }
     }
-    closeSearchPage();
+    if (isOverlay) {
+      closeSearchPage();
+    } else {
+      setDropdownOpen(false);
+    }
     window.location.href = item.href;
   };
 
@@ -1990,17 +2036,15 @@ function initGlobalSearch() {
       statusEl.hidden = false;
       resultsList.innerHTML = "";
       syncHint(trimmed, false, 0);
+      if (!isOverlay) {
+        setDropdownOpen(true);
+      }
     }
   };
 
   const queueSearch = () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => runSearch(input.value), 120);
-  };
-
-  const focusSearch = () => {
-    openSearchPage();
-    input.select();
   };
 
   input.addEventListener("input", queueSearch);
@@ -2038,9 +2082,14 @@ function initGlobalSearch() {
       return;
     }
     if (e.key === "Escape") {
-      if (!overlay.hidden) {
+      if (isOverlay && overlay && !overlay.hidden) {
         e.preventDefault();
         closeSearchPage();
+        return;
+      }
+      if (!isOverlay && resultsPanel && uiIsOverlayOpen(resultsPanel, "ui-motion-visible")) {
+        e.preventDefault();
+        setDropdownOpen(false);
       }
     }
   });
@@ -2053,8 +2102,49 @@ function initGlobalSearch() {
     input.focus();
   });
 
-  openBtn?.addEventListener("click", () => openSearchPage());
-  backBtn?.addEventListener("click", () => closeSearchPage());
+  if (!isOverlay && column) {
+    document.addEventListener("click", (e) => {
+      if (!column.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    });
+  }
+
+  syncClear();
+  syncHint("", false, 0);
+
+  return {
+    mode,
+    focus: () => {
+      if (isOverlay) {
+        openSearchPage();
+      } else {
+        input.focus();
+        input.select();
+        if (input.value.trim()) {
+          queueSearch();
+        }
+      }
+    },
+    openOverlay: openSearchPage,
+  };
+}
+
+function initGlobalSearch() {
+  const desktop = bindGlobalSearchSurface("inline");
+  const mobile = bindGlobalSearchSurface("overlay");
+  const openBtn = document.getElementById("global-search-open");
+  const backBtn = document.getElementById("global-search-back");
+
+  openBtn?.addEventListener("click", () => mobile?.openOverlay());
+  backBtn?.addEventListener("click", () => {
+    const overlay = document.getElementById("global-search-overlay");
+    if (overlay && !overlay.hidden) {
+      overlay.setAttribute("hidden", "");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("search-overlay-open");
+    }
+  });
 
   document.addEventListener("keydown", (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "k") {
@@ -2064,11 +2154,12 @@ function initGlobalSearch() {
       return;
     }
     e.preventDefault();
-    focusSearch();
+    if (window.matchMedia("(max-width: 960px)").matches) {
+      mobile?.focus();
+    } else {
+      desktop?.focus();
+    }
   });
-
-  syncClear();
-  syncHint("", false, 0);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
