@@ -350,6 +350,31 @@ _register("zoom", lambda t, _c: _generic_bearer_get(
     detail_from=lambda u: f"User: {u.get('email') or u.get('id') or 'zoom'}.",
     token=t,
 ))
+def _clickup_user(token: str) -> IntegrationTestResult:
+    status, data = _json_request(
+        "https://api.clickup.com/api/v2/user",
+        headers={
+            "Authorization": token,
+            "Accept": "application/json",
+            "User-Agent": "MultiWorkAgent",
+        },
+    )
+    user = data.get("user") if isinstance(data.get("user"), dict) else data
+    label = (
+        (user or {}).get("email")
+        or (user or {}).get("username")
+        or (user or {}).get("id")
+        or "clickup account"
+    )
+    return IntegrationTestResult(
+        ok=True,
+        probe="clickup_user",
+        message="ClickUp accepted the credential.",
+        detail=f"User: {label}.",
+        http_status=status,
+    )
+
+
 _register("xero", lambda t, _c: _generic_bearer_get(
     probe="xero_organisations",
     url="https://api.xero.com/api.xro/2.0/Organisation",
@@ -358,6 +383,7 @@ _register("xero", lambda t, _c: _generic_bearer_get(
     token=t,
     extra_headers={"Accept": "application/json"},
 ))
+_register("clickup", lambda t, _c: _clickup_user(t))
 
 
 def test_integration_connection(
