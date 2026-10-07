@@ -4316,11 +4316,13 @@ table.data-table {
 }
 
 .password-toggle-icon .password-toggle-slash {
-  stroke-width: 2;
+  stroke-width: 2.25;
+  opacity: 0;
+  transition: opacity 0.12s ease;
 }
 
-.password-toggle-icon[hidden] {
-  display: none;
+.password-toggle.is-revealed .password-toggle-slash {
+  opacity: 1;
 }
 
 .auth-submit {
