@@ -114,25 +114,7 @@
       copyBtn.type = "button";
       copyBtn.className = "agent-code-copy msg-action-btn";
       copyBtn.setAttribute("aria-label", "Copy code");
-      if (typeof createCopyIconSvg === "function") {
-        copyBtn.appendChild(createCopyIconSvg());
-      } else if (typeof COPY_ICON_PATHS !== "undefined") {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("class", "msg-action-icon msg-action-icon--copy");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("aria-hidden", "true");
-        svg.setAttribute("fill", "none");
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "2");
-        COPY_ICON_PATHS.forEach((d) => {
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("d", d);
-          path.setAttribute("stroke", "currentColor");
-          path.setAttribute("fill", "none");
-          svg.appendChild(path);
-        });
-        copyBtn.appendChild(svg);
-      }
+      copyBtn.appendChild(createCopyIconSvg());
       copyBtn.addEventListener("click", async () => {
         const text = code?.textContent || pre.textContent || "";
         try {

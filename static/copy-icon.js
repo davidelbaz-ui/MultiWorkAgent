@@ -27,5 +27,4 @@
   }
 
   global.createCopyIconSvg = createCopyIconSvg;
-  global.COPY_ICON_PATHS = COPY_ICON_PATHS;
 })(window);
