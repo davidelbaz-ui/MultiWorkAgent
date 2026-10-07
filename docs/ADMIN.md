@@ -6,7 +6,7 @@ Separate from customer **Sign in** — uses operator credentials only.
 
 ## Configure
 
-Set in **Vercel → Production env** (and local `.env`):
+Set in **Vercel → Project → Settings → Environment Variables** for **Production** (and local `.env` for `python app.py` only — **`.env` is not uploaded to Vercel**):
 
 ```env
 ADMIN_EMAIL=operator@yourdomain.com
@@ -15,7 +15,9 @@ ADMIN_PASSWORD=use-a-long-random-password
 
 Optional: `ADMIN_PASSWORD_HASH` (werkzeug) instead of plain `ADMIN_PASSWORD`.
 
-Redeploy after changing env vars on Vercel.
+After adding or changing variables on Vercel, click **Redeploy** (existing deployments keep old env until redeploy).
+
+**Verify on production:** `GET https://your-domain/admin/ping` should return `{"ok":true,"admin":true,"db":true}`. If `"admin":false`, `ADMIN_EMAIL` / `ADMIN_PASSWORD` are missing or invalid in that deployment’s env.
 
 ## Sections
 

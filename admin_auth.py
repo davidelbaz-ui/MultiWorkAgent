@@ -3,16 +3,23 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 
 from werkzeug.security import check_password_hash
 
-from auth_store import normalize_email, validate_email
+from auth_store import normalize_email
+
+# Operator login: allow simple local-part@host (no public TLD required).
+_ADMIN_EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+$")
 
 
 def admin_email() -> str | None:
     raw = os.environ.get("ADMIN_EMAIL", "").strip()
-    return validate_email(raw)
+    clean = normalize_email(raw)
+    if not clean or not _ADMIN_EMAIL_RE.match(clean):
+        return None
+    return clean
 
 
 def admin_configured() -> bool:
