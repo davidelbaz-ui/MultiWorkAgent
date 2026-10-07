@@ -600,17 +600,14 @@ async function initAgentComposer() {
     return svg;
   };
 
-  const COPY_ICON_PATHS = [
-    "M8 8H6a2 2 0 0 0-2-2V6a2 2 0 0 0 2-2h8a2 2 0 0 0 2 2v2",
-    "M16 16H8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z",
-  ];
-
   const createMsgCopyButton = (getText) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "msg-action-btn";
     btn.setAttribute("aria-label", "Copy message");
-    btn.appendChild(svgIcon(COPY_ICON_PATHS));
+    btn.appendChild(
+      typeof createCopyIconSvg === "function" ? createCopyIconSvg() : svgIcon([]),
+    );
     btn.addEventListener("click", async () => {
       const text = typeof getText === "function" ? getText() : String(getText || "");
       try {

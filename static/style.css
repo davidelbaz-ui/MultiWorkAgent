@@ -2102,6 +2102,12 @@ table.data-table {
   stroke-linejoin: round;
 }
 
+.msg-action-icon--copy {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 1.35;
+}
+
 .msg-action-btn.is-copied {
   color: var(--accent);
 }
