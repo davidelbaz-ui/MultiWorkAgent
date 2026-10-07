@@ -736,25 +736,14 @@ async function initAgentComposer() {
     editBtn.type = "button";
     editBtn.className = "msg-action-btn";
     editBtn.setAttribute("aria-label", "Edit message");
-    editBtn.appendChild(
-      svgIcon([
-        "M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.12l-2.88-2.88a1.5 1.5 0 0 0-2.12 0L4 16v4",
-        "M13.5 6.5l2 2",
-      ]),
-    );
+    editBtn.appendChild(createEditIconSvg());
     editBtn.addEventListener("click", () => startEditMessage(msg));
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.className = "msg-action-btn";
     deleteBtn.setAttribute("aria-label", "Delete message");
-    deleteBtn.appendChild(
-      svgIcon([
-        "M4 7h16",
-        "M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2",
-        "M7 7l1 12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-12",
-      ]),
-    );
+    deleteBtn.appendChild(createDeleteIconSvg());
     deleteBtn.addEventListener("click", () => deleteMessage(msg.id));
 
     const copyBtn = createMsgCopyButton(() => msg.content || "");
@@ -1210,8 +1199,7 @@ async function initAgentComposer() {
       renameBtn.type = "button";
       renameBtn.className = "agent-chat-action";
       renameBtn.setAttribute("aria-label", "Rename chat");
-      renameBtn.innerHTML =
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z"/></svg>';
+      renameBtn.appendChild(createEditIconSvg());
       renameBtn.addEventListener("click", async (e) => {
         e.stopPropagation();
         const current = thread.title || "";
