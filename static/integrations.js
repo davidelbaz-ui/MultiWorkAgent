@@ -5,7 +5,7 @@ async function integrationApiJson(url, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || `Request failed (${res.status})`);
+    const err = new Error(data.error || data.message || `Request failed (${res.status})`);
     err.status = res.status;
     err.data = data;
     throw err;
@@ -341,8 +341,91 @@ function initIntegrationCatalogSearch() {
   syncClear();
 }
 
+function integrationTestExplainerLines(providerName) {
+  return [
+    `We verify ${providerName} by calling a read-only API endpoint with your stored token or API key.`,
+    "Examples: your account profile, auth.test, or a lightweight metadata route. Nothing is created, updated, or deleted.",
+    "The request runs from the MultiWorkAgent server, the same way the agent would use this connection.",
+  ];
+}
+
+async function runIntegrationConnectionTest(ctx) {
+  return integrationApiJson(
+    `/api/businesses/${ctx.businessId}/integrations/${ctx.connectionId}/test`,
+    { method: "POST" },
+  );
+}
+
+function openIntegrationTestWizard(ctx) {
+  return openAppWizard({
+    title: `Test ${ctx.providerName}`,
+    finishLabel: "Close",
+    steps: [
+      {
+        id: "test",
+        title: "Connection test",
+        render(container, c) {
+          const panel = wizardPanel("What we check", integrationTestExplainerLines(c.providerName));
+          container.appendChild(panel);
+
+          const resultBox = document.createElement("div");
+          resultBox.className = "integration-test-result";
+          resultBox.setAttribute("role", "status");
+          resultBox.textContent = "Running test…";
+          container.appendChild(resultBox);
+
+          void (async () => {
+            try {
+              const data = await runIntegrationConnectionTest(c);
+              resultBox.classList.add("integration-test-result--ok");
+              resultBox.textContent = data.message || "Connection succeeded.";
+              if (data.detail) {
+                const detail = document.createElement("p");
+                detail.className = "integration-test-result-detail";
+                detail.textContent = data.detail;
+                resultBox.appendChild(detail);
+              }
+            } catch (err) {
+              resultBox.classList.add("integration-test-result--err");
+              const message = err.data?.message || err.message || "Connection test failed.";
+              resultBox.textContent = message;
+              const detailText = err.data?.detail;
+              if (detailText) {
+                const detail = document.createElement("p");
+                detail.className = "integration-test-result-detail";
+                detail.textContent = detailText;
+                resultBox.appendChild(detail);
+              }
+            }
+          })();
+        },
+      },
+    ],
+    ctx,
+    onFinish: () => {},
+  });
+}
+
 function initIntegrationDisconnect() {
   document.querySelector(".integration-connections-list")?.addEventListener("click", async (e) => {
+    const testBtn = e.target.closest(".integration-test-btn");
+    if (testBtn instanceof HTMLElement) {
+      const connectionId = testBtn.dataset.connectionId;
+      const businessId = testBtn.dataset.businessId;
+      const providerName = testBtn.dataset.providerName || "integration";
+      const providerSlug = testBtn.dataset.providerSlug || "";
+      if (!connectionId || !businessId) {
+        return;
+      }
+      await openIntegrationTestWizard({
+        connectionId,
+        businessId,
+        providerName,
+        providerSlug,
+      });
+      return;
+    }
+
     const btn = e.target.closest(".integration-disconnect-btn");
     if (!(btn instanceof HTMLElement)) {
       return;

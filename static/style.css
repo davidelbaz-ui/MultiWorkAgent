@@ -2741,6 +2741,38 @@ table.data-table {
   background: var(--surface-2);
 }
 
+.integration-connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.integration-test-result {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.integration-test-result--ok {
+  border: 1px solid rgba(46, 160, 67, 0.45);
+  background: rgba(46, 160, 67, 0.1);
+}
+
+.integration-test-result--err {
+  border: 1px solid rgba(220, 53, 69, 0.45);
+  background: rgba(220, 53, 69, 0.08);
+}
+
+.integration-test-result-detail {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .integration-connection-name {
   font-weight: 600;
 }

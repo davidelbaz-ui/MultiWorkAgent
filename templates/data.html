@@ -27,7 +27,10 @@
         <span class="integration-connection-name">{{ c.provider_name }}</span>
         <span class="meta-row">{{ c.business_name }} · {{ c.auth_type }} · {{ c.status }}{% if c.credential_hint %} · {{ c.credential_hint }}{% endif %}</span>
       </div>
-      <button type="button" class="btn btn-sm integration-disconnect-btn" data-connection-id="{{ c.id }}" data-business-id="{{ c.business_id }}" data-provider-name="{{ c.provider_name }}">Disconnect</button>
+      <div class="integration-connection-actions">
+        <button type="button" class="btn btn-sm integration-test-btn" data-connection-id="{{ c.id }}" data-business-id="{{ c.business_id }}" data-provider-name="{{ c.provider_name }}" data-provider-slug="{{ c.provider_slug }}">Test connection</button>
+        <button type="button" class="btn btn-sm integration-disconnect-btn" data-connection-id="{{ c.id }}" data-business-id="{{ c.business_id }}" data-provider-name="{{ c.provider_name }}">Disconnect</button>
+      </div>
     </li>
     {% endfor %}
   </ul>

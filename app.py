@@ -38,6 +38,7 @@ import auth_store
 import business_store
 import chat_store
 import connection_store
+import integration_connection_test
 import database_introspect
 import database_store
 import integration_oauth
@@ -1608,6 +1609,30 @@ def api_business_knowledge_files_delete(business_id: str, file_id: str):
     if not knowledge_store.delete_file(account_id, business_id, file_id):
         return jsonify({"error": "not found"}), 404
     return jsonify({"ok": True})
+
+
+@app.post("/api/businesses/<business_id>/integrations/<connection_id>/test")
+def api_business_integrations_test(business_id: str, connection_id: str):
+    account_id = _ensure_account_id()
+    if not business_store.get_business(account_id, business_id):
+        return jsonify({"error": "not found"}), 404
+    row = connection_store.get_connection_with_credentials(
+        account_id,
+        business_id,
+        connection_id,
+    )
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    result = integration_connection_test.test_integration_connection(
+        provider_slug=row["provider_slug"],
+        auth_type=row["auth_type"],
+        status=row["status"],
+        credentials=row.get("credentials"),
+    )
+    payload = result.to_api()
+    payload["provider_name"] = row["provider_name"]
+    payload["provider_slug"] = row["provider_slug"]
+    return jsonify(payload), 200 if result.ok else 422
 
 
 @app.delete("/api/businesses/<business_id>/integrations/<connection_id>")

@@ -84,6 +84,26 @@ def get_connection(account_id: str, connection_id: str) -> dict[str, Any] | None
     return _row_to_connection(row) if row else None
 
 
+def get_connection_with_credentials(
+    account_id: str,
+    business_id: str,
+    connection_id: str,
+) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                id, account_id, business_id, provider_slug, provider_name,
+                auth_type, status, secret_ciphertext, credential_hint,
+                created_at, updated_at
+            FROM integration_connections
+            WHERE account_id = ? AND business_id = ? AND id = ?
+            """,
+            (account_id, business_id, connection_id),
+        ).fetchone()
+    return _row_to_connection(row, include_secret=True) if row else None
+
+
 def get_connection_for_business_provider(
     account_id: str,
     business_id: str,
