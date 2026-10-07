@@ -1465,6 +1465,194 @@ body.search-overlay-open {
   .start-hero {
     padding: 1.5rem clamp(1rem, 4vw, 2rem);
   }
+
+  /*
+   * No hover-only visuals on mobile (avoids sticky :hover after tap).
+   * Open/focus/active states are unchanged.
+   */
+  a:hover {
+    text-decoration: none;
+  }
+
+  .logo:hover,
+  .brand-lockup:hover,
+  .start-nav-link:hover,
+  .start-footer-legal a:hover,
+  .agent-composer-notice a:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .business-switcher-trigger:hover {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .business-switcher.is-open .business-switcher-trigger:hover {
+    border-color: rgba(91, 141, 239, 0.55);
+    box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.25);
+  }
+
+  .business-switcher-option:hover,
+  .business-switcher-option:focus {
+    background: transparent;
+    color: var(--text);
+  }
+
+  .business-switcher-option.is-selected,
+  .business-switcher-option.is-selected:hover,
+  .business-switcher-option.is-selected:focus {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .global-search-clear:hover,
+  .integration-search-clear:hover {
+    background: transparent;
+  }
+
+  .global-search-result-btn:hover {
+    background: transparent;
+  }
+
+  .global-search-result.is-active .global-search-result-btn {
+    background: rgba(91, 141, 239, 0.12);
+  }
+
+  .icon-btn:hover,
+  .btn:hover,
+  .btn-primary:hover,
+  .btn-danger:hover {
+    filter: none;
+  }
+
+  .icon-btn:hover {
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent);
+    border-color: var(--accent-dim);
+    color: #fff;
+  }
+
+  .btn-danger:hover {
+    background: var(--danger);
+    border-color: #c85a62;
+    color: #fff;
+  }
+
+  .sidebar-usage-chip:hover {
+    filter: none;
+    text-decoration: none;
+  }
+
+  .sidebar-account-trigger:hover {
+    background: transparent;
+  }
+
+  .nav-link:hover {
+    background: transparent;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .nav-link.active,
+  .nav-link.active:hover {
+    background: rgba(91, 141, 239, 0.15);
+    color: var(--accent);
+  }
+
+  .agent-chat-select:hover {
+    background: transparent;
+  }
+
+  .agent-chat-item.is-active .agent-chat-select,
+  .agent-chat-item.is-active .agent-chat-select:hover {
+    background: transparent;
+    color: var(--accent);
+  }
+
+  .agent-chat-action:hover {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .agent-chat-action--danger:hover {
+    color: var(--muted);
+  }
+
+  .agent-menu-btn:hover,
+  .agent-menu-btn[aria-expanded="true"]:hover {
+    border-color: var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  .agent-menu-btn[aria-expanded="true"] {
+    border-color: var(--accent);
+    background: rgba(91, 141, 239, 0.12);
+  }
+
+  .agent-attachment-remove:hover,
+  .agent-upload-btn:hover,
+  .agent-send-btn:hover:not(:disabled),
+  .agent-send-btn.is-stop:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .msg-action-btn:hover,
+  .msg-action-btn:hover .msg-action-icon--copy {
+    background: transparent;
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  .integration-tile:hover {
+    border-color: var(--border);
+    background: var(--surface);
+  }
+
+  .integration-tile.is-selected,
+  .integration-tile.is-selected:hover {
+    border-color: var(--accent);
+    background: rgba(91, 141, 239, 0.08);
+  }
+
+  .billing-segmented-option:hover .billing-segmented-text,
+  .theme-segmented-option:hover {
+    color: inherit;
+    background: transparent;
+  }
+
+  .notifications-delete-all:hover,
+  .notifications-item-link:hover,
+  .notifications-item-delete:hover {
+    background: transparent;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .account-menu-item:hover,
+  .account-menu-item:focus-visible {
+    background: transparent;
+    color: var(--text);
+  }
+
+  .auth-oauth-btn:hover,
+  .auth-oauth-btn--google:hover,
+  .auth-oauth-btn--microsoft:hover {
+    filter: none;
+  }
 }
 
 .card {
