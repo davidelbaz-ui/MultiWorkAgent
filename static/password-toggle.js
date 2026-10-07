@@ -1,6 +1,6 @@
 function initPasswordToggles() {
   document.querySelectorAll(".password-field").forEach((wrap) => {
-    const input = wrap.querySelector(".password-input, input[type='password']");
+    const input = wrap.querySelector(".password-input");
     const btn = wrap.querySelector(".password-toggle");
     if (!input || !btn || btn.dataset.bound === "1") {
       return;

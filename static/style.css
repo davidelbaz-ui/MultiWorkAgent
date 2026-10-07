@@ -4315,6 +4315,10 @@ table.data-table {
   stroke-linejoin: round;
 }
 
+.password-toggle-icon .password-toggle-slash {
+  stroke-width: 2;
+}
+
 .password-toggle-icon[hidden] {
   display: none;
 }
