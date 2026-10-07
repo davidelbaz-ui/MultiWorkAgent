@@ -614,7 +614,7 @@ async function initAgentComposer() {
           ];
     const svg = svgIcon(paths);
     svg.classList.add("msg-action-icon--copy");
-    svg.setAttribute("stroke-width", "1.35");
+    svg.setAttribute("stroke-width", "2");
     parent.appendChild(svg);
   };
 

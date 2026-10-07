@@ -2103,10 +2103,14 @@ table.data-table {
 }
 
 .msg-action-icon--copy {
-  width: 1rem;
-  height: 1rem;
-  stroke-width: 1.35;
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke-width: 2;
   color: var(--muted);
+}
+
+.msg-action-icon--copy path {
+  stroke-width: 2;
 }
 
 .msg-action-btn:hover .msg-action-icon--copy {

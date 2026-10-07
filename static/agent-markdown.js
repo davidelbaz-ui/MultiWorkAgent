@@ -123,7 +123,7 @@
         svg.setAttribute("aria-hidden", "true");
         svg.setAttribute("fill", "none");
         svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "1.35");
+        svg.setAttribute("stroke-width", "2");
         COPY_ICON_PATHS.forEach((d) => {
           const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
           path.setAttribute("d", d);

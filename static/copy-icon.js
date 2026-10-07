@@ -12,7 +12,7 @@
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("fill", "none");
     svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("stroke-width", "1.35");
+    svg.setAttribute("stroke-width", "2");
     svg.setAttribute("stroke-linecap", "round");
     svg.setAttribute("stroke-linejoin", "round");
     COPY_ICON_PATHS.forEach((d) => {
