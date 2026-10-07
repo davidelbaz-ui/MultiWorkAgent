@@ -113,3 +113,10 @@
 </div>
 </div>
 {% endblock %}
+
+{% block pre_app_scripts %}
+<script src="{{ url_for('static', filename='vendor/marked.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='vendor/dompurify.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='vendor/highlight.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='agent-markdown.js') }}" defer></script>
+{% endblock %}

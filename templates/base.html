@@ -135,6 +135,7 @@
 
   <script src="{{ url_for('static', filename='ui-motion.js') }}" defer></script>
   <script src="{{ url_for('static', filename='app-wizard.js') }}" defer></script>
+  {% block pre_app_scripts %}{% endblock %}
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   <script src="{{ url_for('static', filename='notifications.js') }}" defer></script>
   {% block scripts %}{% endblock %}

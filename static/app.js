@@ -689,6 +689,15 @@ async function initAgentComposer() {
     return block;
   };
 
+  const renderAgentReplyContent = (container, markdown, options = {}) => {
+    if (typeof AgentMarkdown !== "undefined" && AgentMarkdown.isAvailable) {
+      AgentMarkdown.renderInto(container, markdown || "", options);
+      return;
+    }
+    container.classList.add("msg-agent-text");
+    container.textContent = markdown || "";
+  };
+
   const renderMessage = (msg) => {
     if (msg.role === "user") {
       return buildUserMessageBlock(msg);
@@ -696,9 +705,9 @@ async function initAgentComposer() {
     const div = document.createElement("div");
     div.className = `msg ${msg.role}`;
     if (msg.content) {
-      const text = document.createElement("span");
-      text.textContent = msg.content;
-      div.appendChild(text);
+      const body = document.createElement("div");
+      renderAgentReplyContent(body, msg.content);
+      div.appendChild(body);
     }
     appendAttachmentLines(div, msg.attachments);
     return div;
@@ -716,8 +725,8 @@ async function initAgentComposer() {
     if (!bubble) {
       bubble = document.createElement("div");
       bubble.className = "msg agent is-streaming";
-      const textSpan = document.createElement("span");
-      textSpan.className = "msg-agent-text";
+      const textSpan = document.createElement("div");
+      textSpan.className = "msg-agent-text agent-md";
       const dot = document.createElement("span");
       dot.className = "agent-stream-dot";
       dot.setAttribute("aria-hidden", "true");
@@ -731,8 +740,7 @@ async function initAgentComposer() {
     messages.querySelector(".msg.agent.is-streaming")?.remove();
   };
 
-  let streamRevealBuffer = "";
-  let streamRevealScheduled = false;
+  let streamMarkdownScheduled = false;
   /** @type {HTMLElement | null} */
   let streamRevealTextEl = null;
   /** Full agent text received so far (handles cumulative SSE deltas). */
@@ -744,44 +752,45 @@ async function initAgentComposer() {
     }
   };
 
-  const pumpStreamReveal = () => {
-    streamRevealScheduled = false;
+  const flushStreamMarkdown = () => {
+    streamMarkdownScheduled = false;
     const el = streamRevealTextEl;
-    if (!el || !streamRevealBuffer) {
+    if (!el) {
       return;
     }
-    const take = Math.min(streamRevealBuffer.length, 32);
-    el.textContent += streamRevealBuffer.slice(0, take);
-    streamRevealBuffer = streamRevealBuffer.slice(take);
+    renderAgentReplyContent(el, streamReceivedFull, { streaming: true });
     scrollAgentToEnd();
-    if (streamRevealBuffer.length) {
-      streamRevealScheduled = true;
-      requestAnimationFrame(pumpStreamReveal);
+  };
+
+  const scheduleStreamMarkdown = (el) => {
+    streamRevealTextEl = el;
+    if (streamMarkdownScheduled) {
+      return;
     }
+    streamMarkdownScheduled = true;
+    requestAnimationFrame(flushStreamMarkdown);
   };
 
   const enqueueStreamReveal = (text, el) => {
     if (!text) {
       return;
     }
-    streamRevealTextEl = el;
-    streamRevealBuffer += text;
-    if (!streamRevealScheduled) {
-      streamRevealScheduled = true;
-      requestAnimationFrame(pumpStreamReveal);
-    }
+    scheduleStreamMarkdown(el);
   };
 
   const drainStreamReveal = () =>
     new Promise((resolve) => {
       const tick = () => {
-        if (!streamRevealBuffer) {
-          streamRevealTextEl = null;
-          resolve();
+        if (streamMarkdownScheduled) {
+          requestAnimationFrame(tick);
           return;
         }
-        pumpStreamReveal();
-        requestAnimationFrame(tick);
+        const el = streamRevealTextEl;
+        if (el && streamReceivedFull) {
+          renderAgentReplyContent(el, streamReceivedFull);
+        }
+        streamRevealTextEl = null;
+        resolve();
       };
       tick();
     });
@@ -951,9 +960,8 @@ async function initAgentComposer() {
         }
         if (payload.type === "start") {
           activeRunId = payload.run_id || null;
-          streamRevealBuffer = "";
           streamRevealTextEl = null;
-          streamRevealScheduled = false;
+          streamMarkdownScheduled = false;
           streamReceivedFull = "";
           if (payload.message) {
             messages.appendChild(buildUserMessageBlock(payload.message));
