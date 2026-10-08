@@ -953,8 +953,9 @@ body.admin-page .admin-back a:hover {
   .admin-main {
     display: flex;
     flex-direction: column;
-    height: 100dvh;
-    max-height: 100dvh;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
     overflow: hidden;
     padding: 0;
   }
@@ -1093,7 +1094,12 @@ body.admin-page .admin-back a:hover {
       visibility 0.22s;
     pointer-events: none;
     padding-top: calc(1rem + env(safe-area-inset-top, 0));
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: calc(1.35rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .admin-sidebar-foot {
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.15rem;
   }
 
   .admin-shell.admin-nav-open .admin-sidebar {
