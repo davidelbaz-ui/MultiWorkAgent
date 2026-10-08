@@ -906,6 +906,20 @@ body.admin-page .admin-back a:hover {
 }
 
 @media (max-width: 1200px) {
+  html:has(body.admin-page),
+  body.admin-page {
+    height: 100%;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .admin-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    min-height: 0;
+  }
+
   .admin-sheet-option:hover {
     border-color: var(--border);
     background: var(--surface);
@@ -950,13 +964,36 @@ body.admin-page .admin-back a:hover {
     align-items: center;
     gap: 0.45rem;
     flex-shrink: 0;
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 50;
     padding: 0.5rem 0.75rem;
     padding-top: calc(0.5rem + env(safe-area-inset-top, 0));
     background: var(--bg);
     border-bottom: 1px solid var(--border);
+  }
+
+  .admin-main-header .admin-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 0;
+  }
+
+  .admin-main-header .admin-nav-toggle .icon-btn-svg {
+    display: block;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0;
+  }
+
+  .admin-sidebar-foot {
+    padding-bottom: 0.65rem;
+  }
+
+  .admin-sidebar {
+    padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0));
   }
 
   .admin-mobile-bar-title {
@@ -998,11 +1035,15 @@ body.admin-page .admin-back a:hover {
 
 @media (max-width: 960px) {
   .admin-shell {
-    display: block;
-    height: auto;
-    max-height: none;
-    min-height: 100dvh;
-    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .admin-main {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
   }
 
   .admin-shell.admin-nav-open {
