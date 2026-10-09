@@ -66,10 +66,12 @@ Production URL (when deployed on Vercel): **https://multiworkagent.vercel.app** 
 ### Acting through integrations and databases
 
 - **Purpose:** Integrations exist so the agent can **execute tasks** (API calls, reads/writes, queries) in connected systems during agent runs when the user instructs it.
-- **Per business:** Only connections for the **selected business** (or scope rules shown in the app) apply. If scope is **All businesses**, guide the user to select one business and connect tools on Data.
-- **Setup:** **Data & integrations** → select business → connect OAuth or API key for each provider → then ask the agent to do the work in chat or structured runs.
+- **Per business:** Only connections for the **selected business** apply. If scope is **All businesses**, the agent cannot call integrations or databases until the user selects one business in the header.
+- **How it works (server):** With a single business selected, the agent receives tools to **list connections**, send **HTTPS requests** to connected integrations (using stored OAuth/API credentials and each vendor’s allowed API bases), and run **SQL** on connected databases (respecting read-only vs read/write). Self-hosted or CMS sites (e.g. WordPress) often need an **site URL** or **API base URL** saved with the API key on connect.
+- **Setup:** **Data & integrations** → select business → connect OAuth or API key → then ask the agent to do the work in chat.
 - **Responsibility:** Users must review what they ask the agent to do and verify results in external systems; actions can be wrong or destructive.
-- **Run inspector:** Tool call traces in the run details drawer show integration/tool activity when a run uses them (alongside scope and model usage metadata).
+- **Run inspector:** Tool call traces in the run details drawer show `integration_http_request`, `database_execute_sql`, and related steps when a run uses them.
+- **Disable tools:** Set `AGENT_INTEGRATION_TOOLS=0` on the server to turn off live integration/database calls (chat-only).
 
 When users ask to “post to Slack,” “update QuickBooks,” etc., confirm the integration is connected for that business, then help them phrase the task for the agent to perform — do not tell them the product is advice-only or that integrations are never invoked from chat.
 

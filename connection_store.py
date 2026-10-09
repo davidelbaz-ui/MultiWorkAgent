@@ -152,6 +152,8 @@ def connect_api_key(
     *,
     provider_slug: str,
     api_key: str,
+    api_base_url: str | None = None,
+    site_url: str | None = None,
 ) -> dict[str, Any]:
     if not business_store.get_business(account_id, business_id):
         raise LookupError("business not found")
@@ -163,8 +165,12 @@ def connect_api_key(
     if not clean_key:
         raise ValueError("api_key is required")
 
+    creds: dict[str, Any] = {"api_key": clean_key}
+    for key, value in (("api_base_url", api_base_url), ("site_url", site_url)):
+        if isinstance(value, str) and value.strip():
+            creds[key] = value.strip()
     now = _utc_now()
-    ciphertext = integration_secrets.encrypt_credentials({"api_key": clean_key})
+    ciphertext = integration_secrets.encrypt_credentials(creds)
     hint = integration_secrets.credential_hint(clean_key)
     connection_id = str(uuid.uuid4())
 

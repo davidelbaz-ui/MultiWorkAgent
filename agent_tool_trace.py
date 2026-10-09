@@ -54,6 +54,21 @@ def model_tool_use_call(*, tool_id: str, name: str, tool_input: Any) -> dict[str
     }
 
 
+def executed_tool_call(
+    *,
+    name: str,
+    arguments: Any,
+    result: Any,
+    status: str,
+) -> dict[str, Any]:
+    return {
+        "tool_name": name,
+        "input": arguments,
+        "output": result,
+        "status": status,
+    }
+
+
 def build_chat_run_tool_calls(
     *,
     scope_label: str,
@@ -65,6 +80,7 @@ def build_chat_run_tool_calls(
     text_chars: int,
     stop_reason: str | None,
     model_tool_uses: list[dict[str, Any]],
+    executed_tools: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     calls: list[dict[str, Any]] = [
         scope_context_call(
@@ -73,6 +89,8 @@ def build_chat_run_tool_calls(
             message_count=message_count,
         ),
     ]
+    if executed_tools:
+        calls.extend(executed_tools)
     for tool_use in model_tool_uses:
         calls.append(
             model_tool_use_call(

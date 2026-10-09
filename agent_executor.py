@@ -18,6 +18,8 @@ from typing import Any
 
 _stream_cancel_events: dict[str, threading.Event] = {}
 
+import agent_gemini_tool_loop
+import agent_operation_tools
 import agent_tool_trace
 import chat_store
 import knowledge_store
@@ -241,7 +243,9 @@ def _system_prompt(
         "Do not invent integrations or capabilities the reference does not describe. "
         "MultiWorkAgent is built for the agent to perform operational work through connected "
         "integrations and databases per business; when the user asks to change an external system, "
-        "help them connect it on Data & integrations if needed and carry out the task when connections exist. "
+        "help them connect it on Data & integrations if needed. When a single business is selected and "
+        "integrations or databases are connected, use the provided tools to call those systems — do not "
+        "only describe steps the user must take manually. "
         "When you suggest actions in connected systems, note briefly that the user should verify "
         "results—do not add a generic disclaimer footer on every reply.\n"
         "When the user attaches images, describe and use what you see in them.\n"
@@ -464,10 +468,12 @@ def _gemini_contents(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _call_gemini(
     *,
     system: str,
-    messages: list[dict[str, str]],
+    messages: list[dict[str, Any]],
     scope_label: str,
     business_name: str | None,
     message_count: int,
+    account_id: str | None = None,
+    business_id: str | None = None,
 ) -> AgentRunResult:
     api_key = _gemini_api_key()
     if not api_key:
@@ -481,12 +487,70 @@ def _call_gemini(
         )
 
     primary_model = _model()
+    generation_config = {
+        "maxOutputTokens": min(DEFAULT_MAX_OUTPUT_TOKENS, run_output_cap()),
+    }
+    contents = _gemini_contents(messages)
+    op_ctx = _operation_context(account_id, business_id, business_name)
+
+    if op_ctx:
+        try:
+            content, input_tokens, output_tokens, finish_reason, executed = (
+                agent_gemini_tool_loop.run_gemini_with_operation_tools(
+                    api_key=api_key,
+                    model=primary_model,
+                    system=system,
+                    contents=contents,
+                    ctx=op_ctx,
+                    scope_label=scope_label,
+                    business_name=business_name,
+                    message_count=message_count,
+                    generation_config=generation_config,
+                    timeout=_timeout_seconds(),
+                    retry_status_codes=GEMINI_RETRY_STATUS_CODES,
+                    retry_attempts=GEMINI_RETRY_ATTEMPTS,
+                )
+            )
+        except InterruptedError:
+            return AgentRunResult(
+                status="error",
+                content="",
+                error_code="cancelled",
+            )
+        except (urllib.error.HTTPError, urllib.error.URLError, socket.timeout, RuntimeError) as exc:
+            detail = str(exc)
+            if isinstance(exc, urllib.error.HTTPError):
+                detail = exc.read().decode("utf-8", errors="replace")[:500]
+            return AgentRunResult(
+                status="error",
+                content=f"The agent request failed. {detail}".strip(),
+                error_code="http_error",
+            )
+
+        tool_calls = agent_tool_trace.build_chat_run_tool_calls(
+            scope_label=scope_label,
+            business_name=business_name,
+            message_count=message_count,
+            model=primary_model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            text_chars=len(content),
+            stop_reason=finish_reason,
+            model_tool_uses=[],
+            executed_tools=executed,
+        )
+        return AgentRunResult(
+            status="completed",
+            content=content,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            tool_calls=tool_calls,
+        )
+
     payload: dict[str, Any] = {
         "systemInstruction": {"parts": [{"text": system}]},
-        "contents": _gemini_contents(messages),
-        "generationConfig": {
-            "maxOutputTokens": min(DEFAULT_MAX_OUTPUT_TOKENS, run_output_cap()),
-        },
+        "contents": contents,
+        "generationConfig": generation_config,
     }
 
     data, err_result = _gemini_generate_with_retries(
@@ -714,6 +778,24 @@ def _iter_gemini_stream_chunks(
                 yield "", usage
 
 
+def _operation_context(
+    account_id: str | None,
+    business_id: str | None,
+    business_name: str | None,
+) -> agent_operation_tools.OperationContext | None:
+    if (
+        not account_id
+        or not business_id
+        or not agent_operation_tools.integration_tools_enabled()
+    ):
+        return None
+    return agent_operation_tools.OperationContext(
+        account_id=account_id,
+        business_id=business_id,
+        business_name=business_name,
+    )
+
+
 def _agent_system_prompt(
     *,
     scope_label: str,
@@ -727,11 +809,20 @@ def _agent_system_prompt(
             account_id,
             business_id=business_id,
         )
-    return _system_prompt(
+    prompt = _system_prompt(
         scope_label=scope_label,
         business_name=business_name,
         knowledge_block=knowledge or None,
     )
+    ctx = _operation_context(account_id, business_id, business_name)
+    if ctx:
+        prompt += agent_operation_tools.build_connections_system_appendix(ctx)
+    elif agent_operation_tools.integration_tools_enabled() and not business_id:
+        prompt += (
+            "\n\nNo business is selected for scoped operations. "
+            "Ask the user to select one business in the header before you can call integrations or databases."
+        )
+    return prompt
 
 
 def stream_generate_reply(
@@ -801,6 +892,33 @@ def stream_generate_reply(
                 error_code="missing_api_key",
             ),
         }
+        return
+
+    if _operation_context(account_id, business_id, business_name):
+        result = _call_gemini(
+            system=system,
+            messages=api_messages,
+            scope_label=scope_label,
+            business_name=business_name,
+            message_count=message_count,
+            account_id=account_id,
+            business_id=business_id,
+        )
+        if cancel_event and cancel_event.is_set():
+            yield {
+                "event": "done",
+                "result": AgentRunResult(
+                    status="error",
+                    content=result.content if result.status == "completed" else "",
+                    error_code="cancelled",
+                    input_tokens=result.input_tokens,
+                    output_tokens=result.output_tokens,
+                ),
+            }
+            return
+        if result.status == "completed" and result.content:
+            yield {"event": "delta", "text": result.content}
+        yield {"event": "done", "result": result}
         return
 
     payload: dict[str, Any] = {
@@ -981,6 +1099,8 @@ def generate_reply(
             scope_label=scope_label,
             business_name=business_name,
             message_count=message_count,
+            account_id=account_id,
+            business_id=business_id,
         )
     return _call_anthropic(
         system=system,

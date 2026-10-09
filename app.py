@@ -1453,11 +1453,15 @@ def api_business_integrations_connect(business_id: str):
         api_key = payload.get("api_key")
         if not isinstance(api_key, str):
             return jsonify({"error": "api_key is required for api_key auth"}), 400
+        api_base_url = payload.get("api_base_url")
+        site_url = payload.get("site_url")
         connection = connection_store.connect_api_key(
             account_id,
             business_id,
             provider_slug=provider_slug.strip(),
             api_key=api_key,
+            api_base_url=api_base_url if isinstance(api_base_url, str) else None,
+            site_url=site_url if isinstance(site_url, str) else None,
         )
     except LookupError:
         return jsonify({"error": "not found"}), 404
