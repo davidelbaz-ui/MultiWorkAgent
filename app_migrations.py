@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 23
+APP_SCHEMA_VERSION = 24
 
 
 def _utc_now() -> str:
