@@ -11,6 +11,7 @@
   }
 
   const pendingFiles = [];
+  let syncComposerActionButton = null;
 
   function escapeHtml(text) {
     const div = document.createElement("div");
@@ -38,6 +39,7 @@
     attachmentsEl.innerHTML = "";
     if (!pendingFiles.length) {
       attachmentsEl.hidden = true;
+      if (syncComposerActionButton) syncComposerActionButton();
       return;
     }
     attachmentsEl.hidden = false;
@@ -60,6 +62,7 @@
       item.append(name, removeBtn);
       attachmentsEl.appendChild(item);
     });
+    if (syncComposerActionButton) syncComposerActionButton();
   }
 
   function appendMessageAttachments(container, attachments) {
@@ -144,6 +147,18 @@
       });
   }
 
+  if (typeof initPromptComposerVoice === "function") {
+    const voice = initPromptComposerVoice({
+      form: form,
+      textarea: input,
+      sendBtn: sendBtn,
+      showSend: function () {
+        return Boolean((input.value || "").trim()) || pendingFiles.length > 0;
+      },
+    });
+    syncComposerActionButton = voice.syncComposerActionButton;
+  }
+
   if (uploadBtn && fileInput) {
     uploadBtn.addEventListener("click", function () {
       fileInput.click();
@@ -187,6 +202,7 @@
         pendingFiles.length = 0;
         renderPendingAttachments();
         renderMessages(data.messages || []);
+        if (syncComposerActionButton) syncComposerActionButton();
       })
       .catch(function (err) {
         window.alert(err.message || "Could not send message.");

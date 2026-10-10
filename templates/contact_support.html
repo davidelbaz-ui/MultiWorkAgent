@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_prompt_composer.html" import prompt_composer %}
 {% block title %}Contact support — MultiWorkAgent{% endblock %}
 {% block body_class %}page-support{% endblock %}
 {% block content %}
@@ -12,29 +13,23 @@
     <div class="support-chat-messages" id="support-messages" role="log" aria-live="polite" aria-label="Support conversation">
       <p class="empty-state" id="support-messages-loading">Loading conversation…</p>
     </div>
-    <div class="support-composer-stack">
-      <ul class="agent-attachments" id="support-attachments" hidden aria-label="Attached files"></ul>
-      <form class="agent-prompt-box support-prompt-box" id="support-composer" action="#" method="post" enctype="multipart/form-data">
-        <input type="file" id="support-file-input" class="agent-file-input" name="files" multiple hidden>
-        <button type="button" class="agent-prompt-btn agent-upload-btn" id="support-upload-btn" aria-label="Attach files">
-          <svg class="agent-prompt-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-        </button>
-        <label class="support-sr-only" for="support-message-input">Message support</label>
-        <textarea
-          id="support-message-input"
-          rows="1"
-          placeholder="Describe your question or issue…"
-          maxlength="{{ support_max_body }}"
-        ></textarea>
-        <button type="submit" class="agent-prompt-btn agent-send-btn support-send-btn" id="support-send-btn" aria-label="Send message">
-          <svg class="agent-prompt-icon agent-send-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 19V7M7 12l5-5 5 5"/>
-          </svg>
-        </button>
-      </form>
-      <p class="meta-row support-chat-hint">Press Enter to send · Shift+Enter for a new line · Attach screenshots or logs with +</p>
+    <div class="agent-composer-wrap support-composer-wrap">
+      <div class="agent-composer-stack" id="support-composer-stack">
+        <ul class="agent-attachments ui-motion-fade" id="support-attachments" hidden aria-label="Attached files"></ul>
+        {{ prompt_composer(
+          'support-composer',
+          'support-message-input',
+          'support-file-input',
+          'support-upload-btn',
+          'support-send-btn',
+          'Describe your question or issue…',
+          'Message support',
+          support_max_body
+        ) }}
+        <p class="agent-composer-notice meta-row">
+          Press Enter to send · Shift+Enter for a new line · Use + to attach files
+        </p>
+      </div>
     </div>
   </div>
 </section>
@@ -44,5 +39,5 @@
 </nav>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='support.js') }}"></script>
+<script src="{{ url_for('static', filename='support.js') }}" defer></script>
 {% endblock %}

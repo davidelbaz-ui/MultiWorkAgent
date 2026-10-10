@@ -506,25 +506,6 @@ function initBusinessSwitcher() {
   });
 }
 
-function resizeAgentTextarea(textarea) {
-  if (!textarea) {
-    return;
-  }
-  const box = textarea.closest(".agent-prompt-box");
-  const style = window.getComputedStyle(textarea);
-  const lineHeight = parseFloat(style.lineHeight) || 22;
-  const maxHeight = parseFloat(style.maxHeight) || 112;
-
-  textarea.style.height = "0";
-  const contentHeight = textarea.scrollHeight;
-  const nextHeight = Math.min(contentHeight, maxHeight);
-  textarea.style.height = `${nextHeight}px`;
-
-  const isMultiline = contentHeight > lineHeight + 6;
-  box?.classList.toggle("is-multiline", isMultiline);
-  textarea.style.overflowY = isMultiline && contentHeight > maxHeight ? "auto" : "hidden";
-}
-
 async function initAgentComposer() {
   const form = document.getElementById("agent-composer");
   const textarea = document.getElementById("agent-message-input");

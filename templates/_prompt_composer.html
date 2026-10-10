@@ -1,0 +1,30 @@
+{% macro prompt_composer(form_id, textarea_id, file_input_id, upload_btn_id, send_btn_id, placeholder, textarea_label='Message', textarea_maxlength=none) %}
+<form class="agent-prompt-box" id="{{ form_id }}" action="#" method="post" enctype="multipart/form-data">
+  <input type="file" id="{{ file_input_id }}" class="agent-file-input" name="files" multiple hidden>
+  <button type="button" class="agent-prompt-btn agent-upload-btn" id="{{ upload_btn_id }}" aria-label="Upload files">
+    <svg class="agent-prompt-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  </button>
+  <textarea
+    id="{{ textarea_id }}"
+    rows="1"
+    placeholder="{{ placeholder }}"
+    aria-label="{{ textarea_label }}"
+    {% if textarea_maxlength %}maxlength="{{ textarea_maxlength }}"{% endif %}
+  ></textarea>
+  <button type="button" class="agent-prompt-btn agent-send-btn is-voice-mode" id="{{ send_btn_id }}" aria-label="Voice input">
+    <span class="agent-action-icons" aria-hidden="true">
+      <svg class="agent-prompt-icon agent-send-icon" viewBox="0 0 24 24" focusable="false">
+        <path d="M12 19V7M7 12l5-5 5 5"/>
+      </svg>
+      <svg class="agent-voice-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.3 6-6.72h-1.7z"/>
+      </svg>
+      <svg class="agent-prompt-icon agent-stop-icon" viewBox="0 0 24 24" focusable="false">
+        <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
+  </button>
+</form>
+{% endmacro %}

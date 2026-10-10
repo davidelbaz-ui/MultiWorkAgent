@@ -4965,46 +4965,8 @@ table.data-table {
   overflow-wrap: anywhere;
 }
 
-.support-composer-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.support-prompt-box {
-  border-radius: 12px;
-  max-width: 100%;
-}
-
-.support-prompt-box textarea {
-  flex: 1;
-  min-height: 2.5rem;
-  max-height: 12rem;
-  resize: none;
-  border: none;
-  background: transparent;
-  font: inherit;
-  color: var(--text);
-  padding: 0.35rem 0.25rem;
-  line-height: 1.45;
-}
-
-.support-prompt-box textarea:focus {
-  outline: none;
-}
-
-.support-send-btn {
-  background: var(--accent);
-  color: #fff;
-}
-
-.support-send-btn:hover {
-  filter: brightness(1.05);
-}
-
-.support-chat-hint {
-  margin: 0;
-  font-size: 0.82rem;
+.support-composer-wrap {
+  max-width: 42rem;
 }
 
 .support-msg-attachments {
