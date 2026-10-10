@@ -10,6 +10,7 @@ from typing import Any
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import admin_display_time
 import subscription_plans
 
 from app_db import connect, init_app_database
@@ -42,18 +43,6 @@ def _plan_label(plan_tier: str | None, plan_status: str | None) -> str:
     if status == "pending":
         return f"{label} (pending)"
     return label
-
-
-def _format_timestamp(iso: str | None) -> str:
-    if not iso:
-        return "—"
-    try:
-        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).strftime("%b %d, %Y %H:%M UTC")
-    except ValueError:
-        return iso
 
 
 def bootstrap() -> None:
@@ -614,18 +603,18 @@ def list_users_for_admin(
                 "email": row["email"],
                 "display_name": (row["display_name"] or "").strip(),
                 "created_at": row["created_at"],
-                "created_at_display": _format_timestamp(row["created_at"]),
+                "created_at_display": admin_display_time.format_eastern(row["created_at"]),
                 "last_login_at": row["last_login_at"],
-                "last_login_display": _format_timestamp(row["last_login_at"]),
+                "last_login_display": admin_display_time.format_eastern(row["last_login_at"]),
                 "role": row["role"],
                 "role_label": ROLE_LABELS.get(row["role"], row["role"])
                 if row["role"]
                 else "",
                 "account_id": row["account_id"],
                 "account_created_at": row["account_created_at"],
-                "account_created_display": _format_timestamp(row["account_created_at"]),
+                "account_created_display": admin_display_time.format_eastern(row["account_created_at"]),
                 "member_since": row["member_since"],
-                "member_since_display": _format_timestamp(row["member_since"]),
+                "member_since_display": admin_display_time.format_eastern(row["member_since"]),
                 "business_count": int(row["business_count"] or 0),
                 "sign_in_methods": ", ".join(sign_in),
                 "plan_label": _plan_label(row["plan_tier"], row["plan_status"]),

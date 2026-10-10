@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
 import account_activity_store
+import admin_display_time
 import auth_store
 import billing_transaction_store
 import business_store
@@ -17,18 +17,6 @@ import subscription_plans
 import subscription_store
 import support_store
 from app_db import connect
-
-
-def _format_ts(iso: str | None) -> str:
-    if not iso:
-        return "—"
-    try:
-        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).strftime("%b %d, %Y %H:%M UTC")
-    except ValueError:
-        return iso
 
 
 def plan_display(sub: dict[str, Any]) -> str:
@@ -60,7 +48,7 @@ def _timeline_item(
 ) -> dict[str, Any]:
     return {
         "at": at,
-        "at_display": _format_ts(at),
+        "at_display": admin_display_time.format_eastern(at),
         "category": category,
         "title": title,
         "detail": detail or "",
@@ -226,16 +214,16 @@ def build_user_profile(user_id: str) -> dict[str, Any] | None:
             "display_name": user.get("display_name") or "",
             "name": user.get("name") or user["email"],
             "created_at": user.get("created_at"),
-            "created_at_display": _format_ts(user.get("created_at")),
+            "created_at_display": admin_display_time.format_eastern(user.get("created_at")),
             "last_login_at": user.get("last_login_at"),
-            "last_login_display": _format_ts(user.get("last_login_at")),
+            "last_login_display": admin_display_time.format_eastern(user.get("last_login_at")),
             "role": membership.get("role"),
             "role_label": auth_store.ROLE_LABELS.get(membership.get("role"), membership.get("role")),
         },
         "account": {
             "id": account_id,
             "created_at": account_created_at,
-            "created_at_display": _format_ts(account_created_at),
+            "created_at_display": admin_display_time.format_eastern(account_created_at),
         },
         "subscription": {
             "plan_label": plan_display(sub),
