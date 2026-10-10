@@ -229,7 +229,24 @@ def activate_plan(
             ),
         )
         conn.commit()
-    return get_subscription(account_id)
+    sub = get_subscription(account_id)
+    try:
+        import account_activity_store
+
+        account_activity_store.record(
+            account_id,
+            category="billing",
+            action="subscription_update",
+            summary=f"Subscription · {plan.tier} · {status}",
+            detail={
+                "plan_tier": plan.tier,
+                "status": status,
+                "billing_interval": interval,
+            },
+        )
+    except Exception:
+        pass
+    return sub
 
 
 def cancel_at_period_end(account_id: str) -> dict[str, Any]:

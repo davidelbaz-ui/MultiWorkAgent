@@ -175,6 +175,11 @@ def bootstrap_application_stores() -> None:
         chat_store.bootstrap()
         user_notification_store.bootstrap()
         team_invite_store.bootstrap()
+        import account_activity_store
+        import billing_transaction_store
+
+        account_activity_store.bootstrap()
+        billing_transaction_store.bootstrap()
         DB_READY = True
         DB_INIT_ERROR = None
         LOGGER.info("database_bootstrap_ok")

@@ -98,6 +98,18 @@ def create_business(
     business = get_business(account_id, business_id)
     if not business:
         raise RuntimeError("failed to create business")
+    try:
+        import account_activity_store
+
+        account_activity_store.record(
+            account_id,
+            category="business",
+            action="created",
+            summary=f"Business created · {clean_name}",
+            detail={"business_id": business_id, "industry": clean_industry},
+        )
+    except Exception:
+        pass
     return business
 
 

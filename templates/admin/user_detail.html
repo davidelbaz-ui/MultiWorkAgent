@@ -1,0 +1,121 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ profile.user.name }} — Admin — MultiWorkAgent{% endblock %}
+{% block admin_mobile_title %}User{% endblock %}
+{% block content %}
+<p class="admin-back">
+  <a href="{{ url_for('admin.admin_users') }}">← Users</a>
+</p>
+
+<header class="admin-user-detail-head">
+  <div>
+    <h1 class="admin-page-title">{{ profile.user.name }}</h1>
+    <p class="meta-row"><code>{{ profile.user.email }}</code> · {{ profile.user.role_label }} · Account <code>{{ profile.account.id }}</code></p>
+  </div>
+  <div class="admin-user-detail-badges">
+    <span class="admin-pill admin-pill--plan">{{ profile.subscription.plan_label }}</span>
+    <span class="admin-pill">{{ profile.subscription.status }}</span>
+  </div>
+</header>
+
+<section class="admin-panel admin-user-stats">
+  <h2>Account</h2>
+  <dl class="admin-kv-grid">
+    <div><dt>Plan</dt><dd>{{ profile.subscription.plan_label }}</dd></div>
+    <div><dt>Usage</dt><dd>{{ profile.subscription.plan_runs_consumed }} / {{ profile.subscription.monthly_quota }} plan runs · {{ profile.subscription.top_up_balance_runs }} top-up</dd></div>
+    <div><dt>Period ends</dt><dd>{{ profile.subscription.current_period_end or '—' }}</dd></div>
+    <div><dt>Account created</dt><dd>{{ profile.account.created_at_display }}</dd></div>
+    <div><dt>User created</dt><dd>{{ profile.user.created_at_display }}</dd></div>
+    <div><dt>Last sign-in</dt><dd>{{ profile.user.last_login_display }}</dd></div>
+    <div><dt>Businesses</dt><dd>{{ profile.business_count }}</dd></div>
+    <div><dt>Integrations</dt><dd>{{ profile.integration_count }}</dd></div>
+    <div><dt>Databases</dt><dd>{{ profile.database_count }}</dd></div>
+  </dl>
+</section>
+
+{% if profile.team %}
+<section class="admin-panel">
+  <h2>Team</h2>
+  <table class="admin-table admin-table--compact">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+    <tbody>
+      {% for m in profile.team %}
+      <tr>
+        <td>{{ m.name }}</td>
+        <td><code>{{ m.email }}</code></td>
+        <td>{{ m.role_label }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section class="admin-panel">
+  <h2>Invoices</h2>
+  {% if profile.invoices %}
+  <table class="admin-table admin-table--compact">
+    <thead>
+      <tr><th>Number</th><th>Date</th><th>Status</th><th>Amount</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      {% for inv in profile.invoices %}
+      <tr>
+        <td>{{ inv.invoice_number or '—' }}</td>
+        <td>{{ inv.invoice_date }}</td>
+        <td>{{ inv.status }}</td>
+        <td>${{ '%.2f'|format((inv.amount_cents or 0) / 100) }}</td>
+        <td>{{ inv.description or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="meta-row">No invoices recorded for this account.</p>
+  {% endif %}
+</section>
+
+<section class="admin-panel">
+  <h2>Payments &amp; refunds</h2>
+  {% if profile.transactions %}
+  <table class="admin-table admin-table--compact">
+    <thead>
+      <tr><th>Kind</th><th>Date</th><th>Status</th><th>Amount</th><th>Square ID</th></tr>
+    </thead>
+    <tbody>
+      {% for tx in profile.transactions %}
+      <tr>
+        <td>{{ tx.kind }}</td>
+        <td>{{ tx.occurred_at }}</td>
+        <td>{{ tx.status }}</td>
+        <td>${{ '%.2f'|format((tx.amount_cents or 0) / 100) }}</td>
+        <td><code>{{ tx.square_payment_id }}</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="meta-row">No payment transactions recorded yet (populated from Square webhooks).</p>
+  {% endif %}
+</section>
+
+<section class="admin-panel">
+  <h2>Activity timeline</h2>
+  <p class="meta-row">Unified view: logged events, agent runs, billing, businesses, integrations, databases, and support.</p>
+  {% if profile.timeline %}
+  <ul class="admin-timeline">
+    {% for item in profile.timeline %}
+    <li class="admin-timeline-item">
+      <time class="admin-timeline-time" datetime="{{ item.at }}">{{ item.at_display }}</time>
+      <span class="admin-timeline-cat">{{ item.category }}</span>
+      <p class="admin-timeline-title">{{ item.title }}</p>
+      {% if item.detail %}
+      <p class="admin-timeline-detail meta-row">{{ item.detail }}</p>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="meta-row">No activity recorded yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

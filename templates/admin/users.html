@@ -135,6 +135,7 @@
         <th>Display name</th>
         <th>Email</th>
         <th>Role</th>
+        <th>Plan</th>
         <th>Account created</th>
         <th>User created</th>
         <th>Last sign-in</th>
@@ -144,11 +145,12 @@
     </thead>
     <tbody>
       {% for row in users %}
-      <tr>
+      <tr class="admin-table-row--clickable" role="link" tabindex="0" data-href="{{ url_for('admin.admin_user_detail', user_id=row.id) }}">
         <td>{{ row.name }}</td>
         <td>{{ row.display_name or '—' }}</td>
         <td><code>{{ row.email }}</code></td>
         <td>{{ row.role_label or '—' }}</td>
+        <td>{{ row.plan_label or 'Free' }}</td>
         <td title="{{ row.account_created_at or '' }}">{{ row.account_created_display }}</td>
         <td title="{{ row.created_at }}">{{ row.created_at_display }}</td>
         <td title="{{ row.last_login_at or '' }}">{{ row.last_login_display }}</td>
@@ -166,4 +168,5 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='form-switcher.js') }}" defer></script>
 <script src="{{ url_for('static', filename='admin-users-sheets.js') }}" defer></script>
+<script src="{{ url_for('static', filename='admin-users-table.js') }}" defer></script>
 {% endblock %}

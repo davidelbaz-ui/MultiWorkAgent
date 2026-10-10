@@ -10,6 +10,8 @@ from typing import Any
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import subscription_plans
+
 from app_db import connect, init_app_database
 
 ROLES = frozenset({"owner", "operator", "viewer"})
@@ -26,6 +28,20 @@ ADMIN_SIGN_IN_PROVIDER_LABELS = {"google": "Google"}
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _plan_label(plan_tier: str | None, plan_status: str | None) -> str:
+    tier = (plan_tier or "none").lower()
+    status = (plan_status or "inactive").lower()
+    if tier in ("none", "") or status in ("inactive", "canceled"):
+        return "Free"
+    plan = subscription_plans.get_plan(tier)
+    label = plan.display_name if plan else tier.capitalize()
+    if status == "past_due":
+        return f"{label} (past due)"
+    if status == "pending":
+        return f"{label} (pending)"
+    return label
 
 
 def _format_timestamp(iso: str | None) -> str:
@@ -446,6 +462,20 @@ def touch_last_login(user_id: str) -> None:
             (now, user_id),
         )
         conn.commit()
+    membership = get_primary_membership(user_id)
+    if membership:
+        try:
+            import account_activity_store
+
+            account_activity_store.record(
+                membership["account_id"],
+                category="auth",
+                action="login",
+                summary="User signed in",
+                user_id=user_id,
+            )
+        except Exception:
+            pass
 
 
 def list_users_for_admin(
@@ -519,6 +549,7 @@ def list_users_for_admin(
             FROM users u
             LEFT JOIN account_members m ON m.user_id = u.id
             LEFT JOIN accounts a ON a.id = m.account_id
+            LEFT JOIN account_subscriptions sub ON sub.account_id = a.id
             """
 
     with connect() as conn:
@@ -550,7 +581,10 @@ def list_users_for_admin(
                     SELECT string_agg(i.provider, ', ' ORDER BY i.provider)
                     FROM user_auth_identities i
                     WHERE i.user_id = u.id
-                ) AS oauth_providers
+                ) AS oauth_providers,
+                sub.plan_tier,
+                sub.status AS plan_status,
+                sub.billing_interval
             {base_from}
             WHERE {where_sql}
             ORDER BY {sort_sql}
@@ -594,6 +628,9 @@ def list_users_for_admin(
                 "member_since_display": _format_timestamp(row["member_since"]),
                 "business_count": int(row["business_count"] or 0),
                 "sign_in_methods": ", ".join(sign_in),
+                "plan_label": _plan_label(row["plan_tier"], row["plan_status"]),
+                "plan_tier": row["plan_tier"],
+                "plan_status": row["plan_status"],
             }
         )
     return users, total

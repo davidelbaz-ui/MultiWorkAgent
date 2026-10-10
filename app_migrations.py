@@ -596,6 +596,48 @@ def migration_022_subscription_enterprise_annual(conn: DBConnection) -> None:
     )
 
 
+def migration_024_account_activity_billing_transactions(conn: DBConnection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS account_activity_events (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            user_id TEXT,
+            category TEXT NOT NULL,
+            action TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            detail_json TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_account_activity_account_created
+            ON account_activity_events (account_id, created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS billing_transactions (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('payment', 'refund')),
+            square_payment_id TEXT NOT NULL UNIQUE,
+            square_order_id TEXT,
+            square_customer_id TEXT,
+            status TEXT NOT NULL,
+            amount_cents INTEGER NOT NULL DEFAULT 0,
+            currency TEXT NOT NULL DEFAULT 'USD',
+            occurred_at TEXT NOT NULL,
+            raw_json TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_billing_transactions_account_occurred
+            ON billing_transactions (account_id, occurred_at DESC);
+        """
+    )
+
+
 def migration_023_team_invites(conn: DBConnection) -> None:
     conn.executescript(
         """
@@ -670,6 +712,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (21, "business_knowledge_files", migration_021_business_knowledge_files),
     (22, "subscription_enterprise_annual", migration_022_subscription_enterprise_annual),
     (23, "team_invites", migration_023_team_invites),
+    (24, "account_activity_billing_transactions", migration_024_account_activity_billing_transactions),
 ]
 
 

@@ -229,6 +229,18 @@ def connect_api_key(
     conn_row = get_connection(account_id, connection_id)
     if not conn_row:
         raise RuntimeError("failed to save connection")
+    try:
+        import account_activity_store
+
+        account_activity_store.record(
+            account_id,
+            category="integration",
+            action="connected",
+            summary=f"Integration connected · {integration['name']} (API key)",
+            detail={"provider_slug": provider_slug, "connection_id": connection_id},
+        )
+    except Exception:
+        pass
     return conn_row
 
 
@@ -306,6 +318,18 @@ def connect_oauth_tokens(
     conn_row = get_connection(account_id, connection_id)
     if not conn_row:
         raise RuntimeError("failed to save connection")
+    try:
+        import account_activity_store
+
+        account_activity_store.record(
+            account_id,
+            category="integration",
+            action="connected",
+            summary=f"Integration connected · {integration['name']} (OAuth)",
+            detail={"provider_slug": provider_slug, "connection_id": connection_id},
+        )
+    except Exception:
+        pass
     return conn_row
 
 

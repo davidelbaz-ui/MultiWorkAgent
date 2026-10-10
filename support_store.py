@@ -153,6 +153,19 @@ def add_user_message(*, account_id: str, user_id: str, body: str) -> dict[str, A
         ).fetchone()
     if not row:
         raise RuntimeError("failed to save support message")
+    try:
+        import account_activity_store
+
+        account_activity_store.record(
+            account_id,
+            category="support",
+            action="user_message",
+            summary="Support message from user",
+            user_id=user_id,
+            detail={"preview": clean[:160]},
+        )
+    except Exception:
+        pass
     return _row_to_message(row)
 
 

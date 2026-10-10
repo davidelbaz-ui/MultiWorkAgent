@@ -13,6 +13,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import billing_transaction_store
 import invoice_store
 import subscription_plans
 import subscription_store
@@ -410,6 +411,52 @@ def handle_webhook_payload(payload: dict[str, Any]) -> str | None:
         if isinstance(invoice, dict):
             inv_account = apply_invoice_object(invoice)
             account_id = account_id or inv_account
+
+    if event_type.startswith("payment."):
+        payment = obj.get("payment") or obj
+        if isinstance(payment, dict):
+            pay_account = billing_transaction_store.find_account_for_payment(payment)
+            if pay_account:
+                billing_transaction_store.upsert_square_payment(pay_account, payment)
+                try:
+                    import account_activity_store
+
+                    account_activity_store.record(
+                        pay_account,
+                        category="billing",
+                        action="payment_webhook",
+                        summary=f"Square payment · {payment.get('status')}",
+                        detail={"event_type": event_type, "payment_id": payment.get("id")},
+                    )
+                except Exception:
+                    pass
+                account_id = account_id or pay_account
+
+    if event_type.startswith("refund."):
+        refund = obj.get("refund") or obj
+        if isinstance(refund, dict):
+            pay_account = account_id
+            if not pay_account:
+                payment_id = str(refund.get("payment_id") or "")
+                if payment_id:
+                    pay_account = billing_transaction_store.find_account_by_square_payment_id(
+                        payment_id
+                    )
+            if pay_account:
+                billing_transaction_store.upsert_square_refund(pay_account, refund)
+                try:
+                    import account_activity_store
+
+                    account_activity_store.record(
+                        pay_account,
+                        category="billing",
+                        action="refund_webhook",
+                        summary=f"Square refund · {refund.get('status')}",
+                        detail={"event_type": event_type, "refund_id": refund.get("id")},
+                    )
+                except Exception:
+                    pass
+                account_id = account_id or pay_account
 
     subscription_store.mark_webhook_processed(event_id, account_id)
     return account_id

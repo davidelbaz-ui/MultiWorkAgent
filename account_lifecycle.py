@@ -95,6 +95,8 @@ def purge_operational_data(account_id: str, *, user_id: str) -> dict[str, Any]:
         conn.execute("DELETE FROM businesses WHERE account_id = ?", (account_id,))
         conn.execute("DELETE FROM account_notifications WHERE account_id = ?", (account_id,))
         conn.execute("DELETE FROM billing_invoices WHERE account_id = ?", (account_id,))
+        conn.execute("DELETE FROM billing_transactions WHERE account_id = ?", (account_id,))
+        conn.execute("DELETE FROM account_activity_events WHERE account_id = ?", (account_id,))
         conn.execute("DELETE FROM account_chat_workspaces WHERE account_id = ?", (account_id,))
         conn.execute(
             """

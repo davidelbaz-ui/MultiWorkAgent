@@ -200,6 +200,18 @@ def create_connection(
     row = get_connection(account_id, connection_id)
     if not row:
         raise RuntimeError("failed to create database connection")
+    try:
+        import account_activity_store
+
+        account_activity_store.record(
+            account_id,
+            category="database",
+            action="connected",
+            summary=f"Database connected · {clean_name}",
+            detail={"connection_id": connection_id, "engine": clean_engine},
+        )
+    except Exception:
+        pass
     return row
 
 

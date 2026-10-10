@@ -19,6 +19,7 @@ from flask import (
 import admin_auth
 import admin_log_buffer
 import admin_stats
+import admin_user_profile
 import app_logging
 import app_state
 import auth_store
@@ -258,6 +259,15 @@ def admin_users():
         last_login_options=last_login_options,
         sort_options=sort_options,
     )
+
+
+@admin_bp.get("/users/<user_id>")
+def admin_user_detail(user_id: str):
+    profile = admin_user_profile.build_user_profile(user_id)
+    if not profile:
+        flash("User not found.", "error")
+        return redirect(url_for("admin.admin_users"))
+    return render_template("admin/user_detail.html", profile=profile)
 
 
 @admin_bp.get("/logs")

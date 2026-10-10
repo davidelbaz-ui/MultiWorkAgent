@@ -185,6 +185,23 @@ def finish_chat_run(
 
         notification_events.notify_run_finished(account_id, finished)
         notification_events.notify_after_usage_metered(account_id)
+        try:
+            import account_activity_store
+
+            account_activity_store.record(
+                account_id,
+                category="agent",
+                action="run_completed",
+                summary=f"Agent run {finished.get('status')}: {finished.get('summary') or run_id}",
+                user_id=finished.get("user_id"),
+                detail={
+                    "run_id": run_id,
+                    "status": finished.get("status"),
+                    "run_units": finished.get("run_units"),
+                },
+            )
+        except Exception:
+            pass
     return finished
 
 
@@ -246,6 +263,25 @@ def record_chat_run(
     )
     finished = finish_chat_run(account_id, run["id"], result)
     return finished or run
+
+
+def list_runs_for_account(account_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
+    limit = max(1, min(limit, 300))
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                id, account_id, user_id, business_id, thread_id,
+                run_type, status, error_code, summary,
+                input_tokens, output_tokens, run_units, created_at, completed_at
+            FROM agent_runs
+            WHERE account_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (account_id, limit),
+        ).fetchall()
+    return [_row_to_run(row) for row in rows]
 
 
 def get_run(account_id: str, run_id: str) -> dict[str, Any] | None:

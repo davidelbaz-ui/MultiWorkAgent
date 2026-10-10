@@ -186,6 +186,22 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
     rows = list_invoices(account_id, limit=100)
     for row in rows:
         if row["square_invoice_id"] == square_id:
+            try:
+                import account_activity_store
+
+                account_activity_store.record(
+                    account_id,
+                    category="billing",
+                    action="invoice_upsert",
+                    summary=f"Invoice {row.get('invoice_number') or square_id[:8]} · {row.get('status')}",
+                    detail={
+                        "square_invoice_id": square_id,
+                        "amount_cents": row.get("amount_cents"),
+                        "status": row.get("status"),
+                    },
+                )
+            except Exception:
+                pass
             return row
     raise RuntimeError("failed to upsert invoice")
 
