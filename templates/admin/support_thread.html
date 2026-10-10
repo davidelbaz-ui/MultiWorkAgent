@@ -15,7 +15,14 @@
   {% for msg in messages %}
   <article class="admin-thread-msg admin-thread-msg--{{ msg.sender_type }}">
     <header><strong>{{ msg.sender_label }}</strong> <time>{{ msg.created_at }}</time></header>
-    <p>{{ msg.body }}</p>
+    {% if msg.body %}<p>{{ msg.body }}</p>{% endif %}
+    {% if msg.attachments %}
+    <ul class="admin-support-attachments">
+      {% for att in msg.attachments %}
+      <li><a href="{{ att.url }}" target="_blank" rel="noopener noreferrer">{{ att.original_name }}</a>{% if att.size_bytes %} <span class="meta-row">({{ (att.size_bytes / 1024)|round(1) }} KB)</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
   </article>
   {% endfor %}
 </div>

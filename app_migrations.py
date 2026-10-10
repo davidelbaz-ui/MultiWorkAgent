@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 24
+APP_SCHEMA_VERSION = 25
 
 
 def _utc_now() -> str:
@@ -688,6 +688,30 @@ def migration_023_team_invites(conn: DBConnection) -> None:
     )
 
 
+def migration_025_support_message_attachments(conn: DBConnection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS support_message_attachments (
+            id TEXT PRIMARY KEY,
+            account_id TEXT NOT NULL,
+            message_id TEXT NOT NULL,
+            stored_name TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            mime_type TEXT,
+            size_bytes INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (message_id) REFERENCES support_messages (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_support_attachments_message
+            ON support_message_attachments (message_id);
+
+        CREATE INDEX IF NOT EXISTS idx_support_attachments_account
+            ON support_message_attachments (account_id);
+        """
+    )
+
+
 MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (1, "core_accounts_businesses", migration_001_core_accounts_businesses),
     (2, "business_archived_at", migration_002_business_archived_at),
@@ -713,6 +737,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (22, "subscription_enterprise_annual", migration_022_subscription_enterprise_annual),
     (23, "team_invites", migration_023_team_invites),
     (24, "account_activity_billing_transactions", migration_024_account_activity_billing_transactions),
+    (25, "support_message_attachments", migration_025_support_message_attachments),
 ]
 
 

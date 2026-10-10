@@ -164,8 +164,36 @@ def admin_support_thread(account_id: str):
         account_id=account_id,
         thread=thread,
         meta=meta,
-        messages=[support_store.message_to_api(row) for row in rows],
+        messages=[
+            support_store.message_to_api(
+                row,
+                account_id=account_id,
+                for_admin=True,
+            )
+            for row in rows
+        ],
         sla_hours=support_store.SUPPORT_SLA_HOURS,
+    )
+
+
+@admin_bp.get("/support/<account_id>/attachments/<attachment_id>")
+def admin_support_attachment(account_id: str, attachment_id: str):
+    import support_attachments
+    from flask import send_file
+
+    row = support_attachments.get_attachment_row(account_id, attachment_id)
+    if not row:
+        flash("Attachment not found.", "error")
+        return redirect(url_for("admin.admin_support_thread", account_id=account_id))
+    path = support_attachments.attachment_path(account_id, row["stored_name"])
+    if not path.is_file():
+        flash("Attachment file is missing.", "error")
+        return redirect(url_for("admin.admin_support_thread", account_id=account_id))
+    return send_file(
+        path,
+        mimetype=row.get("mime_type") or "application/octet-stream",
+        download_name=row.get("original_name") or "attachment",
+        conditional=True,
     )
 
 

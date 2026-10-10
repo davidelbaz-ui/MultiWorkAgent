@@ -2022,7 +2022,12 @@ def api_support_messages_list():
     return jsonify(
         {
             "messages": [
-                support_store.message_to_api(row, viewer_user_id=user_id) for row in rows
+                support_store.message_to_api(
+                    row,
+                    viewer_user_id=user_id,
+                    account_id=account_id,
+                )
+                for row in rows
             ],
             "sla_hours": support_store.SUPPORT_SLA_HOURS,
         }
@@ -2035,10 +2040,24 @@ def api_support_messages_create():
     account_id = _ensure_account_id()
     if not user_id:
         abort(401)
-    payload = request.get_json(silent=True) or {}
-    body = payload.get("body") if isinstance(payload, dict) else ""
+    attachment_files: list[tuple[str, str | None, bytes]] = []
+    if request.content_type and "multipart/form-data" in request.content_type:
+        body = str(request.form.get("body") or "")
+        for upload in request.files.getlist("files"):
+            if not upload or not upload.filename:
+                continue
+            data = upload.read()
+            attachment_files.append((upload.filename, upload.mimetype, data))
+    else:
+        payload = request.get_json(silent=True) or {}
+        body = payload.get("body") if isinstance(payload, dict) else ""
     try:
-        support_store.add_user_message(account_id=account_id, user_id=user_id, body=str(body))
+        support_store.add_user_message(
+            account_id=account_id,
+            user_id=user_id,
+            body=str(body),
+            attachment_files=attachment_files or None,
+        )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     rows = support_store.list_messages(account_id)
@@ -2046,9 +2065,34 @@ def api_support_messages_create():
         {
             "ok": True,
             "messages": [
-                support_store.message_to_api(row, viewer_user_id=user_id) for row in rows
+                support_store.message_to_api(
+                    row,
+                    viewer_user_id=user_id,
+                    account_id=account_id,
+                )
+                for row in rows
             ],
         }
+    )
+
+
+@app.get("/api/support/attachments/<attachment_id>")
+def api_support_attachment(attachment_id: str):
+    import support_attachments
+    from flask import send_file
+
+    account_id = _ensure_account_id()
+    row = support_attachments.get_attachment_row(account_id, attachment_id)
+    if not row:
+        abort(404)
+    path = support_attachments.attachment_path(account_id, row["stored_name"])
+    if not path.is_file():
+        abort(404)
+    return send_file(
+        path,
+        mimetype=row.get("mime_type") or "application/octet-stream",
+        download_name=row.get("original_name") or "attachment",
+        conditional=True,
     )
 
 

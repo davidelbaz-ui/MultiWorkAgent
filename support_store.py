@@ -27,8 +27,10 @@ def _utc_now() -> str:
 
 def bootstrap() -> None:
     from app_db import init_app_database
+    import support_attachments
 
     init_app_database()
+    support_attachments.ensure_storage()
 
 
 def delete_threads_for_account(account_id: str) -> int:
@@ -112,20 +114,40 @@ def list_messages(account_id: str) -> list[dict[str, Any]]:
             """,
             (thread["id"],),
         ).fetchall()
-    return [_row_to_message(row) for row in rows]
+    messages = [_row_to_message(row) for row in rows]
+    _attach_files_to_messages(messages)
+    return messages
 
 
-def _validate_body(body: str) -> str:
+def _attach_files_to_messages(messages: list[dict[str, Any]]) -> None:
+    if not messages:
+        return
+    import support_attachments
+
+    ids = [m["id"] for m in messages]
+    by_msg = support_attachments.attachments_by_message_ids(ids)
+    for msg in messages:
+        msg["attachments"] = by_msg.get(msg["id"], [])
+
+
+def _validate_body(body: str, *, allow_empty: bool = False) -> str:
     clean = (body or "").strip()
-    if not clean:
+    if not clean and not allow_empty:
         raise ValueError("Message cannot be empty.")
     if len(clean) > MAX_MESSAGE_BODY_LEN:
         raise ValueError(f"Message must be at most {MAX_MESSAGE_BODY_LEN} characters.")
     return clean
 
 
-def add_user_message(*, account_id: str, user_id: str, body: str) -> dict[str, Any]:
-    clean = _validate_body(body)
+def add_user_message(
+    *,
+    account_id: str,
+    user_id: str,
+    body: str,
+    attachment_files: list[tuple[str, str | None, bytes]] | None = None,
+) -> dict[str, Any]:
+    files = attachment_files or []
+    clean = _validate_body(body, allow_empty=bool(files))
     thread = get_or_create_thread(account_id)
     now = _utc_now()
     message_id = uuid.uuid4().hex
@@ -153,6 +175,17 @@ def add_user_message(*, account_id: str, user_id: str, body: str) -> dict[str, A
         ).fetchone()
     if not row:
         raise RuntimeError("failed to save support message")
+    msg = _row_to_message(row)
+    if files:
+        import support_attachments
+
+        msg["attachments"] = support_attachments.save_attachments(
+            account_id=account_id,
+            message_id=message_id,
+            files=files,
+        )
+    else:
+        msg["attachments"] = []
     try:
         import account_activity_store
 
@@ -162,11 +195,14 @@ def add_user_message(*, account_id: str, user_id: str, body: str) -> dict[str, A
             action="user_message",
             summary="Support message from user",
             user_id=user_id,
-            detail={"preview": clean[:160]},
+            detail={
+                "preview": clean[:160],
+                "attachment_count": len(files),
+            },
         )
     except Exception:
         pass
-    return _row_to_message(row)
+    return msg
 
 
 def add_support_reply(*, account_id: str, body: str) -> dict[str, Any]:
@@ -279,7 +315,13 @@ def list_inbox(*, limit: int = 100, status: str | None = None) -> list[dict[str,
     return out
 
 
-def message_to_api(row: dict[str, Any], *, viewer_user_id: str | None = None) -> dict[str, Any]:
+def message_to_api(
+    row: dict[str, Any],
+    *,
+    viewer_user_id: str | None = None,
+    account_id: str | None = None,
+    for_admin: bool = False,
+) -> dict[str, Any]:
     sender = row["sender_type"]
     if sender == SENDER_SUPPORT:
         label = "Support"
@@ -289,6 +331,27 @@ def message_to_api(row: dict[str, Any], *, viewer_user_id: str | None = None) ->
         label = "You"
     else:
         label = "Team member"
+    attachments_out: list[dict[str, Any]] = []
+    for att in row.get("attachments") or []:
+        att_id = att.get("id")
+        if not att_id:
+            continue
+        if for_admin and account_id:
+            url = f"/admin/support/{account_id}/attachments/{att_id}"
+        elif account_id:
+            url = f"/api/support/attachments/{att_id}"
+        else:
+            url = ""
+        attachments_out.append(
+            {
+                "id": att_id,
+                "original_name": att.get("original_name") or "file",
+                "mime_type": att.get("mime_type"),
+                "size_bytes": att.get("size_bytes"),
+                "url": url,
+            }
+        )
+
     return {
         "id": row["id"],
         "sender_type": sender,
@@ -298,4 +361,5 @@ def message_to_api(row: dict[str, Any], *, viewer_user_id: str | None = None) ->
         "is_mine": sender == SENDER_USER
         and bool(viewer_user_id)
         and row.get("author_user_id") == viewer_user_id,
+        "attachments": attachments_out,
     }

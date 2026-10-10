@@ -495,6 +495,24 @@ body.admin-page .admin-back a:hover {
   margin: 0.2rem 0 0;
 }
 
+.admin-support-attachments {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-support-attachments a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.admin-support-attachments a:hover {
+  text-decoration: underline;
+}
+
 .admin-snippet {
   max-width: 280px;
   color: var(--muted);
