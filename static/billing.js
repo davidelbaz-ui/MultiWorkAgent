@@ -18,20 +18,6 @@ function selectedBillingInterval() {
   return checked?.value === "annual" ? "annual" : "monthly";
 }
 
-function syncBillingSegmentedThumb() {
-  const group = document.querySelector(".billing-segmented");
-  const thumb = group?.querySelector(".billing-segmented-thumb");
-  const checked = group?.querySelector(".billing-segmented-option:has(input:checked)");
-  if (!group || !thumb || !checked) {
-    return;
-  }
-  const groupRect = group.getBoundingClientRect();
-  const optionRect = checked.getBoundingClientRect();
-  thumb.style.width = `${optionRect.width}px`;
-  thumb.style.height = `${optionRect.height}px`;
-  thumb.style.transform = `translate(${optionRect.left - groupRect.left}px, ${optionRect.top - groupRect.top}px)`;
-}
-
 function applyBillingIntervalDisplay() {
   const card = document.getElementById("billing-page");
   const interval = selectedBillingInterval();
@@ -39,7 +25,6 @@ function applyBillingIntervalDisplay() {
     card.dataset.billingInterval = interval;
   }
   updateSubscribeButtons();
-  requestAnimationFrame(syncBillingSegmentedThumb);
 }
 
 function updateSubscribeButtons() {
@@ -90,10 +75,6 @@ function initBillingSubscribe() {
     }
   }
   applyBillingIntervalDisplay();
-  window.addEventListener("resize", syncBillingSegmentedThumb);
-  if (document.fonts?.ready) {
-    document.fonts.ready.then(syncBillingSegmentedThumb).catch(() => {});
-  }
 
   document.querySelectorAll("[data-billing-plan]").forEach((btn) => {
     btn.addEventListener("click", async () => {

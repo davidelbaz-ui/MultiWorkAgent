@@ -3312,20 +3312,23 @@ table.data-table {
 
 .billing-segmented-thumb {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0.25rem;
+  left: 0.25rem;
   z-index: 0;
+  width: calc((100% - 0.25rem) / 2);
+  height: calc(100% - 0.5rem);
   border-radius: 999px;
   background: var(--surface);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.08),
     0 0 0 1px rgba(91, 141, 239, 0.12);
   pointer-events: none;
-  will-change: transform, width, height;
-  transition:
-    transform 0.32s cubic-bezier(0.34, 1.25, 0.64, 1),
-    width 0.32s cubic-bezier(0.34, 1.25, 0.64, 1),
-    height 0.32s cubic-bezier(0.34, 1.25, 0.64, 1);
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#billing-page[data-billing-interval="annual"] .billing-segmented-thumb {
+  transform: translateX(calc(100% + 0.25rem));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3377,11 +3380,7 @@ table.data-table {
 }
 
 .billing-segmented-option:has(input:checked) .billing-segmented-text {
-  background: var(--surface);
   color: var(--accent);
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(91, 141, 239, 0.15);
 }
 
 .billing-save-badge {
