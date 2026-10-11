@@ -4746,16 +4746,23 @@ table.data-table {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  justify-content: flex-start;
+  gap: 1rem 1.75rem;
   background: var(--surface);
 }
 
 .start-footer-legal {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.65rem 1.25rem;
   font-size: 0.88rem;
+}
+
+.footer-copyright {
+  color: var(--muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 .start-footer-legal a {
@@ -4773,10 +4780,17 @@ table.data-table {
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.settings-legal-footer-row {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
+  gap: 0.5rem 1rem;
+  width: 100%;
 }
 
 .settings-legal-footer-label {
