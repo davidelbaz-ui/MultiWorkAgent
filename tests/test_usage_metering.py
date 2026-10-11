@@ -96,6 +96,26 @@ class UsageMeteringTest(PostgresStoreTestCase):
         snap = usage_metering.usage_snapshot(self.account_id)
         self.assertFalse(snap["can_run"])
 
+    def test_unlimited_runs_bypasses_quota(self) -> None:
+        import run_limits
+
+        subscription_store.set_unlimited_runs(self.account_id, True)
+        with app_db.connect() as conn:
+            conn.execute(
+                """
+                UPDATE account_subscriptions
+                SET plan_runs_consumed = 9999, top_up_balance_runs = 0
+                WHERE account_id = ?
+                """,
+                (self.account_id,),
+            )
+            conn.commit()
+        snap = usage_metering.usage_snapshot(self.account_id)
+        self.assertTrue(snap["unlimited_runs"])
+        self.assertTrue(snap["can_run"])
+        limits = run_limits.limits_snapshot(self.account_id)
+        self.assertTrue(limits["can_run"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -44,6 +44,7 @@ def limits_snapshot(account_id: str) -> dict[str, Any]:
     cmax = concurrent_max()
     dmax = daily_max()
     usage = usage_metering.usage_snapshot(account_id)
+    unlimited = bool(usage.get("unlimited_runs"))
     blocked_code = None
     blocked_message = None
     if running >= cmax:
@@ -52,13 +53,13 @@ def limits_snapshot(account_id: str) -> dict[str, Any]:
             f"{cmax} runs are already in progress for this account. "
             "Wait for one to finish before starting another."
         )
-    elif usage.get("subscription_active") and used_24h >= dmax:
+    elif not unlimited and usage.get("subscription_active") and used_24h >= dmax:
         blocked_code = "daily_limit"
         blocked_message = (
             f"Daily limit reached ({dmax} runs in 24 hours). "
             "New runs are paused until older runs fall outside the window."
         )
-    if blocked_code is None and not usage["can_run"]:
+    if blocked_code is None and not unlimited and not usage["can_run"]:
         if usage["subscription_active"]:
             blocked_code = "quota_exhausted"
             blocked_message = (
@@ -73,7 +74,11 @@ def limits_snapshot(account_id: str) -> dict[str, Any]:
                 "Subscribe to a plan for more agent runs."
             )
 
-    if usage.get("free_tier"):
+    if unlimited:
+        runs_display_used = int(float(usage.get("usage_used") or 0))
+        runs_display_max = 0
+        runs_display_period = "unlimited"
+    elif usage.get("free_tier"):
         runs_display_used = int(float(usage.get("usage_used") or 0))
         runs_display_max = int(usage.get("usage_quota") or 0)
         runs_display_period = "month"
@@ -90,6 +95,7 @@ def limits_snapshot(account_id: str) -> dict[str, Any]:
         "runs_display_used": runs_display_used,
         "runs_display_max": runs_display_max,
         "runs_display_period": runs_display_period,
+        "unlimited_runs": unlimited,
         "usage": usage,
         "can_run": blocked_code is None,
         "blocked_code": blocked_code,

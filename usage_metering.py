@@ -107,6 +107,7 @@ def usage_snapshot(account_id: str) -> dict[str, Any]:
     subscription_store.ensure_row(account_id)
     maybe_reset_billing_period(account_id)
     sub = subscription_store.get_subscription(account_id)
+    unlimited = bool(sub.get("unlimited_runs"))
     active = subscription_store.is_subscription_active(account_id)
     consumed = float(sub.get("plan_runs_consumed") or 0.0)
     top_up = float(sub["top_up_balance_runs"])
@@ -122,13 +123,14 @@ def usage_snapshot(account_id: str) -> dict[str, Any]:
     return {
         "subscription_active": active,
         "free_tier": not active,
+        "unlimited_runs": unlimited,
         "usage_quota": int(quota) if quota else 0,
         "plan_runs_consumed": round(consumed, 2),
         "usage_used": round(consumed, 2),
         "plan_remaining": round(plan_remaining, 2),
         "top_up_balance": round(top_up, 2) if active else 0.0,
         "total_remaining": round(total_remaining, 2),
-        "can_run": total_remaining > _MIN_REMAINING,
+        "can_run": unlimited or total_remaining > _MIN_REMAINING,
         "period_end": sub.get("current_period_end"),
     }
 
@@ -160,6 +162,22 @@ def assert_quota_for_run(account_id: str) -> None:
 def meter_completed_run(account_id: str, run_id: str) -> dict[str, Any] | None:
     """Apply run_units to subscription ledger once per completed run."""
     maybe_reset_billing_period(account_id)
+    if subscription_store.unlimited_runs_enabled(account_id):
+        now = _utc_now()
+        with connect() as conn:
+            cur = conn.execute(
+                """
+                UPDATE agent_runs
+                SET usage_metered_at = ?
+                WHERE account_id = ? AND id = ? AND usage_metered_at IS NULL
+                  AND status = 'completed'
+                """,
+                (now, account_id, run_id),
+            )
+            conn.commit()
+            if cur.rowcount:
+                return usage_snapshot(account_id)
+        return None
     active = subscription_store.is_subscription_active(account_id)
     if not active and subscription_plans.free_tier_monthly_runs() <= 0:
         return None

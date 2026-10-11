@@ -55,8 +55,8 @@
           </svg>
         </button>
         {% set pct = (usage_used / usage_quota * 100) if usage_quota else 0 %}
-        <a href="{{ url_for('billing') }}" class="usage-chip desktop-only {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" data-usage-chip id="header-usage-chip" data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}">
-          {% if plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
+        <a href="{{ url_for('billing') }}" class="usage-chip desktop-only {% if unlimited_runs|default(false) %}ok{% elif usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" data-usage-chip id="header-usage-chip" data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}" data-unlimited-runs="{{ '1' if unlimited_runs|default(false) else '0' }}">
+          {% if unlimited_runs|default(false) %}Unlimited runs{% elif plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
         </a>
       </div>
       <div class="topbar-actions">
@@ -126,8 +126,8 @@
         {% endfor %}
       </nav>
       <div class="sidebar-foot mobile-only">
-        <a href="{{ url_for('billing') }}" class="usage-chip sidebar-usage-chip {% if usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" data-usage-chip data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}">
-          {% if plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
+        <a href="{{ url_for('billing') }}" class="usage-chip sidebar-usage-chip {% if unlimited_runs|default(false) %}ok{% elif usage_quota and pct >= 75 %}warn{% elif plan %}ok{% endif %}" data-usage-chip data-plan-label="{{ plan or ('Free' if runs_limit_free_tier|default(false) else '') }}" data-unlimited-runs="{{ '1' if unlimited_runs|default(false) else '0' }}">
+          {% if unlimited_runs|default(false) %}Unlimited runs{% elif plan %}{{ usage_used }} / {{ usage_quota }} runs · {{ plan }}{% elif runs_limit_free_tier|default(false) %}{{ usage_used }} / {{ usage_quota }} runs · Free{% else %}No active plan{% endif %}
         </a>
         <div class="account-menu sidebar-account-menu" data-account-menu>
           <button type="button" class="sidebar-account-trigger account-menu-trigger" id="account-menu-trigger" aria-label="Account menu" aria-expanded="false" aria-haspopup="menu">

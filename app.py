@@ -804,6 +804,7 @@ def _billing_fields() -> dict:
         "billing_period_end": summary["billing_period_end"],
         "subscription_status": summary["status"],
         "cancel_at_period_end": summary["cancel_at_period_end"],
+        "unlimited_runs": summary.get("unlimited_runs", False),
         "billing_mode": square_billing.billing_mode(),
         "invoices": invoice_store.list_for_display(account_id),
     }
@@ -830,6 +831,7 @@ def _runs_dashboard_fields() -> dict:
         "runs_today": limits["runs_display_used"],
         "runs_daily_max": limits["runs_display_max"],
         "runs_limit_free_tier": free_tier,
+        "unlimited_runs": bool(limits.get("unlimited_runs")),
         "concurrent": limits["concurrent"],
         "concurrent_max": limits["concurrent_max"],
         "run_limits": limits,

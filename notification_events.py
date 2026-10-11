@@ -77,6 +77,8 @@ def _quota_dedupe_key(account_id: str, suffix: str) -> str:
 def notify_after_usage_metered(account_id: str) -> None:
     if not subscription_store.is_subscription_active(account_id):
         return
+    if subscription_store.unlimited_runs_enabled(account_id):
+        return
     snap = usage_metering.usage_snapshot(account_id)
     quota = snap.get("usage_quota") or 0
     if quota <= 0:

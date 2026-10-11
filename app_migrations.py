@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 25
+APP_SCHEMA_VERSION = 26
 
 
 def _utc_now() -> str:
@@ -688,6 +688,16 @@ def migration_023_team_invites(conn: DBConnection) -> None:
     )
 
 
+def migration_026_account_unlimited_runs(conn: DBConnection) -> None:
+    if "unlimited_runs" not in _column_names(conn, "account_subscriptions"):
+        conn.execute(
+            """
+            ALTER TABLE account_subscriptions
+            ADD COLUMN unlimited_runs INTEGER NOT NULL DEFAULT 0
+            """
+        )
+
+
 def migration_025_support_message_attachments(conn: DBConnection) -> None:
     conn.executescript(
         """
@@ -738,6 +748,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (23, "team_invites", migration_023_team_invites),
     (24, "account_activity_billing_transactions", migration_024_account_activity_billing_transactions),
     (25, "support_message_attachments", migration_025_support_message_attachments),
+    (26, "account_unlimited_runs", migration_026_account_unlimited_runs),
 ]
 
 

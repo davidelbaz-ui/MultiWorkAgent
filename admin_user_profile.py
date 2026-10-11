@@ -236,6 +236,7 @@ def build_user_profile(user_id: str) -> dict[str, Any] | None:
             "current_period_end": sub.get("current_period_end"),
             "square_customer_id": sub.get("square_customer_id"),
             "square_subscription_id": sub.get("square_subscription_id"),
+            "unlimited_runs": bool(sub.get("unlimited_runs")),
         },
         "invoices": invoice_store.list_invoices(account_id, limit=50),
         "transactions": billing_transaction_store.list_transactions(account_id, limit=50),

@@ -16,6 +16,7 @@ from flask import (
     url_for,
 )
 
+import account_activity_store
 import admin_auth
 import admin_log_buffer
 import admin_stats
@@ -23,6 +24,7 @@ import admin_user_profile
 import app_logging
 import app_state
 import auth_store
+import subscription_store
 import http_rate_limit
 import site_settings_store
 import support_store
@@ -296,6 +298,31 @@ def admin_user_detail(user_id: str):
         flash("User not found.", "error")
         return redirect(url_for("admin.admin_users"))
     return render_template("admin/user_detail.html", profile=profile)
+
+
+@admin_bp.post("/users/<user_id>/unlimited-runs")
+def admin_user_unlimited_runs(user_id: str):
+    user = auth_store.get_user(user_id)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for("admin.admin_users"))
+    membership = auth_store.get_primary_membership(user_id)
+    if not membership:
+        flash("User has no account membership.", "error")
+        return redirect(url_for("admin.admin_users"))
+    account_id = membership["account_id"]
+    enabled = request.form.get("enabled") == "1"
+    subscription_store.set_unlimited_runs(account_id, enabled)
+    state = "enabled" if enabled else "disabled"
+    account_activity_store.record(
+        account_id,
+        category="admin",
+        action="unlimited_runs",
+        summary=f"Operator {state} unlimited agent runs",
+        detail={"enabled": enabled, "operator": g.admin_email},
+    )
+    flash(f"Unlimited runs {state} for this account.", "success")
+    return redirect(url_for("admin.admin_user_detail", user_id=user_id))
 
 
 @admin_bp.get("/logs")

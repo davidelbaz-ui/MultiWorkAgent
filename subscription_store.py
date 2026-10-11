@@ -71,6 +71,7 @@ def _row_to_sub(row: Any) -> dict[str, Any]:
         "square_customer_id": row["square_customer_id"],
         "square_subscription_id": row["square_subscription_id"],
         "cancel_at_period_end": bool(row["cancel_at_period_end"]),
+        "unlimited_runs": bool(row["unlimited_runs"]) if "unlimited_runs" in row.keys() else False,
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
@@ -85,7 +86,7 @@ def get_subscription(account_id: str) -> dict[str, Any]:
                 account_id, plan_tier, billing_interval, status, monthly_quota, top_up_balance_runs,
                 plan_runs_consumed, current_period_start, current_period_end,
                 square_customer_id, square_subscription_id, cancel_at_period_end,
-                created_at, updated_at
+                unlimited_runs, created_at, updated_at
             FROM account_subscriptions
             WHERE account_id = ?
             """,
@@ -272,6 +273,26 @@ def is_subscription_active(account_id: str) -> bool:
     return sub["status"] in _ACTIVE_STATUSES and sub["plan_tier"] in subscription_plans.PLANS
 
 
+def unlimited_runs_enabled(account_id: str) -> bool:
+    return bool(get_subscription(account_id).get("unlimited_runs"))
+
+
+def set_unlimited_runs(account_id: str, enabled: bool) -> dict[str, Any]:
+    ensure_row(account_id)
+    now = _utc_now()
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE account_subscriptions
+            SET unlimited_runs = ?, updated_at = ?
+            WHERE account_id = ?
+            """,
+            (1 if enabled else 0, now, account_id),
+        )
+        conn.commit()
+    return get_subscription(account_id)
+
+
 def billing_summary(account_id: str) -> dict[str, Any]:
     import usage_metering
 
@@ -304,6 +325,7 @@ def billing_summary(account_id: str) -> dict[str, Any]:
         "cancel_at_period_end": sub["cancel_at_period_end"],
         "square_customer_id": sub["square_customer_id"],
         "square_subscription_id": sub["square_subscription_id"],
+        "unlimited_runs": bool(sub.get("unlimited_runs")),
     }
 
 

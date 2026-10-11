@@ -404,6 +404,10 @@ body.admin-page .admin-back a:hover {
   text-decoration: none;
 }
 
+.admin-user-unlimited-runs {
+  margin-bottom: 1.25rem;
+}
+
 .admin-user-detail-head {
   display: flex;
   flex-wrap: wrap;
