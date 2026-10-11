@@ -4917,6 +4917,24 @@ table.data-table {
   padding: 0.25rem 0.15rem;
 }
 
+.support-chat-messages--empty {
+  min-height: 0;
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.page-support .support-composer-wrap .agent-composer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.page-support .support-composer-wrap .agent-attachments {
+  width: 100%;
+}
+
 .support-msg {
   max-width: min(92%, 34rem);
   padding: 0.65rem 0.85rem;

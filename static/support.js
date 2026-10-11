@@ -34,15 +34,33 @@
     }
   }
 
+  function showAttachmentsList() {
+    if (typeof uiShowElement === "function") {
+      void uiShowElement(attachmentsEl);
+    } else if (attachmentsEl) {
+      attachmentsEl.hidden = false;
+      attachmentsEl.classList.add("ui-motion-visible");
+    }
+  }
+
+  function hideAttachmentsList() {
+    if (typeof uiHideElement === "function") {
+      void uiHideElement(attachmentsEl);
+    } else if (attachmentsEl) {
+      attachmentsEl.hidden = true;
+      attachmentsEl.classList.remove("ui-motion-visible");
+    }
+  }
+
   function renderPendingAttachments() {
     if (!attachmentsEl) return;
     attachmentsEl.innerHTML = "";
     if (!pendingFiles.length) {
-      attachmentsEl.hidden = true;
+      hideAttachmentsList();
       if (syncComposerActionButton) syncComposerActionButton();
       return;
     }
-    attachmentsEl.hidden = false;
+    showAttachmentsList();
     pendingFiles.forEach(function (file, index) {
       const item = document.createElement("li");
       item.className = "agent-attachment";
@@ -86,12 +104,10 @@
   function renderMessages(messages) {
     messagesEl.innerHTML = "";
     if (!messages.length) {
-      const empty = document.createElement("p");
-      empty.className = "empty-state";
-      empty.textContent = "No messages yet.";
-      messagesEl.appendChild(empty);
+      messagesEl.classList.add("support-chat-messages--empty");
       return;
     }
+    messagesEl.classList.remove("support-chat-messages--empty");
     messages.forEach(function (msg) {
       const wrap = document.createElement("article");
       const type = msg.sender_type || "user";
