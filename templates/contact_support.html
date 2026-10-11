@@ -8,7 +8,8 @@
   {{ support_intro or ('Chat with our team. We aim to respond within ' ~ support_sla_hours ~ ' hours on business days. Your conversation is saved to your account so you can return anytime.') }}
 </p>
 
-<section class="card support-chat-card">
+<section class="card support-chat-card" id="support-chat-card">
+  <div class="support-drop-overlay" id="support-drop-overlay" aria-hidden="true">Drop files to attach</div>
   <div class="support-chat-shell">
     <p class="support-chat-reminder" role="note">{{ support_reminder }}</p>
     <div class="support-chat-messages" id="support-messages" role="log" aria-live="polite" aria-label="Support conversation">
@@ -28,7 +29,7 @@
           support_max_body
         ) }}
         <p class="agent-composer-notice meta-row">
-          Press Enter to send · Shift+Enter for a new line · Use + to attach files
+          Press Enter to send · Shift+Enter for a new line · Paste, drag-and-drop, or + to attach files
         </p>
       </div>
     </div>

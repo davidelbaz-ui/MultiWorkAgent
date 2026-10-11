@@ -4887,7 +4887,36 @@ table.data-table {
 
 /* Contact support chat */
 .support-chat-card {
+  position: relative;
   max-width: 42rem;
+}
+
+.support-chat-card.is-drag-over .support-drop-overlay {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+}
+
+.support-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 18, 25, 0.82);
+  border: 2px dashed rgba(91, 141, 239, 0.65);
+  margin: 0.5rem;
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 600;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--motion-duration) var(--motion-ease),
+    visibility var(--motion-duration);
+  border-radius: inherit;
 }
 
 .support-chat-reminder {

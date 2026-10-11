@@ -10,8 +10,11 @@
     return;
   }
 
+  const MAX_FILES_PER_MESSAGE = 5;
   const pendingFiles = [];
   let syncComposerActionButton = null;
+  const dropZone = document.getElementById("support-chat-card");
+  const dropOverlay = document.getElementById("support-drop-overlay");
 
   function escapeHtml(text) {
     const div = document.createElement("div");
@@ -50,6 +53,52 @@
       attachmentsEl.hidden = true;
       attachmentsEl.classList.remove("ui-motion-visible");
     }
+  }
+
+  function addPendingFiles(fileList) {
+    const incoming = Array.from(fileList || []).filter(function (file) {
+      return file && (file.name || file.size);
+    });
+    if (!incoming.length) {
+      return;
+    }
+    const room = MAX_FILES_PER_MESSAGE - pendingFiles.length;
+    if (room <= 0) {
+      window.alert("At most " + MAX_FILES_PER_MESSAGE + " files per message.");
+      return;
+    }
+    incoming.slice(0, room).forEach(function (file) {
+      pendingFiles.push(file);
+    });
+    if (incoming.length > room) {
+      window.alert(
+        "Only " + room + " more file(s) added (max " + MAX_FILES_PER_MESSAGE + " per message)."
+      );
+    }
+    renderPendingAttachments();
+  }
+
+  function clipboardHasFiles(dataTransfer) {
+    if (!dataTransfer) {
+      return false;
+    }
+    return Array.from(dataTransfer.types || []).includes("Files");
+  }
+
+  function filesFromClipboard(clipboard) {
+    const out = [];
+    if (!clipboard || !clipboard.items) {
+      return out;
+    }
+    for (const item of clipboard.items) {
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) {
+          out.push(file);
+        }
+      }
+    }
+    return out;
   }
 
   function renderPendingAttachments() {
@@ -180,11 +229,56 @@
       fileInput.click();
     });
     fileInput.addEventListener("change", function () {
-      Array.from(fileInput.files || []).forEach(function (file) {
-        pendingFiles.push(file);
-      });
+      addPendingFiles(fileInput.files);
       fileInput.value = "";
-      renderPendingAttachments();
+    });
+  }
+
+  input.addEventListener("paste", function (event) {
+    const pasted = filesFromClipboard(event.clipboardData);
+    if (!pasted.length) {
+      return;
+    }
+    event.preventDefault();
+    addPendingFiles(pasted);
+  });
+
+  if (dropZone) {
+    dropZone.addEventListener("dragenter", function (event) {
+      if (!clipboardHasFiles(event.dataTransfer)) {
+        return;
+      }
+      event.preventDefault();
+      dropZone.classList.add("is-drag-over");
+    });
+
+    dropZone.addEventListener("dragover", function (event) {
+      if (!clipboardHasFiles(event.dataTransfer)) {
+        return;
+      }
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      dropZone.classList.add("is-drag-over");
+    });
+
+    dropZone.addEventListener("dragleave", function (event) {
+      const next = event.relatedTarget;
+      if (next && dropZone.contains(next)) {
+        return;
+      }
+      dropZone.classList.remove("is-drag-over");
+    });
+
+    dropZone.addEventListener("drop", function (event) {
+      if (!clipboardHasFiles(event.dataTransfer)) {
+        return;
+      }
+      event.preventDefault();
+      dropZone.classList.remove("is-drag-over");
+      if (!event.dataTransfer.files?.length) {
+        return;
+      }
+      addPendingFiles(event.dataTransfer.files);
     });
   }
 
