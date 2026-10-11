@@ -3323,12 +3323,13 @@ table.data-table {
     0 1px 3px rgba(0, 0, 0, 0.08),
     0 0 0 1px rgba(91, 141, 239, 0.12);
   pointer-events: none;
-  transform: translateX(0);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.45s ease-in-out;
+  backface-visibility: hidden;
 }
 
-#billing-page[data-billing-interval="annual"] .billing-segmented-thumb {
-  transform: translateX(calc(100% + 0.25rem));
+.billing-segmented:has(input[value="annual"]:checked) .billing-segmented-thumb {
+  transform: translate3d(calc(100% + 0.25rem), 0, 0);
 }
 
 @media (prefers-reduced-motion: reduce) {
