@@ -7,17 +7,17 @@
 <section class="metrics">
   <div class="metric-card">
     <div class="metric-label">Runs this period</div>
-    <div class="metric-value">{% if plan or runs_limit_free_tier %}{{ usage_used }} / {{ usage_quota }}{% else %}—{% endif %}</div>
-    <div class="metric-hint">{% if billing_period_end %}Resets {{ billing_period_end }}{% elif runs_limit_free_tier %}Free tier · monthly limit{% else %}No billing period{% endif %}</div>
+    <div class="metric-value">{% if unlimited_runs|default(false) %}Unlimited{% elif plan or runs_limit_free_tier %}{{ usage_used }} / {{ usage_quota }}{% else %}—{% endif %}</div>
+    <div class="metric-hint">{% if unlimited_runs|default(false) %}No plan quota{% elif billing_period_end %}Resets {{ billing_period_end }}{% elif runs_limit_free_tier %}Free tier · monthly limit{% else %}No billing period{% endif %}</div>
   </div>
   <div class="metric-card">
     <div class="metric-label">Active businesses</div>
     <div class="metric-value">{{ businesses|length }}</div>
   </div>
   <div class="metric-card">
-    <div class="metric-label">{% if runs_limit_free_tier %}Runs this month{% else %}Runs today{% endif %}</div>
-    <div class="metric-value">{{ runs_today }} / {{ runs_daily_max }}</div>
-    <div class="metric-hint">{% if runs_limit_free_tier %}Free tier allowance{% else %}Rolling 24h circuit breaker{% endif %}</div>
+    <div class="metric-label">{% if unlimited_runs|default(false) %}Run limits{% elif runs_limit_free_tier %}Runs this month{% else %}Runs today{% endif %}</div>
+    <div class="metric-value">{% if unlimited_runs|default(false) %}Unlimited{% else %}{{ runs_today }} / {{ runs_daily_max }}{% endif %}</div>
+    <div class="metric-hint">{% if unlimited_runs|default(false) %}Quota &amp; daily cap waived{% elif runs_limit_free_tier %}Free tier allowance{% else %}Rolling 24h circuit breaker{% endif %}</div>
   </div>
   <div class="metric-card">
     <div class="metric-label">Concurrent runs</div>

@@ -13,23 +13,37 @@
 {% endif %}
 
 <section class="card" style="margin-bottom: 1.25rem;">
-  <h2>Current plan{% if plan %} — {{ plan }}{% endif %}</h2>
+  <h2>Current plan{% if plan %} — {{ plan }}{% elif unlimited_runs|default(false) %} — Free{% endif %}</h2>
   {% if subscription_status == 'pending' %}
   <p class="meta-row">Checkout in progress — waiting for Square confirmation.</p>
   {% endif %}
   {% if cancel_at_period_end and plan %}
   <p class="meta-row">Cancellation scheduled at end of billing period.</p>
   {% endif %}
-  {% if plan and usage_quota %}
+  {% if unlimited_runs|default(false) %}
+  <p class="billing-unlimited-runs"><strong>Unlimited runs</strong></p>
+  <p class="meta-row">This account is not limited by plan quota or the daily run breaker. Concurrent runs still apply (see Limits below).</p>
+  {% if usage_used and usage_used > 0 %}
+  <p class="meta-row">{{ usage_used }} runs recorded this period (informational only).</p>
+  {% endif %}
+  {% elif plan and usage_quota %}
   <div class="progress-bar"><div class="progress-fill" style="width: {{ (usage_used / usage_quota * 100)|int }}%;"></div></div>
   <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used · Top-up balance: <strong>{{ top_up_balance }}</strong> runs</p>
+  {% if billing_period_end %}
+  <p class="meta-row">Usage period resets {{ billing_period_end }}</p>
+  {% endif %}
+  {% elif runs_limit_free_tier|default(false) and usage_quota %}
+  <div class="progress-bar"><div class="progress-fill" style="width: {{ (usage_used / usage_quota * 100)|int }}%;"></div></div>
+  <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used (free tier)</p>
   {% if billing_period_end %}
   <p class="meta-row">Usage period resets {{ billing_period_end }}</p>
   {% endif %}
   {% else %}
   <p class="empty-state">No active subscription. Choose a plan below.</p>
   {% endif %}
+  {% if not unlimited_runs|default(false) %}
   <p class="meta-row">Plan runs are used first, then top-up credits. Unused top-up rolls over. Annual billing saves 20% vs paying monthly for 12 months.</p>
+  {% endif %}
   {% if plan and subscription_status == 'active' and account_role == 'owner' %}
   <button type="button" class="btn btn-sm" id="billing-cancel-subscription">Cancel at period end</button>
   {% endif %}
@@ -86,7 +100,9 @@
   <section class="card">
     <h2>Limits</h2>
     <p>Concurrent runs: <strong>{{ concurrent }} / {{ concurrent_max }}</strong></p>
-    {% if runs_limit_free_tier %}
+    {% if unlimited_runs|default(false) %}
+    <p>Agent runs: <strong>Unlimited</strong> (operator override)</p>
+    {% elif runs_limit_free_tier %}
     <p>Free tier runs: <strong>{{ runs_today }} / {{ runs_daily_max }}</strong> this month</p>
     {% else %}
     <p>Daily breaker: <strong>{{ runs_today }} / {{ runs_daily_max }}</strong> in 24h</p>
