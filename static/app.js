@@ -14,12 +14,57 @@ function formatHeaderUsageRuns(value) {
   return String(Number(n.toFixed(2)));
 }
 
+/** @param {{ unlimited_runs?: boolean, limits?: Record<string, unknown> }} data */
+function isUnlimitedRunsState(data) {
+  if (!data) {
+    return false;
+  }
+  if (data.unlimited_runs) {
+    return true;
+  }
+  const limits = data.limits;
+  if (!limits || typeof limits !== "object") {
+    return false;
+  }
+  if (limits.unlimited_runs) {
+    return true;
+  }
+  if (limits.runs_display_period === "unlimited") {
+    return true;
+  }
+  const usage = limits.usage;
+  return Boolean(usage && typeof usage === "object" && usage.unlimited_runs);
+}
+
+/** @param {Record<string, unknown>} limits */
+function formatAgentRunsLimitLine(limits) {
+  if (!limits) {
+    return "";
+  }
+  if (limits.unlimited_runs || limits.runs_display_period === "unlimited") {
+    return "Unlimited runs";
+  }
+  const used = limits.runs_display_used ?? limits.runs_24h;
+  const max = limits.runs_display_max ?? limits.runs_daily_max;
+  const period = limits.runs_display_period === "month" ? "This month" : "Today";
+  return `${period}: ${used} / ${max} runs`;
+}
+
 /**
  * @param {{ usage_used?: number, usage_quota?: number, plan?: string | null, runs_limit_free_tier?: boolean, limits?: { usage?: Record<string, unknown> } }} data
  */
 function updateHeaderUsageChip(data) {
   const chips = document.querySelectorAll("[data-usage-chip]");
   if (!chips.length || !data) {
+    return;
+  }
+  if (isUnlimitedRunsState(data)) {
+    chips.forEach((el) => {
+      el.textContent = "Unlimited runs";
+      el.dataset.unlimitedRuns = "1";
+      el.classList.remove("warn");
+      el.classList.add("ok");
+    });
     return;
   }
   const chip = chips[0];
@@ -51,6 +96,7 @@ function updateHeaderUsageChip(data) {
   }
   const pct = Number(quotaRaw) ? (Number(usedRaw) / Number(quotaRaw)) * 100 : 0;
   chips.forEach((el) => {
+    el.dataset.unlimitedRuns = "0";
     if (data.plan !== undefined && data.plan !== null) {
       el.dataset.planLabel = String(data.plan);
     } else if (freeTier) {
@@ -1364,10 +1410,7 @@ async function initAgentComposer() {
       concurrentEl.textContent = `Concurrent: ${limits.concurrent} / ${limits.concurrent_max}`;
     }
     if (runsTodayEl) {
-      const used = limits.runs_display_used ?? limits.runs_24h;
-      const max = limits.runs_display_max ?? limits.runs_daily_max;
-      const period = limits.runs_display_period === "month" ? "This month" : "Today";
-      runsTodayEl.textContent = `${period}: ${used} / ${max} runs`;
+      runsTodayEl.textContent = formatAgentRunsLimitLine(limits);
     }
     if (limitsBanner) {
       if (!limits.can_run) {
@@ -1384,9 +1427,11 @@ async function initAgentComposer() {
     }
     updateHeaderUsageChip({
       limits,
+      unlimited_runs: limits.unlimited_runs,
       usage_used: limits.usage?.usage_used,
       usage_quota: limits.usage?.usage_quota,
       runs_limit_free_tier: limits.usage?.free_tier,
+      plan: limits.usage?.plan_name,
     });
   };
 
@@ -1438,12 +1483,17 @@ async function initAgentComposer() {
         statusEl.textContent = (labels[runStatus] || `Last run: ${runStatus}`) + units;
       }
     }
-    if (runsTodayEl && typeof run.runs_today === "number") {
+    if (runsTodayEl) {
       const limits = run.limits || {};
-      const used = limits.runs_display_used ?? run.runs_today;
-      const max = limits.runs_display_max ?? run.runs_daily_max ?? 50;
-      const period = limits.runs_display_period === "month" ? "This month" : "Today";
-      runsTodayEl.textContent = `${period}: ${used} / ${max} runs`;
+      if (limits.unlimited_runs || limits.runs_display_period === "unlimited") {
+        runsTodayEl.textContent = "Unlimited runs";
+      } else if (typeof run.runs_today === "number") {
+        runsTodayEl.textContent = formatAgentRunsLimitLine({
+          ...limits,
+          runs_display_used: limits.runs_display_used ?? run.runs_today,
+          runs_display_max: limits.runs_display_max ?? run.runs_daily_max ?? 50,
+        });
+      }
     }
     if (run.limits) {
       updateLimitsUI(run.limits);
