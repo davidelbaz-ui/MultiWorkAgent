@@ -3315,7 +3315,8 @@ table.data-table {
   top: 0.25rem;
   left: 0.25rem;
   z-index: 0;
-  width: calc((100% - 0.25rem) / 2);
+  /* Match one grid column: (track width − horizontal padding − column gap) / 2 */
+  width: calc((100% - 0.75rem) / 2);
   height: calc(100% - 0.5rem);
   border-radius: 999px;
   background: var(--surface);
@@ -3323,13 +3324,11 @@ table.data-table {
     0 1px 3px rgba(0, 0, 0, 0.08),
     0 0 0 1px rgba(91, 141, 239, 0.12);
   pointer-events: none;
-  transform: translate3d(0, 0, 0);
-  transition: transform 0.45s ease-in-out;
-  backface-visibility: hidden;
+  transition: left 0.45s ease-in-out;
 }
 
 .billing-segmented:has(input[value="annual"]:checked) .billing-segmented-thumb {
-  transform: translate3d(calc(100% + 0.25rem), 0, 0);
+  left: calc(50% + 0.125rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
