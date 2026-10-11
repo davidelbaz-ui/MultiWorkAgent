@@ -81,14 +81,16 @@
   </main>
 
   <footer class="start-footer">
-    {{ brand_lockup(href=url_for('index'), size='sm') }}
+    <div class="start-footer-brand">
+      {{ brand_lockup(href=url_for('index'), size='sm') }}
+    </div>
     <nav class="start-footer-legal" aria-label="Legal">
       <a href="{{ url_for('agent_notes') }}">Agent notes</a>
       <a href="{{ url_for('privacy_policy') }}">Privacy policy</a>
       <a href="{{ url_for('terms_and_conditions') }}">Terms &amp; conditions</a>
       <a href="{{ url_for('licence_agreement') }}">Licence agreement</a>
-      <span class="footer-copyright">&copy; 2026 MultiWorkAgent</span>
     </nav>
+    <p class="footer-copyright start-footer-copyright meta-row">&copy; 2026 MultiWorkAgent</p>
   </footer>
 </body>
 </html>

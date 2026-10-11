@@ -4743,20 +4743,31 @@ table.data-table {
 .start-footer {
   border-top: 1px solid var(--border);
   padding: 1.25rem clamp(1rem, 4vw, 2.5rem);
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: flex-start;
-  gap: 1rem 1.75rem;
+  gap: 1rem 1.25rem;
   background: var(--surface);
+}
+
+.start-footer-brand {
+  justify-self: start;
 }
 
 .start-footer-legal {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
+  justify-self: center;
   gap: 0.65rem 1.25rem;
   font-size: 0.88rem;
+}
+
+.start-footer-copyright {
+  justify-self: end;
+  margin: 0;
+  text-align: right;
 }
 
 .footer-copyright {
@@ -4780,32 +4791,35 @@ table.data-table {
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.65rem;
-}
-
-.settings-legal-footer-row {
-  display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.5rem 1rem;
-  width: 100%;
+  gap: 0.45rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .settings-legal-footer-label {
+  flex-shrink: 0;
   margin: 0;
+  padding-right: 0.35rem;
   font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+  white-space: nowrap;
 }
 
-.settings-legal-footer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.settings-legal-footer .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.settings-legal-footer-copyright {
+  flex-shrink: 0;
+  margin-left: 0.15rem;
+  padding-left: 0.35rem;
 }
 
 /* Public legal document pages */
