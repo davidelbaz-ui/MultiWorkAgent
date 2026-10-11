@@ -2,7 +2,7 @@
 
 Multi-tenant business operations agent: businesses, integrations, databases, agent runs, billing, and usage metering.
 
-Production site: **https://multiworkagent.vercel.app** (Vercel).
+Production site: **[https://multiworkagent.com](https://multiworkagent.com)**.
 
 ## Local development
 
@@ -14,13 +14,13 @@ copy env.example .env    # edit secrets
 python app.py
 ```
 
-Open http://127.0.0.1:5000
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-Operator admin (support inbox, page copy, logs, DB status): **https://multiworkagent.vercel.app/admin** — set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in env. See [docs/ADMIN.md](docs/ADMIN.md). Optional local-only: `python admin_app.py` → http://127.0.0.1:8000/admin
+Operator admin (support inbox, page copy, logs, DB status): **[https://multiworkagent.vercel.app/admin](https://multiworkagent.vercel.app/admin)** — set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in env. See [docs/ADMIN.md](docs/ADMIN.md). Optional local-only: `python admin_app.py` → [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
 
 ## Deploy on Vercel
 
-See [VERCEL.md](VERCEL.md). Set `APP_BASE_URL=https://multiworkagent.vercel.app` in production.
+See [VERCEL.md](VERCEL.md). Set `APP_BASE_URL=https://multiworkagent.com` in production.
 
 ## OAuth login
 
@@ -35,3 +35,4 @@ See [INTEGRATIONS_OAUTH.md](INTEGRATIONS_OAUTH.md) and [docs/oauth-walkthrough/]
 ```bash
 python -m pytest tests/ -q
 ```
+

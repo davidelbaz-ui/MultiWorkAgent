@@ -59,6 +59,7 @@ import support_store
 import square_billing
 import subscription_plans
 import subscription_store
+import seo_public
 import team_invite_store
 import user_notification_store
 import oauth_state_store
@@ -107,6 +108,8 @@ AUTH_PUBLIC_ENDPOINTS = frozenset(
         "terms_and_conditions",
         "licence_agreement",
         "agent_notes",
+        "robots_txt",
+        "sitemap_xml",
     }
 )
 
@@ -122,6 +125,8 @@ DB_PUBLIC_ENDPOINTS = frozenset(
         "terms_and_conditions",
         "licence_agreement",
         "agent_notes",
+        "robots_txt",
+        "sitemap_xml",
     }
 )
 
@@ -408,7 +413,7 @@ def enforce_maintenance_mode():
     if not enabled:
         return None
     endpoint = (request.endpoint or "").split(".")[0]
-    if endpoint in {"health", "static", "favicon"}:
+    if endpoint in {"health", "static", "favicon", "robots_txt", "sitemap_xml"}:
         return None
     if request.path.startswith("/api/"):
         return jsonify({"error": "maintenance", "message": message}), 503
@@ -572,6 +577,16 @@ def health():
 @app.get("/favicon.ico")
 def favicon():
     return redirect(url_for("static", filename="logo.svg"))
+
+
+@app.get("/robots.txt")
+def robots_txt():
+    return Response(seo_public.robots_txt(), mimetype="text/plain; charset=utf-8")
+
+
+@app.get("/sitemap.xml")
+def sitemap_xml():
+    return Response(seo_public.sitemap_xml(), mimetype="application/xml; charset=utf-8")
 
 
 def _account_businesses() -> list[dict]:
