@@ -4967,6 +4967,8 @@ table.data-table {
 
 .support-composer-wrap {
   max-width: 42rem;
+  background: none;
+  padding: 0;
 }
 
 .support-msg-attachments {
