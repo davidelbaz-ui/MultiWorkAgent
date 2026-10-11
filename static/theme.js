@@ -57,10 +57,12 @@ function syncThemePickerUi(preference) {
   if (!group) {
     return;
   }
-  group.querySelectorAll("[data-theme-value]").forEach((button) => {
-    const active = button.dataset.themeValue === preference;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-checked", active ? "true" : "false");
+  group.querySelectorAll("[data-theme-value]").forEach((el) => {
+    const value = el.dataset.themeValue || el.value;
+    const active = value === preference;
+    if (el instanceof HTMLInputElement && el.type === "radio") {
+      el.checked = active;
+    }
   });
 }
 
@@ -86,9 +88,12 @@ function initThemePicker() {
   const preference = readThemePreference();
   syncThemePickerUi(preference);
 
-  group.querySelectorAll("[data-theme-value]").forEach((button) => {
-    button.addEventListener("click", () => {
-      setThemePreference(button.dataset.themeValue || "device");
+  group.querySelectorAll("input[data-theme-value]").forEach((input) => {
+    input.addEventListener("change", () => {
+      if (!input.checked) {
+        return;
+      }
+      setThemePreference(input.dataset.themeValue || input.value || "device");
     });
   });
 }

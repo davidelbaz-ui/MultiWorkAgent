@@ -47,10 +47,21 @@
   <section class="card">
     <h2>Appearance</h2>
     <p class="meta-row">Saved to your account (syncs across browsers). Device follows system light or dark.</p>
-    <div class="theme-segmented" data-theme-picker data-theme-sync="server" role="radiogroup" aria-label="Theme">
-      <button type="button" class="theme-segmented-option" role="radio" data-theme-value="light" aria-checked="false">Light</button>
-      <button type="button" class="theme-segmented-option" role="radio" data-theme-value="dark" aria-checked="false">Dark</button>
-      <button type="button" class="theme-segmented-option" role="radio" data-theme-value="device" aria-checked="false">Device</button>
+    {% set theme_pref = settings_appearance.theme if settings_appearance is defined else 'device' %}
+    <div class="billing-segmented billing-segmented--3" data-theme-picker data-theme-sync="server" role="radiogroup" aria-label="Theme">
+      <span class="billing-segmented-thumb" aria-hidden="true"></span>
+      <label class="billing-segmented-option">
+        <input type="radio" name="theme-preference" value="light" data-theme-value="light"{% if theme_pref == 'light' %} checked{% endif %}>
+        <span class="billing-segmented-text">Light</span>
+      </label>
+      <label class="billing-segmented-option">
+        <input type="radio" name="theme-preference" value="dark" data-theme-value="dark"{% if theme_pref == 'dark' %} checked{% endif %}>
+        <span class="billing-segmented-text">Dark</span>
+      </label>
+      <label class="billing-segmented-option">
+        <input type="radio" name="theme-preference" value="device" data-theme-value="device"{% if theme_pref != 'light' and theme_pref != 'dark' %} checked{% endif %}>
+        <span class="billing-segmented-text">Device</span>
+      </label>
     </div>
   </section>
   <section class="card">
