@@ -21,7 +21,6 @@
   <h2>Account</h2>
   <form class="admin-user-unlimited-runs" method="post" action="{{ url_for('admin.admin_user_unlimited_runs', user_id=profile.user.id) }}">
     <label class="admin-toggle">
-      <input type="hidden" name="enabled" value="0">
       <input type="checkbox" name="enabled" value="1" {% if profile.subscription.unlimited_runs %}checked{% endif %} onchange="this.form.submit()">
       <span class="admin-toggle-ui" aria-hidden="true"></span>
       <span><strong>Unlimited runs</strong> — bypass plan quota and daily run limits (concurrency still applies)</span>

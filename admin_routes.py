@@ -311,7 +311,7 @@ def admin_user_unlimited_runs(user_id: str):
         flash("User has no account membership.", "error")
         return redirect(url_for("admin.admin_users"))
     account_id = membership["account_id"]
-    enabled = request.form.get("enabled") == "1"
+    enabled = "1" in request.form.getlist("enabled")
     subscription_store.set_unlimited_runs(account_id, enabled)
     state = "enabled" if enabled else "disabled"
     account_activity_store.record(
