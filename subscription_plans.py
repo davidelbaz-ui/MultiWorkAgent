@@ -22,19 +22,19 @@ PLANS: dict[str, SubscriptionPlan] = {
     "starter": SubscriptionPlan(
         tier="starter",
         display_name="Starter",
-        monthly_price_usd_cents=4999,
+        monthly_price_usd_cents=17999,
         monthly_quota=150,
     ),
     "pro": SubscriptionPlan(
         tier="pro",
         display_name="Pro",
-        monthly_price_usd_cents=14999,
+        monthly_price_usd_cents=27999,
         monthly_quota=500,
     ),
     "enterprise": SubscriptionPlan(
         tier="enterprise",
         display_name="Enterprise",
-        monthly_price_usd_cents=24999,
+        monthly_price_usd_cents=37999,
         monthly_quota=1000,
     ),
 }
