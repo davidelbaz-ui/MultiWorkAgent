@@ -18,10 +18,10 @@ class SupportStoreTests(PostgresStoreTestCase):
         )
         self.account_id = self.membership["account_id"]
 
-    def test_thread_welcome_and_user_message(self) -> None:
+    def test_thread_starts_empty_reminder_is_not_stored(self) -> None:
         rows = support_store.list_messages(self.account_id)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["sender_type"], support_store.SENDER_SYSTEM)
+        self.assertEqual(rows, [])
+        self.assertIn("48 hours", support_store.support_reminder_text())
 
         support_store.add_user_message(
             account_id=self.account_id,
@@ -29,10 +29,10 @@ class SupportStoreTests(PostgresStoreTestCase):
             body="  Need help with OAuth  ",
         )
         rows = support_store.list_messages(self.account_id)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[1]["body"], "Need help with OAuth")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["body"], "Need help with OAuth")
 
-        api = support_store.message_to_api(rows[1], viewer_user_id=self.user["id"])
+        api = support_store.message_to_api(rows[0], viewer_user_id=self.user["id"])
         self.assertTrue(api["is_mine"])
         self.assertEqual(api["sender_label"], "You")
 

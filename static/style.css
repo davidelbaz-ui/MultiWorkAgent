@@ -4890,6 +4890,17 @@ table.data-table {
   max-width: 42rem;
 }
 
+.support-chat-reminder {
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--border) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
 .support-chat-shell {
   display: flex;
   flex-direction: column;

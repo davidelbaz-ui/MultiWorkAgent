@@ -14,11 +14,13 @@ SENDER_USER = "user"
 SENDER_SUPPORT = "support"
 SENDER_SYSTEM = "system"
 
-_WELCOME_BODY = (
-    "Thanks for reaching out. Our team typically replies within "
-    f"{SUPPORT_SLA_HOURS} hours on business days. "
-    "Describe your issue below — include screenshots or error messages if you can."
-)
+def support_reminder_text() -> str:
+    """Static copy shown in the UI — not stored as a thread message."""
+    return (
+        "Thanks for reaching out. Our team typically replies within "
+        f"{SUPPORT_SLA_HOURS} hours on business days. "
+        "Describe your issue below — include screenshots or error messages if you can."
+    )
 
 
 def _utc_now() -> str:
@@ -84,14 +86,6 @@ def get_or_create_thread(account_id: str) -> dict[str, Any]:
             """,
             (thread_id, account_id, now, now),
         )
-        conn.execute(
-            """
-            INSERT INTO support_messages (
-                id, thread_id, sender_type, author_user_id, body, created_at
-            ) VALUES (?, ?, ?, NULL, ?, ?)
-            """,
-            (uuid.uuid4().hex, thread_id, SENDER_SYSTEM, _WELCOME_BODY, now),
-        )
         conn.commit()
     return {
         "id": thread_id,
@@ -110,9 +104,10 @@ def list_messages(account_id: str) -> list[dict[str, Any]]:
             SELECT id, thread_id, sender_type, author_user_id, body, created_at
             FROM support_messages
             WHERE thread_id = ?
+              AND sender_type != ?
             ORDER BY created_at ASC, id ASC
             """,
-            (thread["id"],),
+            (thread["id"], SENDER_SYSTEM),
         ).fetchall()
     messages = [_row_to_message(row) for row in rows]
     _attach_files_to_messages(messages)
@@ -283,6 +278,7 @@ def list_inbox(*, limit: int = 100, status: str | None = None) -> list[dict[str,
                     SELECT body
                     FROM support_messages m
                     WHERE m.thread_id = t.id
+                      AND m.sender_type != ?
                     ORDER BY m.created_at DESC, m.id DESC
                     LIMIT 1
                 ) AS last_snippet
@@ -294,7 +290,7 @@ def list_inbox(*, limit: int = 100, status: str | None = None) -> list[dict[str,
             ORDER BY t.updated_at DESC
             LIMIT ?
             """,
-            tuple([SENDER_USER] + params),
+            tuple([SENDER_USER, SENDER_SYSTEM] + params),
         ).fetchall()
     out: list[dict[str, Any]] = []
     for row in rows:

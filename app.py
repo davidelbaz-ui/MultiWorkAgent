@@ -2012,6 +2012,7 @@ def contact_support():
             support_sla_hours=support_store.SUPPORT_SLA_HOURS,
             support_max_body=support_store.MAX_MESSAGE_BODY_LEN,
             support_intro=intro,
+            support_reminder=support_store.support_reminder_text(),
         ),
     )
 
@@ -2032,6 +2033,7 @@ def api_support_messages_list():
                 for row in rows
             ],
             "sla_hours": support_store.SUPPORT_SLA_HOURS,
+            "reminder": support_store.support_reminder_text(),
         }
     )
 
