@@ -77,9 +77,12 @@ When users ask to “post to Slack,” “update QuickBooks,” etc., confirm th
 
 ### AI provider
 
-- Server uses **Google Gemini** when `GEMINI_API_KEY` or `AGENT_API_KEY` is set (default path on production).
-- Otherwise **Anthropic** when `ANTHROPIC_API_KEY` is set.
-- If neither is configured, the agent returns an “not configured” message.
+- **`AGENT_PROVIDER`**: `gemini` (default) or `anthropic` / `claude`.
+- **Gemini**: `GEMINI_API_KEY` or `AGENT_API_KEY`. Supports **integration/database tool calling** when one business is selected.
+- **Claude**: `ANTHROPIC_API_KEY` (and `AGENT_PROVIDER=anthropic` if Gemini keys are also set). Chat and knowledge context only; integration tools use the Gemini path today.
+- If the chosen provider has no key, the agent returns a not-configured message.
+
+Setup: [docs/AGENT_CLAUDE.md](AGENT_CLAUDE.md).
 
 ---
 

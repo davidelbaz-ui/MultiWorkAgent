@@ -42,7 +42,14 @@ https://multiworkagent.vercel.app/integrations/oauth/callback
 
 Copy operator keys from `.env.example` / [INTEGRATIONS_OAUTH.md](INTEGRATIONS_OAUTH.md) into Vercel env (never commit `.env`).
 
-Agent, Square billing, database drivers: set the same vars you use locally (`AGENT_API_KEY`, `SQUARE_*`, etc.). Full Square subscription setup: [docs/SQUARE_BILLING.md](docs/SQUARE_BILLING.md).
+**Agent (pick one provider):**
+
+| Provider | Variables |
+|----------|-----------|
+| Gemini (default) | `GEMINI_API_KEY`, optional `AGENT_MODEL` |
+| Claude | `AGENT_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, optional `AGENT_MODEL` — see [docs/AGENT_CLAUDE.md](docs/AGENT_CLAUDE.md) |
+
+Square billing, database drivers: set the same vars you use locally (`SQUARE_*`, etc.). Full Square setup: [docs/SQUARE_BILLING.md](docs/SQUARE_BILLING.md).
 
 ## OAuth on HTTPS (Asana, etc.)
 
