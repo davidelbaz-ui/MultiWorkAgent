@@ -4785,24 +4785,20 @@ table.data-table {
   color: var(--accent);
 }
 
-/* Settings legal footer */
+/* Settings legal footer — same grid as .start-footer (label | links | copyright) */
 .settings-legal-footer {
   margin-top: 2rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 0.45rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  gap: 1rem 1.25rem;
 }
 
 .settings-legal-footer-label {
-  flex-shrink: 0;
+  justify-self: start;
   margin: 0;
-  padding-right: 0.35rem;
   font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -4811,15 +4807,23 @@ table.data-table {
   white-space: nowrap;
 }
 
-.settings-legal-footer .btn {
-  flex-shrink: 0;
+.settings-legal-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  gap: 0.5rem;
+}
+
+.settings-legal-footer-actions .btn {
   white-space: nowrap;
 }
 
 .settings-legal-footer-copyright {
-  flex-shrink: 0;
-  margin-left: 0.15rem;
-  padding-left: 0.35rem;
+  justify-self: end;
+  margin: 0;
+  text-align: right;
 }
 
 /* Public legal document pages */

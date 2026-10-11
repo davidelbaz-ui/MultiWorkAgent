@@ -121,11 +121,13 @@
 
 <footer class="settings-legal-footer">
   <span class="settings-legal-footer-label">Help &amp; legal</span>
-  <a class="btn btn-primary btn-sm" href="{{ url_for('contact_support') }}">Contact support</a>
-  <a class="btn btn-sm" href="{{ url_for('agent_notes') }}">Agent notes</a>
-  <a class="btn btn-sm" href="{{ url_for('privacy_policy') }}">Privacy policy</a>
-  <a class="btn btn-sm" href="{{ url_for('terms_and_conditions') }}">Terms &amp; conditions</a>
-  <a class="btn btn-sm" href="{{ url_for('licence_agreement') }}">Licence agreement</a>
+  <div class="settings-legal-footer-actions">
+    <a class="btn btn-primary btn-sm" href="{{ url_for('contact_support') }}">Contact support</a>
+    <a class="btn btn-sm" href="{{ url_for('agent_notes') }}">Agent notes</a>
+    <a class="btn btn-sm" href="{{ url_for('privacy_policy') }}">Privacy policy</a>
+    <a class="btn btn-sm" href="{{ url_for('terms_and_conditions') }}">Terms &amp; conditions</a>
+    <a class="btn btn-sm" href="{{ url_for('licence_agreement') }}">Licence agreement</a>
+  </div>
   <span class="footer-copyright settings-legal-footer-copyright">&copy; 2026 MultiWorkAgent</span>
 </footer>
 {% endblock %}
