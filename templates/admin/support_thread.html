@@ -2,7 +2,11 @@
 {% block title %}Support thread — Admin{% endblock %}
 {% block admin_mobile_title %}Support thread{% endblock %}
 {% block content %}
-<p class="admin-back">{% include "admin/_back_link.html" with back_href=url_for('admin.admin_support_inbox'), back_label='Inbox' %}</p>
+<p class="admin-back">
+  {% with back_href=url_for('admin.admin_support_inbox'), back_label='Inbox' %}
+  {% include "admin/_back_link.html" %}
+  {% endwith %}
+</p>
 <h1 class="admin-page-title">{{ meta.owner_email if meta else account_id }}</h1>
 <p class="meta-row">Account <code>{{ account_id }}</code> · SLA {{ sla_hours }}h · Status <strong>{{ thread.status }}</strong></p>
 <div class="admin-toolbar">

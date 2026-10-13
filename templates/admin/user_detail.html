@@ -3,7 +3,9 @@
 {% block admin_mobile_title %}User{% endblock %}
 {% block content %}
 <p class="admin-back">
-  {% include "admin/_back_link.html" with back_href=url_for('admin.admin_users'), back_label='Users' %}
+  {% with back_href=url_for('admin.admin_users'), back_label='Users' %}
+  {% include "admin/_back_link.html" %}
+  {% endwith %}
 </p>
 
 <header class="admin-user-detail-head">
