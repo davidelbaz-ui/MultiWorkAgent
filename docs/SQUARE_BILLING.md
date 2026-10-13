@@ -1,6 +1,6 @@
 # Square billing (MultiWorkAgent subscriptions & invoices)
 
-This app bills **your customers for MultiWorkAgent** (Starter, Pro, and Enterprise) through **Square**. That uses **server env vars** (`SQUARE_*` below). It is separate from connecting **Square as a business integration** so the agent can operate a merchant’s Square account (`SQUARE_OAUTH_*` in the integration catalog).
+This app bills **your customers for MultiWorkAgent** (Starter, Pro, Max, and Enterprise) through **Square**. That uses **server env vars** (`SQUARE_*` below). It is separate from connecting **Square as a business integration** so the agent can operate a merchant’s Square account (`SQUARE_OAUTH_*` in the integration catalog).
 
 When billing is configured, the **Billing** page offers Square checkout, webhooks update subscription status and quotas, and owners can **Sync from Square** for invoices.
 
@@ -10,7 +10,7 @@ When billing is configured, the **Billing** page offers Square checkout, webhook
 |-------|---------|
 | Square Developer application | Access token + webhook signature key |
 | Square location | `SQUARE_LOCATION_ID` (same environment as token) |
-| Subscription plan variations | Six Square variations: Starter / Pro / Enterprise × monthly and annual (annual = 20% off vs 12× monthly) |
+| Subscription plan variations | Eight Square variations: Starter / Pro / Max / Enterprise × monthly and annual (annual = 20% off vs 12× monthly) |
 | Public HTTPS app URL | `APP_BASE_URL` + webhook endpoint |
 
 Local testing without Square: set `BILLING_DEV_MOCK=1` (or `SQUARE_MOCK=1`). Subscribe on Billing activates plans and a sample invoice in the database only.
@@ -34,15 +34,16 @@ In [Square Dashboard](https://squareup.com/dashboard) (sandbox or production mat
 
 All checkout and invoice search calls are scoped to this location.
 
-## 3. Subscription plans (Starter, Pro, Enterprise)
+## 3. Subscription plans (Starter, Pro, Max, Enterprise)
 
 Plans are defined in code (`subscription_plans.py`):
 
 | Plan | Monthly | Annual (20% off) | Runs / month |
 |------|---------|------------------|--------------|
-| Starter | $179.99 | $1,727.90/yr | 150 |
-| Pro | $279.99 | $2,687.90/yr | 500 |
-| Enterprise | $379.99 | $3,647.90/yr | 1,000 |
+| Starter | $199.99 | $1,919.90/yr | 150 |
+| Pro | $299.99 | $2,879.90/yr | 500 |
+| Max | $399.99 | $3,839.90/yr | 750 |
+| Enterprise | $499.99 | $4,799.90/yr | 1,000 |
 
 Square must have matching **subscription plan variations** (one per row — monthly and annual are separate variations in Square).
 
@@ -57,6 +58,8 @@ SQUARE_STARTER_PLAN_VARIATION_ID=
 SQUARE_STARTER_ANNUAL_PLAN_VARIATION_ID=
 SQUARE_PRO_PLAN_VARIATION_ID=
 SQUARE_PRO_ANNUAL_PLAN_VARIATION_ID=
+SQUARE_MAX_PLAN_VARIATION_ID=
+SQUARE_MAX_ANNUAL_PLAN_VARIATION_ID=
 SQUARE_ENTERPRISE_PLAN_VARIATION_ID=
 SQUARE_ENTERPRISE_ANNUAL_PLAN_VARIATION_ID=
 ```
@@ -68,6 +71,8 @@ SQUARE_CHECKOUT_URL_STARTER=https://...
 SQUARE_CHECKOUT_URL_STARTER_ANNUAL=https://...
 SQUARE_CHECKOUT_URL_PRO=https://...
 SQUARE_CHECKOUT_URL_PRO_ANNUAL=https://...
+SQUARE_CHECKOUT_URL_MAX=https://...
+SQUARE_CHECKOUT_URL_MAX_ANNUAL=https://...
 SQUARE_CHECKOUT_URL_ENTERPRISE=https://...
 SQUARE_CHECKOUT_URL_ENTERPRISE_ANNUAL=https://...
 ```
@@ -127,6 +132,8 @@ Add for **Production** (then **Redeploy**):
 | `SQUARE_STARTER_ANNUAL_PLAN_VARIATION_ID` | Annual Starter |
 | `SQUARE_PRO_PLAN_VARIATION_ID` | Monthly Pro |
 | `SQUARE_PRO_ANNUAL_PLAN_VARIATION_ID` | Annual Pro |
+| `SQUARE_MAX_PLAN_VARIATION_ID` | Monthly Max |
+| `SQUARE_MAX_ANNUAL_PLAN_VARIATION_ID` | Annual Max |
 | `SQUARE_ENTERPRISE_PLAN_VARIATION_ID` | Monthly Enterprise |
 | `SQUARE_ENTERPRISE_ANNUAL_PLAN_VARIATION_ID` | Annual Enterprise |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` | From Developer → Webhooks |

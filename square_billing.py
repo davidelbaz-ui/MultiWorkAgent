@@ -36,7 +36,7 @@ def is_square_configured() -> bool:
     location = os.environ.get("SQUARE_LOCATION_ID", "").strip()
     if not token or not location:
         return False
-    for tier in subscription_plans.PLANS:
+    for tier in subscription_plans.PLAN_TIER_ORDER:
         for interval in subscription_plans.BILLING_INTERVALS:
             if subscription_plans.plan_variation_id(tier, interval) or subscription_plans.plan_checkout_url(
                 tier, interval

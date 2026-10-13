@@ -30,7 +30,7 @@ def square_status() -> dict[str, Any]:
     location = bool(os.environ.get("SQUARE_LOCATION_ID", "").strip())
     webhook_key = bool(os.environ.get("SQUARE_WEBHOOK_SIGNATURE_KEY", "").strip())
     missing_plans: list[str] = []
-    for tier in subscription_plans.PLANS:
+    for tier in subscription_plans.PLAN_TIER_ORDER:
         for interval in subscription_plans.BILLING_INTERVALS:
             if not subscription_plans.plan_variation_id(
                 tier, interval

@@ -106,9 +106,10 @@ A **run** is one agent turn (user message → model reply). Usage is metered whe
 
 | Plan | Monthly price | Included runs / month |
 |------|---------------|------------------------|
-| Starter | $179.99 | 150 |
-| Pro | $279.99 | 500 |
-| Enterprise | $379.99 | 1,000 |
+| Starter | $199.99 | 150 |
+| Pro | $299.99 | 500 |
+| Max | $399.99 | 750 |
+| Enterprise | $499.99 | 1,000 |
 
 **Annual billing:** 20% discount vs 12 separate monthly payments (billed as one annual Square plan variation).
 

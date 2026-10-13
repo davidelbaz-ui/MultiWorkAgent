@@ -71,12 +71,12 @@
 <div class="pricing-grid pricing-grid--plans" id="pricing-grid">
   {% for item in plan_catalog %}
   <article
-    class="price-card price-card--plan{% if plan_tier == item.tier and plan %} price-card--current{% elif item.tier == 'pro' %} price-card--recommended{% endif %}"
+    class="price-card price-card--plan{% if plan_tier == item.tier and plan %} price-card--current{% elif item.tier == 'max' %} price-card--recommended{% endif %}"
     data-plan-tier="{{ item.tier }}"
   >
     <header class="price-card__header">
       <h3 class="price-card__title">{{ item.display_name }}<span class="billing-current-label" hidden> · current</span></h3>
-      {% if item.tier == 'pro' and not (plan_tier == 'pro' and plan) %}
+      {% if item.tier == 'max' and not (plan_tier == 'max' and plan) %}
       <span class="price-card__pill">Popular</span>
       {% endif %}
     </header>
@@ -91,7 +91,7 @@
     <p class="billing-price-caption billing-price-caption--monthly">Billed monthly</p>
     <p class="billing-price-caption billing-price-caption--annual">{{ item.annual_monthly_equiv }}/mo equivalent · billed annually</p>
     <p class="price-card__quota">{{ item.monthly_quota }} runs / month</p>
-    <p class="price-card__tagline">{% if item.tier == 'starter' %}Solopreneurs &amp; small teams{% elif item.tier == 'pro' %}Agencies &amp; growing teams{% else %}High-volume operations{% endif %}</p>
+    <p class="price-card__tagline">{% if item.tier == 'starter' %}Solopreneurs &amp; small teams{% elif item.tier == 'pro' %}Agencies &amp; growing teams{% elif item.tier == 'max' %}Scaling teams &amp; heavier automation{% else %}High-volume operations{% endif %}</p>
     <button type="button" class="btn btn-primary price-card__cta" data-billing-plan="{{ item.tier }}">Subscribe</button>
   </article>
   {% endfor %}

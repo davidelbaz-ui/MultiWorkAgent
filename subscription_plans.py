@@ -8,6 +8,8 @@ from typing import Any
 
 ANNUAL_SAVINGS_PERCENT = 20
 BILLING_INTERVALS = ("monthly", "annual")
+PLAN_TIER_ORDER: tuple[str, ...] = ("starter", "pro", "max", "enterprise")
+RECOMMENDED_PLAN_TIER = "max"
 
 
 @dataclass(frozen=True)
@@ -22,19 +24,25 @@ PLANS: dict[str, SubscriptionPlan] = {
     "starter": SubscriptionPlan(
         tier="starter",
         display_name="Starter",
-        monthly_price_usd_cents=17999,
+        monthly_price_usd_cents=19999,
         monthly_quota=150,
     ),
     "pro": SubscriptionPlan(
         tier="pro",
         display_name="Pro",
-        monthly_price_usd_cents=27999,
+        monthly_price_usd_cents=29999,
         monthly_quota=500,
+    ),
+    "max": SubscriptionPlan(
+        tier="max",
+        display_name="Max",
+        monthly_price_usd_cents=39999,
+        monthly_quota=750,
     ),
     "enterprise": SubscriptionPlan(
         tier="enterprise",
         display_name="Enterprise",
-        monthly_price_usd_cents=37999,
+        monthly_price_usd_cents=49999,
         monthly_quota=1000,
     ),
 }
@@ -109,7 +117,7 @@ def _variation_id_index_map() -> dict[str, tuple[str, str]]:
     global _variation_id_index
     if _variation_id_index is None:
         index: dict[str, tuple[str, str]] = {}
-        for tier in PLANS:
+        for tier in PLAN_TIER_ORDER:
             for interval in BILLING_INTERVALS:
                 env_val = plan_variation_id(tier, interval)
                 if env_val:
@@ -134,6 +142,8 @@ def parse_plan_from_payment_note(note: str) -> tuple[str | None, str]:
         tier = "starter"
     elif "plan=pro" in text:
         tier = "pro"
+    elif "plan=max" in text:
+        tier = "max"
     elif "plan=enterprise" in text:
         tier = "enterprise"
     if "interval=annual" in text:
@@ -152,7 +162,8 @@ def billing_interval_label(interval: str) -> str:
 def catalog_for_billing() -> list[dict[str, Any]]:
     """Pricing cards for the Billing page."""
     items: list[dict[str, Any]] = []
-    for plan in PLANS.values():
+    for tier in PLAN_TIER_ORDER:
+        plan = PLANS[tier]
         annual_cents = checkout_price_cents(plan.tier, "annual")
         monthly_equiv = int(round(annual_cents / 12))
         items.append(
@@ -173,7 +184,8 @@ def catalog_for_billing() -> list[dict[str, Any]]:
 
 def plans_for_api() -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
-    for plan in PLANS.values():
+    for tier in PLAN_TIER_ORDER:
+        plan = PLANS[tier]
         for interval in BILLING_INTERVALS:
             items.append(
                 {
