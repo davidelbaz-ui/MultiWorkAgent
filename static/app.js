@@ -1430,22 +1430,9 @@ async function initAgentComposer() {
     if (!run) {
       return;
     }
-    const stats = document.getElementById("agent-run-stats");
-    const meter = document.getElementById("agent-run-meter-fill");
     const statusEl = document.getElementById("agent-run-status");
     const summaryEl = document.getElementById("agent-run-summary");
     const runsTodayEl = document.getElementById("agent-runs-today");
-    const inputCap = run.run_input_cap || 30000;
-    const outputCap = run.run_output_cap || 2000;
-    const inputTokens = run.input_tokens || 0;
-    const outputTokens = run.output_tokens || 0;
-    if (stats) {
-      stats.textContent = `${inputTokens} / ${inputCap} input · ${outputTokens} / ${outputCap} output`;
-    }
-    if (meter) {
-      const pct = inputCap ? Math.min(100, Math.round((inputTokens / inputCap) * 100)) : 0;
-      meter.style.width = `${pct}%`;
-    }
     if (summaryEl) {
       const summary = run.summary || "";
       if (summary && run.status && run.status !== "idle") {

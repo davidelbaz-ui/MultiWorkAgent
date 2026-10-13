@@ -3,7 +3,6 @@
 {% block body_class %}page-agent{% endblock %}
 {% block main_class %}main--agent{% endblock %}
 {% block content %}
-{% set token_pct = ((run_input_tokens / run_input_cap * 100) if run_input_cap else 0)|int %}
 <div class="agent-layout" id="agent-layout">
   <div class="agent-chats-backdrop" id="agent-chats-backdrop" hidden aria-hidden="true"></div>
   <aside class="agent-chats-panel" id="agent-chats-panel" aria-label="Chats">
@@ -89,10 +88,7 @@
       <section class="agent-drawer-section">
         <h3>Run inspector</h3>
         <p class="meta-row agent-run-summary" id="agent-run-summary" hidden></p>
-        <p class="meta-row">Token budget (standard run)</p>
         <p class="meta-row agent-run-status" id="agent-run-status" hidden></p>
-        <div class="meter"><div class="meter-fill" id="agent-run-meter-fill" style="width: {{ token_pct }}%;"></div></div>
-        <p class="inspector-stats" id="agent-run-stats">{{ run_input_tokens }} / {{ run_input_cap }} input · {{ run_output_tokens }} / {{ run_output_cap }} output</p>
         <h4>Tool calls</h4>
         <ul class="inspector-tools" id="agent-run-tool-calls"></ul>
         <p class="empty-state empty-state--compact" id="agent-run-tool-calls-empty">No tool calls in this run.</p>
