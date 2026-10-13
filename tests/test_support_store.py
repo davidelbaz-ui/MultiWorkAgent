@@ -19,8 +19,10 @@ class SupportStoreTests(PostgresStoreTestCase):
         self.account_id = self.membership["account_id"]
 
     def test_thread_starts_empty_reminder_is_not_stored(self) -> None:
+        self.assertIsNone(support_store.get_thread(self.account_id))
         rows = support_store.list_messages(self.account_id)
         self.assertEqual(rows, [])
+        self.assertIsNone(support_store.get_thread(self.account_id))
         self.assertIn("48 hours", support_store.support_reminder_text())
 
         support_store.add_user_message(
@@ -46,11 +48,9 @@ class SupportStoreTests(PostgresStoreTestCase):
 
         removed = support_store.delete_threads_for_account(self.account_id)
         self.assertEqual(removed, 1)
-        thread = support_store.get_or_create_thread(self.account_id)
-        self.assertIsNotNone(thread["id"])
+        self.assertIsNone(support_store.get_thread(self.account_id))
         fresh = support_store.list_messages(self.account_id)
-        self.assertEqual(len(fresh), 1)
-        self.assertEqual(fresh[0]["sender_type"], support_store.SENDER_SYSTEM)
+        self.assertEqual(fresh, [])
 
     def test_empty_message_rejected(self) -> None:
         with self.assertRaises(ValueError):

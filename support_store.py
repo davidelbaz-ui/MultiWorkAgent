@@ -58,8 +58,7 @@ def _row_to_message(row: Any) -> dict[str, Any]:
     }
 
 
-def get_or_create_thread(account_id: str) -> dict[str, Any]:
-    now = _utc_now()
+def get_thread(account_id: str) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute(
             """
@@ -69,15 +68,23 @@ def get_or_create_thread(account_id: str) -> dict[str, Any]:
             """,
             (account_id,),
         ).fetchone()
-        if row:
-            return {
-                "id": row["id"],
-                "account_id": row["account_id"],
-                "status": row["status"],
-                "created_at": row["created_at"],
-                "updated_at": row["updated_at"],
-            }
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "account_id": row["account_id"],
+        "status": row["status"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
 
+
+def get_or_create_thread(account_id: str) -> dict[str, Any]:
+    existing = get_thread(account_id)
+    if existing:
+        return existing
+    now = _utc_now()
+    with connect() as conn:
         thread_id = uuid.uuid4().hex
         conn.execute(
             """
@@ -96,8 +103,27 @@ def get_or_create_thread(account_id: str) -> dict[str, Any]:
     }
 
 
+def _delete_thread_if_empty(account_id: str, thread_id: str) -> None:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM support_messages
+            WHERE thread_id = ?
+              AND sender_type != ?
+            """,
+            (thread_id, SENDER_SYSTEM),
+        ).fetchone()
+        if row and int(row["n"]) > 0:
+            return
+        conn.execute("DELETE FROM support_threads WHERE id = ?", (thread_id,))
+        conn.commit()
+
+
 def list_messages(account_id: str) -> list[dict[str, Any]]:
-    thread = get_or_create_thread(account_id)
+    thread = get_thread(account_id)
+    if not thread:
+        return []
     with connect() as conn:
         rows = conn.execute(
             """
@@ -109,6 +135,9 @@ def list_messages(account_id: str) -> list[dict[str, Any]]:
             """,
             (thread["id"], SENDER_SYSTEM),
         ).fetchall()
+    if not rows:
+        _delete_thread_if_empty(account_id, thread["id"])
+        return []
     messages = [_row_to_message(row) for row in rows]
     _attach_files_to_messages(messages)
     return messages
@@ -252,12 +281,24 @@ def set_thread_status(account_id: str, status: str) -> None:
 
 def list_inbox(*, limit: int = 100, status: str | None = None) -> list[dict[str, Any]]:
     cap = max(1, min(limit, 200))
-    params: list[Any] = []
-    where = ""
+    where_parts: list[str] = []
+    query_params: list[Any] = [SENDER_USER, SENDER_SYSTEM]
     if status:
-        where = "WHERE t.status = ?"
-        params.append(status.strip().lower())
-    params.append(cap)
+        where_parts.append("t.status = ?")
+        query_params.append(status.strip().lower())
+    where_parts.append(
+        """
+        EXISTS (
+            SELECT 1
+            FROM support_messages m
+            WHERE m.thread_id = t.id
+              AND m.sender_type != ?
+        )
+        """.strip()
+    )
+    query_params.append(SENDER_SYSTEM)
+    query_params.append(cap)
+    where = "WHERE " + " AND ".join(where_parts)
     with connect() as conn:
         rows = conn.execute(
             f"""
@@ -290,7 +331,7 @@ def list_inbox(*, limit: int = 100, status: str | None = None) -> list[dict[str,
             ORDER BY t.updated_at DESC
             LIMIT ?
             """,
-            tuple([SENDER_USER, SENDER_SYSTEM] + params),
+            tuple(query_params),
         ).fetchall()
     out: list[dict[str, Any]] = []
     for row in rows:

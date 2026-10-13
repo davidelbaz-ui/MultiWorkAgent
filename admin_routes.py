@@ -156,7 +156,13 @@ def admin_support_inbox():
 @admin_bp.get("/support/<account_id>")
 def admin_support_thread(account_id: str):
     rows = support_store.list_messages(account_id)
-    thread = support_store.get_or_create_thread(account_id)
+    if not rows:
+        flash("No support conversation for this account yet.", "error")
+        return redirect(url_for("admin.admin_support_inbox"))
+    thread = support_store.get_thread(account_id)
+    if not thread:
+        flash("No support conversation for this account yet.", "error")
+        return redirect(url_for("admin.admin_support_inbox"))
     meta = next(
         (t for t in support_store.list_inbox(limit=200) if t["account_id"] == account_id),
         None,
