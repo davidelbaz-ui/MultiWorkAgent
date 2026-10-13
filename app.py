@@ -2548,6 +2548,24 @@ def api_agent_draft_file():
     return jsonify({"file": record, "draft": chat_store.get_draft(thread_id)}), 201
 
 
+@app.get("/api/agent/draft/files/<int:file_id>")
+def api_agent_draft_file_get(file_id: int):
+    from flask import send_file
+    import io
+
+    thread_id = _active_thread_id()
+    payload = chat_store.read_draft_file(thread_id, file_id)
+    if not payload:
+        abort(404)
+    data, mime, original_name = payload
+    return send_file(
+        io.BytesIO(data),
+        mimetype=mime,
+        download_name=original_name,
+        conditional=True,
+    )
+
+
 @app.delete("/api/agent/draft/files/<int:file_id>")
 def api_agent_draft_file_delete(file_id: int):
     thread_id = _active_thread_id()

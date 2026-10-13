@@ -110,25 +110,26 @@
       return;
     }
     showAttachmentsList();
-    pendingFiles.forEach(function (file, index) {
-      const item = document.createElement("li");
-      item.className = "agent-attachment";
-      const name = document.createElement("span");
-      name.className = "agent-attachment-name";
-      name.textContent = file.name;
-      name.title = file.name;
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "agent-attachment-remove";
-      removeBtn.setAttribute("aria-label", "Remove " + file.name);
-      removeBtn.textContent = "×";
-      removeBtn.addEventListener("click", function () {
-        pendingFiles.splice(index, 1);
-        renderPendingAttachments();
+    if (typeof AgentAttachmentTiles !== "undefined") {
+      AgentAttachmentTiles.renderTiles(
+        attachmentsEl,
+        pendingFiles.map(function (file) {
+          return { name: file.name, mime: file.type, file: file };
+        }),
+        {
+          onRemove: function (index) {
+            pendingFiles.splice(index, 1);
+            renderPendingAttachments();
+          },
+        },
+      );
+    } else {
+      pendingFiles.forEach(function (file) {
+        const item = document.createElement("li");
+        item.textContent = file.name;
+        attachmentsEl.appendChild(item);
       });
-      item.append(name, removeBtn);
-      attachmentsEl.appendChild(item);
-    });
+    }
     if (syncComposerActionButton) syncComposerActionButton();
   }
 

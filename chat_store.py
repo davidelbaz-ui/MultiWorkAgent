@@ -218,6 +218,27 @@ def add_draft_file(
     }
 
 
+def read_draft_file(
+    thread_id: str, file_id: int
+) -> tuple[bytes, str, str] | None:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT stored_name, mime_type, original_name
+            FROM chat_draft_files
+            WHERE id = ? AND thread_id = ?
+            """,
+            (file_id, thread_id),
+        ).fetchone()
+    if not row:
+        return None
+    path = _thread_dir(thread_id) / row["stored_name"]
+    if not path.is_file():
+        return None
+    mime = (row["mime_type"] or "application/octet-stream").strip()
+    return path.read_bytes(), mime, str(row["original_name"])
+
+
 def remove_draft_file(thread_id: str, file_id: int) -> bool:
     with connect() as conn:
         row = conn.execute(

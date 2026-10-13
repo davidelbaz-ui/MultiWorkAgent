@@ -672,33 +672,39 @@ async function initAgentComposer() {
     }
     void uiShowElement(attachmentsEl);
 
-    draftFiles.forEach((file) => {
-      const item = document.createElement("li");
-      item.className = "agent-attachment";
-
-      const name = document.createElement("span");
-      name.className = "agent-attachment-name";
-      name.textContent = file.original_name;
-      name.title = file.original_name;
-
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "agent-attachment-remove";
-      removeBtn.setAttribute("aria-label", `Remove ${file.original_name}`);
-      removeBtn.textContent = "×";
-      removeBtn.addEventListener("click", async () => {
-        try {
-          const data = await apiJson(`/api/agent/draft/files/${file.id}`, { method: "DELETE" });
-          draftFiles = data.draft.files;
-          renderAttachments();
-        } catch (err) {
-          console.error(err);
-        }
+    const tiles = typeof AgentAttachmentTiles !== "undefined" ? AgentAttachmentTiles : null;
+    if (tiles) {
+      tiles.renderTiles(
+        attachmentsEl,
+        draftFiles.map((file) => ({
+          name: file.original_name,
+          mime: file.mime_type,
+          draftFileId: file.id,
+        })),
+        {
+          onRemove: async (index) => {
+            const file = draftFiles[index];
+            if (!file) {
+              return;
+            }
+            try {
+              const data = await apiJson(`/api/agent/draft/files/${file.id}`, { method: "DELETE" });
+              draftFiles = data.draft.files;
+              renderAttachments();
+            } catch (err) {
+              console.error(err);
+            }
+          },
+        },
+      );
+    } else {
+      draftFiles.forEach((file) => {
+        const item = document.createElement("li");
+        item.className = "agent-attachment";
+        item.textContent = file.original_name;
+        attachmentsEl.appendChild(item);
       });
-
-      item.append(name, removeBtn);
-      attachmentsEl.appendChild(item);
-    });
+    }
     syncComposerActionButton();
   };
 

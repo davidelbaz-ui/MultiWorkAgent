@@ -1601,7 +1601,7 @@ body.search-overlay-open {
     background: rgba(91, 141, 239, 0.12);
   }
 
-  .agent-attachment-remove:hover,
+  .agent-attachment-tile-remove:hover,
   .agent-upload-btn:hover,
   .agent-send-btn:hover:not(:disabled),
   .agent-send-btn.is-stop:hover:not(:disabled) {
@@ -2407,53 +2407,103 @@ table.data-table {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
 }
 
 .agent-attachments[hidden]:not(.ui-motion-visible) {
   display: none;
 }
 
-.agent-attachment {
+.agent-attachments--tiles {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.4rem 0.45rem 0.65rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 0.85rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0 0.1rem;
 }
 
-.agent-attachment-name {
-  flex: 1;
-  min-width: 0;
+.agent-attachment-tile {
+  position: relative;
+  width: 5.25rem;
+  flex-shrink: 0;
+  list-style: none;
+}
+
+.agent-attachment-tile-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-attachment-tile-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.agent-attachment-tile-preview--file,
+.agent-attachment-tile-preview--doc,
+.agent-attachment-tile-preview--pdf,
+.agent-attachment-tile-preview--sheet,
+.agent-attachment-tile-preview--slide {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.agent-attachment-tile-preview--pdf {
+  color: #c45c4a;
+}
+
+.agent-attachment-tile-icon {
+  width: 2rem;
+  height: 2rem;
+  opacity: 0.85;
+}
+
+.agent-attachment-tile-name {
+  display: block;
+  margin-top: 0.35rem;
+  padding: 0 0.1rem;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text);
 }
 
-.agent-attachment-remove {
-  flex-shrink: 0;
-  width: 1.75rem;
-  height: 1.75rem;
+.agent-attachment-tile-remove {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  z-index: 2;
+  width: 1.35rem;
+  height: 1.35rem;
   padding: 0;
   border: none;
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 1.1rem;
+  border-radius: 999px;
+  background: rgba(15, 18, 25, 0.72);
+  color: #fff;
+  font-size: 0.95rem;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.agent-attachment-remove:hover {
-  background: var(--chip-danger);
-  color: var(--danger);
+.agent-attachment-tile-remove:hover {
+  background: rgba(15, 18, 25, 0.9);
+  transform: scale(1.05);
 }
 
 .agent-prompt-box {
