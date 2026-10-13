@@ -164,7 +164,7 @@ function initBillingSubscribe() {
       console.error(err);
       await openAppConfirm({
         title: "Sync failed",
-        message: err.message || "Could not sync invoices from Square.",
+        message: err.message || "Could not refresh invoices.",
         confirmLabel: "OK",
       });
     }

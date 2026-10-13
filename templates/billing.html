@@ -3,19 +3,19 @@
 {% block content %}
 <div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}" data-billing-interval="{{ billing_interval or 'monthly' }}">
 <h1 class="page-title">Billing & usage</h1>
-<p class="page-sub">AI Service Subscription System · Square payments</p>
+<p class="page-sub">Plans, usage, and subscription billing</p>
 {% if request.args.get('checkout') == 'done' %}
-<p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Checkout complete — your subscription will update when Square confirms payment.</p>
+<p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Checkout complete — your subscription will update when payment is confirmed.</p>
 {% endif %}
-<p class="meta-row integration-scope-note" id="billing-mode-note" hidden>Billing dev mock is on (<code>BILLING_DEV_MOCK</code> / <code>SQUARE_MOCK</code>). Subscribe activates plans locally without Square.</p>
+<p class="meta-row integration-scope-note" id="billing-mode-note" hidden>Test billing mode is on. Subscribe activates plans locally without charging a card.</p>
 {% if billing_mode == 'unconfigured' %}
-<p class="meta-row integration-scope-note">Square is not configured. Set server env vars for live checkout, or enable mock mode for local testing.</p>
+<p class="meta-row integration-scope-note">Subscription checkout is temporarily unavailable. Contact support if this persists.</p>
 {% endif %}
 
 <section class="card" style="margin-bottom: 1.25rem;">
   <h2>Current plan{% if plan %} — {{ plan }}{% elif unlimited_runs|default(false) %} — Free{% endif %}</h2>
   {% if subscription_status == 'pending' %}
-  <p class="meta-row">Checkout in progress — waiting for Square confirmation.</p>
+  <p class="meta-row">Checkout in progress — waiting for payment confirmation.</p>
   {% endif %}
   {% if cancel_at_period_end and plan %}
   <p class="meta-row">Cancellation scheduled at end of billing period.</p>
@@ -103,7 +103,6 @@
     <h2>Execution run definition</h2>
     <p>1 Standard Execution Run = up to <strong>30,000 input</strong> + <strong>2,000 output</strong> tokens.</p>
     <p>All agent work is metered in standard runs (1.0× when fully utilized; partial units when usage is lower).</p>
-    <p class="meta-row">~$0.12 API cost ceiling per run (informational)</p>
   </section>
   <section class="card">
     <h2>Limits</h2>
@@ -120,9 +119,9 @@
 
 <section class="card" style="margin-top: 1.25rem;">
   <div class="integration-catalog-head">
-    <h2>Invoices (Square)</h2>
+    <h2>Invoices</h2>
     {% if billing_mode == 'square' and account_role == 'owner' %}
-    <button type="button" class="btn btn-sm" id="billing-sync-invoices">Sync from Square</button>
+    <button type="button" class="btn btn-sm" id="billing-sync-invoices">Refresh invoices</button>
     {% endif %}
   </div>
   {% if invoices %}
@@ -141,7 +140,7 @@
     </tbody>
   </table>
   {% else %}
-  <p class="empty-state">No invoices yet{% if billing_mode == 'square' %} — sync from Square or complete checkout{% elif billing_mode == 'mock' %} — subscribe in mock mode to generate a sample invoice{% endif %}.</p>
+  <p class="empty-state">No invoices yet{% if billing_mode == 'square' %} — complete checkout or refresh invoices{% elif billing_mode == 'mock' %} — subscribe in test mode to generate a sample invoice{% endif %}.</p>
   {% endif %}
 </section>
 </div>
