@@ -44,9 +44,6 @@
   {% if not unlimited_runs|default(false) %}
   <p class="meta-row">Annual billing saves 20% vs paying monthly for 12 months.</p>
   {% endif %}
-  {% if plan and subscription_status == 'active' and account_role == 'owner' %}
-  <button type="button" class="btn btn-sm" id="billing-cancel-subscription">Cancel at period end</button>
-  {% endif %}
 </section>
 
 <section class="billing-plans-section">
