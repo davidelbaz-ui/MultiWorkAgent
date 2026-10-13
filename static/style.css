@@ -1466,6 +1466,43 @@ body.search-overlay-open {
     padding: 1.5rem clamp(1rem, 4vw, 2rem);
   }
 
+  .start-footer,
+  .settings-legal-footer {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .start-footer-brand,
+  .start-footer-legal,
+  .start-footer-copyright,
+  .settings-legal-footer-label,
+  .settings-legal-footer-actions,
+  .settings-legal-footer-copyright {
+    justify-self: stretch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .start-footer-copyright,
+  .settings-legal-footer-copyright {
+    text-align: center;
+  }
+
+  .start-footer-legal,
+  .settings-legal-footer-actions {
+    justify-content: center;
+  }
+
+  .footer-copyright {
+    white-space: normal;
+  }
+
+  .settings-legal-footer {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  }
+
   /*
    * No hover-only visuals on mobile (avoids sticky :hover after tap).
    * Open/focus/active states are unchanged.
