@@ -68,27 +68,47 @@
     </div>
   </div>
 
-<div class="pricing-grid" id="pricing-grid">
+<div class="pricing-grid pricing-grid--plans" id="pricing-grid">
   {% for item in plan_catalog %}
-  <div class="price-card {% if plan_tier == item.tier and plan %}featured{% endif %}" data-plan-tier="{{ item.tier }}">
-    <h3>{{ item.display_name }}<span class="billing-current-label" hidden> (current)</span></h3>
+  <article
+    class="price-card price-card--plan{% if plan_tier == item.tier and plan %} price-card--current{% elif item.tier == 'pro' %} price-card--recommended{% endif %}"
+    data-plan-tier="{{ item.tier }}"
+  >
+    <header class="price-card__header">
+      <h3 class="price-card__title">{{ item.display_name }}<span class="billing-current-label" hidden> · current</span></h3>
+      {% if item.tier == 'pro' and not (plan_tier == 'pro' and plan) %}
+      <span class="price-card__pill">Popular</span>
+      {% endif %}
+    </header>
     <div class="billing-price-stack">
-      <div class="price billing-price-monthly">{{ item.monthly_price }}<span class="billing-price-suffix">/mo</span></div>
-      <div class="price billing-price-annual">{{ item.annual_price }}<span class="billing-price-suffix">/yr</span></div>
+      <div class="price billing-price-monthly">
+        <span class="price-card__amount">{{ item.monthly_price }}</span><span class="billing-price-suffix">/mo</span>
+      </div>
+      <div class="price billing-price-annual">
+        <span class="price-card__amount">{{ item.annual_price }}</span><span class="billing-price-suffix">/yr</span>
+      </div>
     </div>
-    <p class="billing-price-caption billing-price-caption--monthly">Billed every month</p>
-    <p class="billing-price-caption billing-price-caption--annual">{{ item.annual_monthly_equiv }}/mo · paid annually</p>
-    <p class="billing-plan-blurb">{{ item.monthly_quota }} runs/mo{% if item.tier == 'starter' %} · solopreneurs & small teams{% elif item.tier == 'pro' %} · agencies & growing teams{% else %} · high-volume operations{% endif %}</p>
-    <button type="button" class="btn btn-primary" data-billing-plan="{{ item.tier }}">Subscribe</button>
-  </div>
+    <p class="billing-price-caption billing-price-caption--monthly">Billed monthly</p>
+    <p class="billing-price-caption billing-price-caption--annual">{{ item.annual_monthly_equiv }}/mo equivalent · billed annually</p>
+    <p class="price-card__quota">{{ item.monthly_quota }} runs / month</p>
+    <p class="price-card__tagline">{% if item.tier == 'starter' %}Solopreneurs &amp; small teams{% elif item.tier == 'pro' %}Agencies &amp; growing teams{% else %}High-volume operations{% endif %}</p>
+    <button type="button" class="btn btn-primary price-card__cta" data-billing-plan="{{ item.tier }}">Subscribe</button>
+  </article>
   {% endfor %}
-  <div class="price-card price-card--topup">
-    <h3>Credit top-up</h3>
-    <div class="price">$10</div>
-    <p class="billing-plan-blurb">+65 execution runs · pay-as-you-go</p>
-    <button type="button" class="btn" data-billing-plan="topup" {% if not plan %}disabled{% endif %}>Purchase</button>
-  </div>
 </div>
+<article class="price-card price-card--topup">
+  <div class="price-card--topup-body">
+    <div class="price-card--topup-copy">
+      <h3 class="price-card__title">Credit top-up</h3>
+      <p class="price-card__tagline">+65 execution runs when you need extra capacity</p>
+    </div>
+    <div class="price-card--topup-price">
+      <span class="price-card__amount price-card__amount--topup">$10</span>
+      <span class="price-card__tagline">pay-as-you-go</span>
+    </div>
+    <button type="button" class="btn price-card__cta price-card__cta--topup" data-billing-plan="topup" {% if not plan %}disabled title="Subscribe to a plan first"{% endif %}>Purchase</button>
+  </div>
+</article>
 </section>
 
 <div class="grid-2">
