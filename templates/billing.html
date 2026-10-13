@@ -28,7 +28,7 @@
   {% endif %}
   {% elif plan and usage_quota %}
   <div class="progress-bar"><div class="progress-fill" style="width: {{ (usage_used / usage_quota * 100)|int }}%;"></div></div>
-  <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used · Top-up balance: <strong>{{ top_up_balance }}</strong> runs</p>
+  <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used this period</p>
   {% if billing_period_end %}
   <p class="meta-row">Usage period resets {{ billing_period_end }}</p>
   {% endif %}
@@ -42,7 +42,7 @@
   <p class="empty-state">No active subscription. Choose a plan below.</p>
   {% endif %}
   {% if not unlimited_runs|default(false) %}
-  <p class="meta-row">Plan runs are used first, then top-up credits. Unused top-up rolls over. Annual billing saves 20% vs paying monthly for 12 months.</p>
+  <p class="meta-row">Annual billing saves 20% vs paying monthly for 12 months.</p>
   {% endif %}
   {% if plan and subscription_status == 'active' and account_role == 'owner' %}
   <button type="button" class="btn btn-sm" id="billing-cancel-subscription">Cancel at period end</button>
@@ -96,19 +96,6 @@
   </article>
   {% endfor %}
 </div>
-<article class="price-card price-card--topup">
-  <div class="price-card--topup-body">
-    <div class="price-card--topup-copy">
-      <h3 class="price-card__title">Credit top-up</h3>
-      <p class="price-card__tagline">+65 execution runs when you need extra capacity</p>
-    </div>
-    <div class="price-card--topup-price">
-      <span class="price-card__amount price-card__amount--topup">$10</span>
-      <span class="price-card__tagline">pay-as-you-go</span>
-    </div>
-    <button type="button" class="btn price-card__cta price-card__cta--topup" data-billing-plan="topup" {% if not plan %}disabled title="Subscribe to a plan first"{% endif %}>Purchase</button>
-  </div>
-</article>
 </section>
 
 <div class="grid-2">

@@ -1,4 +1,4 @@
-"""Billable run consumption (plan quota first, then top-up credits)."""
+"""Billable run consumption against plan monthly quota."""
 
 from __future__ import annotations
 
@@ -145,8 +145,7 @@ def assert_quota_for_run(account_id: str) -> None:
         raise RunLimitError(
             code="quota_exhausted",
             message=(
-                "Monthly plan and top-up credits are used up. "
-                "Purchase a top-up or wait for the next billing period."
+                "Monthly plan runs are used up. Upgrade your plan or wait for the next billing period."
             ),
         )
     quota = snap["usage_quota"]

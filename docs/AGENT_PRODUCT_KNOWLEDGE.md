@@ -106,10 +106,10 @@ A **run** is one agent turn (user message → model reply). Usage is metered whe
 
 | Plan | Monthly price | Included runs / month |
 |------|---------------|------------------------|
-| Starter | $199.99 | 150 |
-| Pro | $299.99 | 500 |
-| Max | $399.99 | 750 |
-| Enterprise | $499.99 | 1,000 |
+| Starter | $199.99 | 300 |
+| Pro | $299.99 | 1,000 |
+| Max | $399.99 | 2,000 |
+| Enterprise | $499.99 | 5,000 |
 
 **Annual billing:** 20% discount vs 12 separate monthly payments (billed as one annual Square plan variation).
 
@@ -143,7 +143,7 @@ When limits block a run, the UI shows a banner and the header usage chip updates
 
 ## Billing (`/billing`)
 
-- View plan, usage, top-up balance (if subscription active), invoices synced from Square.
+- View plan, usage, and invoices synced from Square.
 - **Subscribe** / change plan: owner only; redirects through Square checkout.
 - **Cancel at period end** may be recorded locally; confirm Square subscription state on deployment.
 

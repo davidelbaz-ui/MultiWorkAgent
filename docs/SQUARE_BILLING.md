@@ -40,10 +40,10 @@ Plans are defined in code (`subscription_plans.py`):
 
 | Plan | Monthly | Annual (20% off) | Runs / month |
 |------|---------|------------------|--------------|
-| Starter | $199.99 | $1,919.90/yr | 150 |
-| Pro | $299.99 | $2,879.90/yr | 500 |
-| Max | $399.99 | $3,839.90/yr | 750 |
-| Enterprise | $499.99 | $4,799.90/yr | 1,000 |
+| Starter | $199.99 | $1,919.90/yr | 300 |
+| Pro | $299.99 | $2,879.90/yr | 1,000 |
+| Max | $399.99 | $3,839.90/yr | 2,000 |
+| Enterprise | $499.99 | $4,799.90/yr | 5,000 |
 
 Square must have matching **subscription plan variations** (one per row — monthly and annual are separate variations in Square).
 

@@ -95,15 +95,6 @@ function initBillingSubscribe() {
         return;
       }
 
-      if (plan === "topup") {
-        await openAppConfirm({
-          title: "Top-up",
-          message: "Credit top-ups will be available after usage metering (#13) is wired.",
-          confirmLabel: "OK",
-        });
-        return;
-      }
-
       const billingInterval = selectedBillingInterval();
 
       try {

@@ -62,7 +62,7 @@ def notify_run_blocked(account_id: str, *, error_code: str, summary: str) -> Non
             account_id,
             kind="quota_100",
             title="Plan quota exhausted",
-            body="Monthly plan and top-up credits are used up. Upgrade or add a top-up to continue.",
+            body="Monthly plan runs are used up. Upgrade your plan to continue.",
             href="/billing",
             dedupe_key=_quota_dedupe_key(account_id, "100"),
         )

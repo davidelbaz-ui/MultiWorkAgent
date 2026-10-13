@@ -67,10 +67,10 @@ Create **Subscriptions** in Square at these prices (monthly + annual per tier):
 
 | Plan | Monthly | Annual (20% off 12× monthly) | Runs/mo |
 |------|---------|--------------------------------|---------|
-| Starter | $199.99 | $1,919.90/yr | 150 |
-| Pro | $299.99 | $2,879.90/yr | 500 |
-| Max | $399.99 | $3,839.90/yr | 750 |
-| Enterprise | $499.99 | $4,799.90/yr | 1,000 |
+| Starter | $199.99 | $1,919.90/yr | 300 |
+| Pro | $299.99 | $2,879.90/yr | 1,000 |
+| Max | $399.99 | $3,839.90/yr | 2,000 |
+| Enterprise | $499.99 | $4,799.90/yr | 5,000 |
 
 Copy each plan **variation ID** into Vercel:
 

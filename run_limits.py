@@ -63,8 +63,7 @@ def limits_snapshot(account_id: str) -> dict[str, Any]:
         if usage["subscription_active"]:
             blocked_code = "quota_exhausted"
             blocked_message = (
-                "Monthly plan and top-up credits are used up. "
-                "Purchase a top-up or wait for the next billing period."
+                "Monthly plan runs are used up. Upgrade your plan or wait for the next billing period."
             )
         else:
             quota = usage["usage_quota"]

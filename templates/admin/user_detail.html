@@ -30,7 +30,7 @@
   </form>
   <dl class="admin-kv-grid">
     <div><dt>Plan</dt><dd>{{ profile.subscription.plan_label }}</dd></div>
-    <div><dt>Usage</dt><dd>{% if profile.subscription.unlimited_runs %}Unlimited · {{ profile.subscription.plan_runs_consumed }} recorded{% else %}{{ profile.subscription.plan_runs_consumed }} / {{ profile.subscription.monthly_quota }} plan runs · {{ profile.subscription.top_up_balance_runs }} top-up{% endif %}</dd></div>
+    <div><dt>Usage</dt><dd>{% if profile.subscription.unlimited_runs %}Unlimited · {{ profile.subscription.plan_runs_consumed }} recorded{% else %}{{ profile.subscription.plan_runs_consumed }} / {{ profile.subscription.monthly_quota }} plan runs{% endif %}</dd></div>
     <div><dt>Period ends</dt><dd>{{ profile.subscription.current_period_end or '—' }}</dd></div>
     <div><dt>Account created</dt><dd>{{ profile.account.created_at_display }}</dd></div>
     <div><dt>User created</dt><dd>{{ profile.user.created_at_display }}</dd></div>
