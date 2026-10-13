@@ -834,19 +834,6 @@ async function initAgentComposer() {
     block?.classList.add("is-editing-target");
   };
 
-  const deleteMessage = async (messageId) => {
-    if (editingMessageId === messageId) {
-      await clearEditMode();
-    }
-    const data = await apiJson(`/api/agent/messages/${messageId}`, { method: "DELETE" });
-    renderMessages(data.messages || []);
-    if (scroll) {
-      requestAnimationFrame(() => {
-        scroll.scrollTop = scroll.scrollHeight;
-      });
-    }
-  };
-
   const buildUserMessageBlock = (msg) => {
     const block = document.createElement("div");
     block.className = "msg-user-block";
@@ -873,15 +860,8 @@ async function initAgentComposer() {
     editBtn.appendChild(createEditIconSvg());
     editBtn.addEventListener("click", () => startEditMessage(msg));
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className = "msg-action-btn";
-    deleteBtn.setAttribute("aria-label", "Delete message");
-    deleteBtn.appendChild(createDeleteIconSvg());
-    deleteBtn.addEventListener("click", () => deleteMessage(msg.id));
-
     const copyBtn = createMsgCopyButton(() => msg.content || "");
-    actions.append(copyBtn, editBtn, deleteBtn);
+    actions.append(copyBtn, editBtn);
     block.appendChild(actions);
     return block;
   };
@@ -1211,7 +1191,6 @@ async function initAgentComposer() {
         } else if (payload.type === "done") {
           activeRunId = null;
           await drainStreamReveal();
-          clearStreamingBubble();
           const state = await apiJson("/api/agent/state");
           applyWorkspaceState(state, { scrollToEnd: true });
           setAgentRunning(false);

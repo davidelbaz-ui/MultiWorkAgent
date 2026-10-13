@@ -143,14 +143,16 @@
       el.textContent = text;
       return;
     }
+    if (options.streaming) {
+      el.textContent = text;
+      return;
+    }
     configureMarked();
     const html = marked.parse(text, { async: false });
     el.innerHTML = sanitizeHtml(html);
     secureLinks(el);
     highlightCodeBlocks(el);
-    if (!options.streaming) {
-      attachCopyButtons(el);
-    }
+    attachCopyButtons(el);
   }
 
   function createContainer(markdown) {

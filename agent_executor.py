@@ -727,6 +727,73 @@ def _call_anthropic(
     )
 
 
+def _iter_anthropic_stream_chunks(
+    *,
+    api_key: str,
+    system: str,
+    messages: list[dict[str, str]],
+    cancel_event: threading.Event | None,
+) -> Iterator[tuple[str, dict[str, Any] | None]]:
+    payload = {
+        "model": _model(),
+        "max_tokens": min(DEFAULT_MAX_OUTPUT_TOKENS, run_output_cap()),
+        "system": system,
+        "messages": messages,
+        "stream": True,
+    }
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=body,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=_timeout_seconds()) as resp:
+        while True:
+            if cancel_event and cancel_event.is_set():
+                return
+            line = resp.readline()
+            if not line:
+                break
+            decoded = line.decode("utf-8", errors="replace").strip()
+            if not decoded or decoded.startswith("event:"):
+                continue
+            if not decoded.startswith("data:"):
+                continue
+            raw = decoded[5:].strip()
+            if not raw:
+                continue
+            try:
+                event_data = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            etype = event_data.get("type")
+            if etype == "content_block_delta":
+                delta = event_data.get("delta") or {}
+                if delta.get("type") == "text_delta":
+                    piece = delta.get("text") or ""
+                    if piece:
+                        yield piece, None
+            elif etype == "message_start":
+                usage = (event_data.get("message") or {}).get("usage") or {}
+                if usage:
+                    yield "", {
+                        "input_tokens": usage.get("input_tokens"),
+                        "output_tokens": usage.get("output_tokens"),
+                    }
+            elif etype == "message_delta":
+                usage = event_data.get("usage") or {}
+                if usage:
+                    yield "", {
+                        "input_tokens": usage.get("input_tokens"),
+                        "output_tokens": usage.get("output_tokens"),
+                    }
+
+
 def attach_stream_cancel(run_id: str) -> threading.Event:
     event = threading.Event()
     _stream_cancel_events[run_id] = event
@@ -887,16 +954,105 @@ def stream_generate_reply(
     )
 
     if _agent_provider() != "gemini":
-        result = _call_anthropic(
-            system=system,
-            messages=api_messages,
+        api_key = _anthropic_api_key()
+        if not api_key:
+            yield {
+                "event": "done",
+                "result": AgentRunResult(
+                    status="unconfigured",
+                    content=(
+                        "Agent execution is not configured on the server. "
+                        "Set ANTHROPIC_API_KEY and restart the app."
+                    ),
+                    error_code="missing_api_key",
+                ),
+            }
+            return
+        accumulated: list[str] = []
+        input_tokens = 0
+        output_tokens = 0
+        try:
+            for text, usage in _iter_anthropic_stream_chunks(
+                api_key=api_key,
+                system=system,
+                messages=api_messages,
+                cancel_event=cancel_event,
+            ):
+                if cancel_event and cancel_event.is_set():
+                    break
+                if text:
+                    accumulated.append(text)
+                    yield {"event": "delta", "text": text}
+                if usage:
+                    input_tokens = int(usage.get("input_tokens") or input_tokens)
+                    output_tokens = int(usage.get("output_tokens") or output_tokens)
+        except socket.timeout:
+            yield {
+                "event": "done",
+                "result": AgentRunResult(
+                    status="error",
+                    content="The agent timed out. Try a shorter message or try again in a moment.",
+                    error_code="timeout",
+                ),
+            }
+            return
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")[:500]
+            yield {
+                "event": "done",
+                "result": AgentRunResult(
+                    status="error",
+                    content=f"The agent request failed ({exc.code}). {detail}".strip(),
+                    error_code="http_error",
+                ),
+            }
+            return
+        except urllib.error.URLError as exc:
+            yield {
+                "event": "done",
+                "result": AgentRunResult(
+                    status="error",
+                    content=f"Could not reach the agent service: {exc.reason}",
+                    error_code="network_error",
+                ),
+            }
+            return
+        if cancel_event and cancel_event.is_set():
+            content = "".join(accumulated)
+            yield {
+                "event": "done",
+                "result": AgentRunResult(
+                    status="error",
+                    content=content,
+                    error_code="cancelled",
+                    output_tokens=output_tokens,
+                ),
+            }
+            return
+        content = "".join(accumulated).strip()
+        if not content:
+            content = "The agent returned an empty response."
+        tool_calls = agent_tool_trace.build_chat_run_tool_calls(
             scope_label=scope_label,
             business_name=business_name,
             message_count=message_count,
+            model=_model(),
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            text_chars=len(content),
+            stop_reason=None,
+            model_tool_uses=[],
         )
-        if result.status == "completed" and result.content:
-            yield {"event": "delta", "text": result.content}
-        yield {"event": "done", "result": result}
+        yield {
+            "event": "done",
+            "result": AgentRunResult(
+                status="completed",
+                content=content,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                tool_calls=tool_calls,
+            ),
+        }
         return
 
     api_key = _gemini_api_key()
