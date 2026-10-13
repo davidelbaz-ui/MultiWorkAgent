@@ -22,7 +22,7 @@ Operator admin (support inbox, page copy, logs, DB status): **[https://multiwork
 
 See [VERCEL.md](VERCEL.md). Set `APP_BASE_URL=https://multiworkagent.com` in production.
 
-**Claude agent + Square billing on Vercel:** [docs/PRODUCTION_GO_LIVE.md](docs/PRODUCTION_GO_LIVE.md)
+**Gemini agent + Square billing on Vercel:** [docs/PRODUCTION_GO_LIVE.md](docs/PRODUCTION_GO_LIVE.md)
 
 ## OAuth login
 

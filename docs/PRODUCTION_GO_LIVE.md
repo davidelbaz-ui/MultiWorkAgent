@@ -1,4 +1,4 @@
-# Production go-live: Claude agent + Square billing
+# Production go-live: Gemini agent + Square billing
 
 Use this checklist on **Vercel → MultiWorkAgent → Settings → Environment Variables (Production)**.  
 Never commit API keys or tokens to git.
@@ -21,25 +21,26 @@ Verify: **https://multiworkagent.com/health** and **Admin → System** (agent/bi
 
 ---
 
-## 2. Claude agent (Anthropic)
+## 2. Gemini agent (Google)
 
-1. [console.anthropic.com](https://console.anthropic.com/) → **API keys** → create key (`sk-ant-…`).
-2. Add billing/credits in Anthropic if needed.
+1. [Google AI Studio](https://aistudio.google.com/apikey) → create an API key.
+2. Enable billing/quotas in Google Cloud if required for your usage tier.
 
 | Variable | Value |
 |----------|--------|
-| `AGENT_PROVIDER` | `anthropic` |
-| `ANTHROPIC_API_KEY` | your `sk-ant-…` key |
-| `AGENT_MODEL` | optional; default `claude-sonnet-4-20250514` |
+| `AGENT_PROVIDER` | `gemini` |
+| `GEMINI_API_KEY` | your API key |
+| `AGENT_MODEL` | optional; default `gemini-3.8-flash` |
+| `AGENT_MODEL_FALLBACK` | optional; default `gemini-2.5-flash` |
 | `AGENT_MOCK` | `0` |
 
-**Important:** If `GEMINI_API_KEY` is still set, you **must** set `AGENT_PROVIDER=anthropic` or the app may use Gemini.
+**Important:** If `ANTHROPIC_API_KEY` is still set, keep **`AGENT_PROVIDER=gemini`** (or unset Anthropic) so the app does not auto-select Claude.
 
-**Limitation:** Integration/database **tools** (Slack, Salesforce, etc.) run on **Gemini** only today. Claude is chat + knowledge context without live tool loop.
+**Tools:** Integration/database **tools** (Slack, Salesforce, etc.) require Gemini with one business selected in the header.
 
-**Test:** Send a message on **Agent**. `/health` → `deployment.agent.ready: true`.
+**Test:** Send a message on **Agent**. `/health` → `deployment.agent.provider: "gemini"`, `ready: true`.
 
-Details: [AGENT_CLAUDE.md](AGENT_CLAUDE.md)
+Details: [AGENT_GEMINI.md](AGENT_GEMINI.md). Optional Claude-only chat: [AGENT_CLAUDE.md](AGENT_CLAUDE.md)
 
 ---
 
@@ -113,7 +114,7 @@ Full reference: [SQUARE_BILLING.md](SQUARE_BILLING.md)
 
 ```json
 "deployment": {
-  "agent": { "provider": "anthropic", "ready": true, "mock": false, "model": "..." },
+  "agent": { "provider": "gemini", "ready": true, "mock": false, "model": "..." },
   "billing": { "mode": "square", "access_token_set": true, ... }
 }
 ```
