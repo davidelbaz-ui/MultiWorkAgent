@@ -292,11 +292,13 @@ body.admin-page a.btn {
   text-decoration: none !important;
 }
 
-body.admin-page .admin-back a {
+body.admin-page .admin-back a,
+body.admin-page .admin-back-link {
   text-decoration: none;
 }
 
-body.admin-page .admin-back a:hover {
+body.admin-page .admin-back a:hover,
+body.admin-page .admin-back-link:hover {
   text-decoration: none;
   color: var(--accent);
 }
@@ -399,9 +401,44 @@ body.admin-page .admin-back a:hover {
   margin: 0 0 0.75rem;
 }
 
-.admin-back a {
+.admin-back a,
+.admin-back-link {
   color: var(--accent);
   text-decoration: none;
+}
+
+.admin-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.admin-back-chevron {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-reply-form {
+  max-width: 40rem;
+}
+
+.admin-reply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-reply-actions .btn-primary {
+  width: auto;
+  flex: 0 0 auto;
 }
 
 .admin-user-unlimited-runs {
