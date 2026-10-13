@@ -24,25 +24,25 @@ PLANS: dict[str, SubscriptionPlan] = {
     "starter": SubscriptionPlan(
         tier="starter",
         display_name="Starter",
-        monthly_price_usd_cents=19999,
+        monthly_price_usd_cents=49900,
         monthly_quota=300,
     ),
     "pro": SubscriptionPlan(
         tier="pro",
         display_name="Pro",
-        monthly_price_usd_cents=29999,
+        monthly_price_usd_cents=119900,
         monthly_quota=1000,
     ),
     "max": SubscriptionPlan(
         tier="max",
         display_name="Max",
-        monthly_price_usd_cents=39999,
+        monthly_price_usd_cents=219900,
         monthly_quota=2000,
     ),
     "enterprise": SubscriptionPlan(
         tier="enterprise",
         display_name="Enterprise",
-        monthly_price_usd_cents=49999,
+        monthly_price_usd_cents=499900,
         monthly_quota=5000,
     ),
 }
