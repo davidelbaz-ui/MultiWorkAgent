@@ -119,6 +119,33 @@ function initBillingSubscribe() {
     });
   });
 
+  const cancelBtn = document.getElementById("billing-cancel-subscription");
+  cancelBtn?.addEventListener("click", async () => {
+    if (!isOwner) {
+      return;
+    }
+    const ok = await openAppConfirm({
+      title: "Cancel subscription",
+      message:
+        "Cancel at the end of the current billing period? You keep access until the period ends.",
+      confirmLabel: "Cancel at period end",
+    });
+    if (!ok) {
+      return;
+    }
+    try {
+      await billingApiJson("/api/billing/cancel", { method: "POST" });
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      await openAppConfirm({
+        title: "Could not cancel",
+        message: err.message || "Request failed.",
+        confirmLabel: "OK",
+      });
+    }
+  });
+
   if (mode === "mock") {
     const note = document.getElementById("billing-mode-note");
     if (note) {

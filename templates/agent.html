@@ -102,7 +102,6 @@
         <h3>Queue</h3>
         <p class="meta-row" id="agent-concurrent-line">Concurrent: {{ concurrent }} / {{ concurrent_max }}</p>
         <p class="meta-row" id="agent-runs-today">{% if unlimited_runs|default(false) %}Unlimited runs{% elif runs_limit_free_tier %}This month: {{ runs_today }} / {{ runs_daily_max }} runs{% else %}Today: {{ runs_today }} / {{ runs_daily_max }} runs{% endif %}</p>
-        <button type="button" class="btn">New structured run</button>
       </section>
     </div>
   </aside>
