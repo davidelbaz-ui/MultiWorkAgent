@@ -562,6 +562,7 @@ async function initAgentComposer() {
   const uploadBtn = document.getElementById("agent-upload-btn");
   const attachmentsEl = document.getElementById("agent-attachments");
   const composerStack = document.getElementById("agent-composer-stack");
+  const composerWrap = form.closest(".agent-composer-wrap");
   const editingHint = document.getElementById("agent-editing-hint");
   const cancelEditBtn = document.getElementById("agent-cancel-edit");
   const threadLabel = document.getElementById("agent-thread-label");
@@ -1216,12 +1217,17 @@ async function initAgentComposer() {
     list.forEach((msg) => messages.appendChild(renderMessage(msg)));
   };
 
+  const syncComposerLayout = () => {
+    resizeAgentTextarea(textarea);
+    composerWrap?.classList.add("is-layout-ready");
+  };
+
   const applyDraft = (draft) => {
     draftFiles = draft.files || [];
     textarea.value = draft.body || "";
     lastSavedDraft = draft.body || "";
     renderAttachments();
-    resizeAgentTextarea(textarea);
+    syncComposerLayout();
     syncComposerActionButton();
   };
 
@@ -1776,6 +1782,7 @@ async function initAgentComposer() {
   });
 
   syncComposerActionButton();
+  syncComposerLayout();
 
   window.addEventListener("beforeunload", () => {
     if (!editingMessageId && textarea.value !== lastSavedDraft) {

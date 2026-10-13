@@ -10,7 +10,7 @@ function resizeAgentTextarea(textarea) {
   const lineHeight = parseFloat(style.lineHeight) || 22;
   const maxHeight = parseFloat(style.maxHeight) || 112;
 
-  textarea.style.height = "0";
+  textarea.style.height = "auto";
   const contentHeight = textarea.scrollHeight;
   const nextHeight = Math.min(contentHeight, maxHeight);
   textarea.style.height = `${nextHeight}px`;

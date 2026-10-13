@@ -2399,7 +2399,7 @@ table.data-table {
   color: var(--text);
 }
 
-.agent-scroll-inner--thread .agent-composer-stack {
+.page-agent .agent-composer-stack {
   max-width: 36rem;
 }
 
@@ -2477,9 +2477,17 @@ table.data-table {
     padding 0.25s ease;
 }
 
-.agent-scroll-inner--thread .agent-prompt-box {
+.page-agent .agent-composer-wrap .agent-prompt-box {
   min-height: 3rem;
   padding: 0.45rem 0.45rem 0.4rem;
+}
+
+.page-agent .agent-composer-wrap:not(.is-layout-ready) .agent-prompt-box {
+  visibility: hidden;
+}
+
+.page-agent .agent-composer-wrap.is-layout-ready .agent-prompt-box {
+  visibility: visible;
 }
 
 .agent-prompt-box.is-multiline {
@@ -2521,7 +2529,7 @@ table.data-table {
   line-height: 1.4;
 }
 
-.agent-scroll-inner--thread .agent-prompt-box textarea {
+.page-agent .agent-composer-wrap .agent-prompt-box textarea {
   font-size: 0.95rem;
   padding: 0.4rem 0.3rem;
 }
@@ -2550,7 +2558,7 @@ table.data-table {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.agent-scroll-inner--thread .agent-prompt-btn {
+.page-agent .agent-composer-wrap .agent-prompt-btn {
   width: 2.15rem;
   height: 2.15rem;
   margin-bottom: 0.08rem;
