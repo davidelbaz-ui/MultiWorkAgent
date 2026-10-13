@@ -3564,8 +3564,8 @@ table.data-table {
   text-transform: uppercase;
   white-space: nowrap;
   color: #fff;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  box-shadow: 0 1px 3px rgba(91, 141, 239, 0.35);
   pointer-events: none;
 }
 
