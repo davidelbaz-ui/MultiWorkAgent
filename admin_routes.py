@@ -134,6 +134,7 @@ def admin_logout():
 
 @admin_bp.get("/")
 def admin_dashboard():
+    support_store.prune_empty_threads()
     return render_template(
         "admin/dashboard.html",
         counts=admin_stats.platform_counts(),
@@ -144,6 +145,7 @@ def admin_dashboard():
 
 @admin_bp.get("/support")
 def admin_support_inbox():
+    support_store.prune_empty_threads()
     status = request.args.get("status", "").strip() or None
     threads = support_store.list_inbox(limit=100, status=status)
     return render_template(

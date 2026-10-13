@@ -103,6 +103,25 @@ def get_or_create_thread(account_id: str) -> dict[str, Any]:
     }
 
 
+def prune_empty_threads() -> int:
+    """Remove open/closed shells with no user or support messages (legacy auto-create)."""
+    with connect() as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM support_threads
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM support_messages m
+                WHERE m.thread_id = support_threads.id
+                  AND m.sender_type != ?
+            )
+            """,
+            (SENDER_SYSTEM,),
+        )
+        conn.commit()
+        return int(cur.rowcount or 0)
+
+
 def _delete_thread_if_empty(account_id: str, thread_id: str) -> None:
     with connect() as conn:
         row = conn.execute(

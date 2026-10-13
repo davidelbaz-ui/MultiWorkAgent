@@ -29,9 +29,30 @@ def platform_counts() -> dict[str, int]:
         accounts = conn.execute("SELECT COUNT(*) AS n FROM accounts").fetchone()
         users = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()
         businesses = conn.execute("SELECT COUNT(*) AS n FROM businesses").fetchone()
-        threads = conn.execute("SELECT COUNT(*) AS n FROM support_threads").fetchone()
+        threads = conn.execute(
+            """
+            SELECT COUNT(*) AS n
+            FROM support_threads t
+            WHERE EXISTS (
+                SELECT 1
+                FROM support_messages m
+                WHERE m.thread_id = t.id
+                  AND m.sender_type != 'system'
+            )
+            """
+        ).fetchone()
         open_threads = conn.execute(
-            "SELECT COUNT(*) AS n FROM support_threads WHERE status = 'open'"
+            """
+            SELECT COUNT(*) AS n
+            FROM support_threads t
+            WHERE t.status = 'open'
+              AND EXISTS (
+                SELECT 1
+                FROM support_messages m
+                WHERE m.thread_id = t.id
+                  AND m.sender_type != 'system'
+            )
+            """
         ).fetchone()
         runs = conn.execute("SELECT COUNT(*) AS n FROM agent_runs").fetchone()
     return {

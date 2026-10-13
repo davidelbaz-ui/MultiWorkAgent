@@ -2,7 +2,7 @@
 {% block title %}Support inbox — Admin{% endblock %}
 {% block admin_mobile_title %}Support{% endblock %}
 {% block content %}
-<h1 class="admin-page-title">Contact support</h1>
+<h1 class="admin-page-title">Support inbox</h1>
 <div class="admin-toolbar">
   <a class="btn btn-sm {% if not filter_status %}btn-primary{% endif %}" href="{{ url_for('admin.admin_support_inbox') }}">All</a>
   <a class="btn btn-sm {% if filter_status == 'open' %}btn-primary{% endif %}" href="{{ url_for('admin.admin_support_inbox', status='open') }}">Open</a>
