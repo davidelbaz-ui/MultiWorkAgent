@@ -7,7 +7,7 @@ import os
 from flask import url_for
 
 # Register this host in every OAuth provider console (login + integrations).
-PRODUCTION_APP_BASE_URL = "https://multiworkagent.vercel.app"
+PRODUCTION_APP_BASE_URL = "https://multiworkagent.com"
 
 
 def _normalize_public_base_url(raw: str) -> str:

@@ -570,6 +570,12 @@ def health():
     import admin_auth
 
     payload["admin_configured"] = admin_auth.admin_configured()
+    try:
+        import deployment_status
+
+        payload["deployment"] = deployment_status.public_deployment_status()
+    except Exception:
+        pass
     status = 200 if DB_READY else 503
     return jsonify(payload), status
 

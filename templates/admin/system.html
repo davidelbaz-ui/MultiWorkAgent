@@ -28,6 +28,23 @@
   </ul>
 </section>
 <section class="admin-panel">
+  <h2>Agent &amp; billing (env)</h2>
+  <ul class="admin-kv">
+    <li><span>Agent provider</span><strong>{{ deployment.agent.provider }}</strong></li>
+    <li><span>Agent ready</span><strong>{{ 'yes' if deployment.agent.ready else 'no' }}{% if deployment.agent.mock %} (mock){% endif %}</strong></li>
+    <li><span>Agent model</span><code>{{ deployment.agent.model or '—' }}</code></li>
+    <li><span>Billing mode</span><strong>{{ deployment.billing.mode }}</strong></li>
+    <li><span>Square token</span><strong>{{ 'set' if deployment.billing.access_token_set else 'missing' }}</strong></li>
+    <li><span>Square location</span><strong>{{ 'set' if deployment.billing.location_set else 'missing' }}</strong></li>
+    <li><span>Webhook signature key</span><strong>{{ 'set' if deployment.billing.webhook_signature_key_set else 'missing' }}</strong></li>
+    <li><span>Webhook URL</span><code>{{ deployment.billing.webhook_notification_url }}</code></li>
+  </ul>
+  {% if deployment.billing.plans_missing_variation_or_checkout_url %}
+  <p class="meta-row">Plans still need a variation ID or checkout URL: {{ deployment.billing.plans_missing_variation_or_checkout_url | join(', ') }}</p>
+  {% endif %}
+  <p class="meta-row">Setup: <code>docs/PRODUCTION_GO_LIVE.md</code></p>
+</section>
+<section class="admin-panel">
   <h2>Main app</h2>
   <p class="meta-row">Customer site (default local): <a href="{{ main_app_url }}" target="_blank" rel="noopener">{{ main_app_url }}</a></p>
   <p class="meta-row">Health: <a href="{{ main_app_url }}/health" target="_blank" rel="noopener">{{ main_app_url }}/health</a></p>

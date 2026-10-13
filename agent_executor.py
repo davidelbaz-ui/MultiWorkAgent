@@ -209,6 +209,26 @@ def _mock_enabled() -> bool:
     return os.environ.get("AGENT_MOCK", "").strip().lower() in ("1", "true", "yes")
 
 
+def agent_provider_name() -> str:
+    return _agent_provider()
+
+
+def agent_mock_enabled() -> bool:
+    return _mock_enabled()
+
+
+def agent_api_ready() -> bool:
+    if _mock_enabled():
+        return True
+    if _agent_provider() == "anthropic":
+        return bool(_anthropic_api_key())
+    return bool(_gemini_api_key())
+
+
+def agent_model_name() -> str:
+    return _model()
+
+
 def _load_product_knowledge() -> str:
     global _product_knowledge_cache
     path = _AGENT_PRODUCT_KNOWLEDGE_PATH

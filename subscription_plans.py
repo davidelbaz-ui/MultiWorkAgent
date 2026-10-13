@@ -102,16 +102,27 @@ def plan_checkout_url(tier: str, billing_interval: str = "monthly") -> str | Non
     return raw or None
 
 
+_variation_id_index: dict[str, tuple[str, str]] | None = None
+
+
+def _variation_id_index_map() -> dict[str, tuple[str, str]]:
+    global _variation_id_index
+    if _variation_id_index is None:
+        index: dict[str, tuple[str, str]] = {}
+        for tier in PLANS:
+            for interval in BILLING_INTERVALS:
+                env_val = plan_variation_id(tier, interval)
+                if env_val:
+                    index[env_val] = (tier, interval)
+        _variation_id_index = index
+    return _variation_id_index
+
+
 def tier_and_interval_for_variation_id(variation_id: str) -> tuple[str, str] | None:
     vid = variation_id.strip()
     if not vid:
         return None
-    for tier in PLANS:
-        for interval in BILLING_INTERVALS:
-            env_val = plan_variation_id(tier, interval)
-            if env_val and env_val == vid:
-                return tier, interval
-    return None
+    return _variation_id_index_map().get(vid)
 
 
 def parse_plan_from_payment_note(note: str) -> tuple[str | None, str]:

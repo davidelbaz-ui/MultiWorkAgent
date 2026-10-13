@@ -40,9 +40,9 @@ Plans are defined in code (`subscription_plans.py`):
 
 | Plan | Monthly | Annual (20% off) | Runs / month |
 |------|---------|------------------|--------------|
-| Starter | $49.99 | $479.90/yr | 150 |
-| Pro | $149.99 | $1,439.90/yr | 500 |
-| Enterprise | $249.99 | $2,399.90/yr | 1,000 |
+| Starter | $179.99 | $1,727.90/yr | 150 |
+| Pro | $279.99 | $2,687.90/yr | 500 |
+| Enterprise | $379.99 | $3,647.90/yr | 1,000 |
 
 Square must have matching **subscription plan variations** (one per row — monthly and annual are separate variations in Square).
 
@@ -79,7 +79,7 @@ If a static URL is set and the variation ID for that tier is empty, checkout red
 Set **`APP_BASE_URL`** to your public site (no trailing slash):
 
 ```env
-APP_BASE_URL=https://multiworkagent.vercel.app
+APP_BASE_URL=https://multiworkagent.com
 ```
 
 After payment, Square redirects to `{APP_BASE_URL}/billing?checkout=done`. The app creates a Square **customer** per account and a **payment link** with your plan variation.
@@ -94,7 +94,7 @@ Square must notify your app when subscriptions and invoices change.
 2. **Notification URL** (must match env **character for character**):
 
    ```text
-   https://multiworkagent.vercel.app/webhooks/square
+   https://multiworkagent.com/webhooks/square
    ```
 
 3. Subscribe to events including:
@@ -106,7 +106,7 @@ Square must notify your app when subscriptions and invoices change.
 5. Set (recommended, same URL as in Square):
 
    ```env
-   SQUARE_WEBHOOK_NOTIFICATION_URL=https://multiworkagent.vercel.app/webhooks/square
+   SQUARE_WEBHOOK_NOTIFICATION_URL=https://multiworkagent.com/webhooks/square
    ```
 
 If `SQUARE_WEBHOOK_NOTIFICATION_URL` is empty, the app derives the URL from `APP_BASE_URL`. Signature verification uses this URL plus the raw POST body—if Square’s registered URL and your env differ, webhooks return **401 invalid signature**.
@@ -119,7 +119,7 @@ Add for **Production** (then **Redeploy**):
 
 | Variable | Example / notes |
 |----------|-----------------|
-| `APP_BASE_URL` | `https://multiworkagent.vercel.app` |
+| `APP_BASE_URL` | `https://multiworkagent.com` |
 | `SQUARE_ACCESS_TOKEN` | Production or sandbox token |
 | `SQUARE_LOCATION_ID` | From Square locations |
 | `SQUARE_ENVIRONMENT` | `production` or `sandbox` |

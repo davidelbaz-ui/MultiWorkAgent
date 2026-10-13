@@ -344,11 +344,14 @@ def admin_logs():
 def admin_system():
     from app_urls import public_app_base_url
 
+    import deployment_status
+
     return render_template(
         "admin/system.html",
         db=admin_stats.database_status(),
         counts=admin_stats.platform_counts(),
         main_app_url=public_app_base_url(),
+        deployment=deployment_status.public_deployment_status(),
     )
 
 
