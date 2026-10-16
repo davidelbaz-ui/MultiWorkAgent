@@ -219,7 +219,6 @@ a:hover {
 
   .sidebar {
     gap: 0.1rem;
-    border-top-right-radius: var(--shell-inner-join);
   }
 
   .sidebar-nav {
@@ -227,30 +226,34 @@ a:hover {
     overflow: visible;
   }
 
-  .main {
-    border-top-left-radius: var(--shell-inner-join);
-  }
-
-  /* Header rule on workspace/actions only (none under logo); curve where it meets the sidebar. */
+  /* Keep full header bottom rule; hide only the segment under the logo column. */
   .topbar {
-    align-items: stretch;
-    border-bottom: none;
+    position: relative;
   }
 
-  .topbar-brand {
-    display: flex;
-    align-items: center;
+  .topbar::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    bottom: -1px;
+    width: var(--sidebar-width);
+    height: 3px;
+    background: var(--surface);
+    pointer-events: none;
   }
 
-  .topbar-workspace,
-  .topbar-actions {
-    align-self: stretch;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .topbar-workspace {
-    border-bottom-left-radius: var(--shell-inner-join);
+  .topbar::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: calc(var(--sidebar-width) - var(--shell-inner-join));
+    bottom: -1px;
+    width: var(--shell-inner-join);
+    height: var(--shell-inner-join);
+    background: var(--bg);
+    border-bottom-right-radius: var(--shell-inner-join);
+    pointer-events: none;
   }
 }
 
