@@ -53,7 +53,7 @@ def public_app_base_url() -> str:
 
 
 def billing_checkout_return_url() -> str:
-    """Square redirect after subscription checkout (must match payment link config)."""
+    """Stripe Checkout success/cancel redirect URL."""
     base = app_base_url()
     path = url_for("billing", checkout="done", _external=False)
     if base:
@@ -61,9 +61,9 @@ def billing_checkout_return_url() -> str:
     return url_for("billing", checkout="done", _external=True)
 
 
-def square_webhook_notification_url() -> str:
-    """URL registered in Square Developer → Webhooks (used for signature verification)."""
+def stripe_webhook_notification_url() -> str:
+    """URL registered in Stripe Dashboard → Webhooks."""
     base = app_base_url()
     if base:
-        return f"{base}/webhooks/square"
-    return url_for("square_webhook", _external=True)
+        return f"{base}/webhooks/stripe"
+    return url_for("stripe_webhook", _external=True)

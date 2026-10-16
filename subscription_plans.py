@@ -1,4 +1,4 @@
-"""Product subscription tiers (MultiWorkAgent billing via Square)."""
+"""Product subscription tiers (MultiWorkAgent billing via Stripe)."""
 
 from __future__ import annotations
 
@@ -80,27 +80,32 @@ def format_usd(cents: int) -> str:
     return f"${cents / 100:,.2f}"
 
 
-def _variation_env_key(tier: str, billing_interval: str) -> str:
+def _stripe_price_env_key(tier: str, billing_interval: str) -> str:
     interval = normalize_billing_interval(billing_interval)
     upper = tier.strip().upper()
     if interval == "annual":
-        return f"SQUARE_{upper}_ANNUAL_PLAN_VARIATION_ID"
-    return f"SQUARE_{upper}_PLAN_VARIATION_ID"
+        return f"STRIPE_{upper}_ANNUAL_PRICE_ID"
+    return f"STRIPE_{upper}_MONTHLY_PRICE_ID"
 
 
 def _checkout_url_env_key(tier: str, billing_interval: str) -> str:
     interval = normalize_billing_interval(billing_interval)
     upper = tier.strip().upper()
     if interval == "annual":
-        return f"SQUARE_CHECKOUT_URL_{upper}_ANNUAL"
-    return f"SQUARE_CHECKOUT_URL_{upper}"
+        return f"STRIPE_CHECKOUT_URL_{upper}_ANNUAL"
+    return f"STRIPE_CHECKOUT_URL_{upper}"
+
+
+def stripe_price_id(tier: str, billing_interval: str = "monthly") -> str | None:
+    if not get_plan(tier):
+        return None
+    raw = os.environ.get(_stripe_price_env_key(tier, billing_interval), "").strip()
+    return raw or None
 
 
 def plan_variation_id(tier: str, billing_interval: str = "monthly") -> str | None:
-    if not get_plan(tier):
-        return None
-    raw = os.environ.get(_variation_env_key(tier, billing_interval), "").strip()
-    return raw or None
+    """Legacy alias (Square variation IDs); use stripe_price_id."""
+    return stripe_price_id(tier, billing_interval)
 
 
 def plan_checkout_url(tier: str, billing_interval: str = "monthly") -> str | None:
@@ -110,31 +115,35 @@ def plan_checkout_url(tier: str, billing_interval: str = "monthly") -> str | Non
     return raw or None
 
 
-_variation_id_index: dict[str, tuple[str, str]] | None = None
+_stripe_price_index: dict[str, tuple[str, str]] | None = None
 
 
-def _variation_id_index_map() -> dict[str, tuple[str, str]]:
-    global _variation_id_index
-    if _variation_id_index is None:
+def _stripe_price_index_map() -> dict[str, tuple[str, str]]:
+    global _stripe_price_index
+    if _stripe_price_index is None:
         index: dict[str, tuple[str, str]] = {}
         for tier in PLAN_TIER_ORDER:
             for interval in BILLING_INTERVALS:
-                env_val = plan_variation_id(tier, interval)
+                env_val = stripe_price_id(tier, interval)
                 if env_val:
                     index[env_val] = (tier, interval)
-        _variation_id_index = index
-    return _variation_id_index
+        _stripe_price_index = index
+    return _stripe_price_index
+
+
+def tier_and_interval_for_stripe_price_id(price_id: str) -> tuple[str, str] | None:
+    pid = price_id.strip()
+    if not pid:
+        return None
+    return _stripe_price_index_map().get(pid)
 
 
 def tier_and_interval_for_variation_id(variation_id: str) -> tuple[str, str] | None:
-    vid = variation_id.strip()
-    if not vid:
-        return None
-    return _variation_id_index_map().get(vid)
+    return tier_and_interval_for_stripe_price_id(variation_id)
 
 
 def parse_plan_from_payment_note(note: str) -> tuple[str | None, str]:
-    """Extract plan tier and billing interval from Square payment_note / subscription note."""
+    """Extract plan tier and billing interval from checkout metadata or legacy payment notes."""
     text = str(note)
     tier: str | None = None
     interval = "monthly"
@@ -194,8 +203,8 @@ def plans_for_api() -> list[dict[str, Any]]:
                     "display_name": plan.display_name,
                     "price_usd_cents": checkout_price_cents(plan.tier, interval),
                     "monthly_quota": plan.monthly_quota,
-                    "square_variation_configured": bool(plan_variation_id(plan.tier, interval)),
-                    "square_checkout_url_configured": bool(plan_checkout_url(plan.tier, interval)),
+                    "stripe_price_configured": bool(stripe_price_id(plan.tier, interval)),
+                    "stripe_checkout_url_configured": bool(plan_checkout_url(plan.tier, interval)),
                 }
             )
     return items

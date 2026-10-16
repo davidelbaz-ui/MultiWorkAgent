@@ -1,4 +1,4 @@
-"""Square billing invoices cached per account."""
+"""Billing invoices cached per account (Stripe IDs stored in legacy square_invoice_id column)."""
 
 from __future__ import annotations
 
@@ -204,6 +204,57 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
                 pass
             return row
     raise RuntimeError("failed to upsert invoice")
+
+
+def upsert_stripe_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str, Any]:
+    stripe_id = str(invoice.get("id") or "")
+    if not stripe_id:
+        raise ValueError("stripe invoice id is required")
+
+    amount_cents, currency = _extract_stripe_amount(invoice)
+    created = invoice.get("created")
+    if isinstance(created, (int, float)):
+        invoice_date = datetime.fromtimestamp(int(created), tz=timezone.utc).replace(microsecond=0).isoformat()
+    else:
+        invoice_date = str(invoice.get("status_transitions", {}).get("paid_at") or _utc_now())
+    public_url = str(invoice.get("hosted_invoice_url") or "")
+    pdf_url = str(invoice.get("invoice_pdf") or public_url or "")
+    number = str(invoice.get("number") or stripe_id[:8])
+    status = str(invoice.get("status") or "unknown").upper()
+    line_desc = ""
+    lines = invoice.get("lines")
+    if isinstance(lines, dict):
+        data = lines.get("data")
+        if isinstance(data, list) and data and isinstance(data[0], dict):
+            line_desc = str(data[0].get("description") or "")
+    description = str(invoice.get("description") or line_desc or "Stripe invoice")
+
+    payload = {
+        "id": stripe_id,
+        "invoice_number": number,
+        "status": status,
+        "title": description,
+        "created_at": invoice_date,
+        "updated_at": invoice_date,
+        "public_url": public_url,
+        "pdf_url": pdf_url,
+        "payment_requests": [
+            {"computed_amount_money": {"amount": amount_cents, "currency": currency}}
+        ],
+    }
+    return upsert_square_invoice(account_id, payload)
+
+
+def _extract_stripe_amount(invoice: dict[str, Any]) -> tuple[int, str]:
+    currency = str(invoice.get("currency") or "usd").upper()
+    for key in ("total", "amount_paid", "amount_due"):
+        raw = invoice.get(key)
+        if raw is not None:
+            try:
+                return int(raw), currency
+            except (TypeError, ValueError):
+                continue
+    return 0, currency
 
 
 def _extract_amount(invoice: dict[str, Any]) -> tuple[int, str]:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -53,6 +54,8 @@ def build_connections_system_appendix(ctx: OperationContext) -> str:
         "and run SQL on connected databases (database_execute_sql).",
         "Use the provider_slug from the list below. For APIs, prefer paths from each vendor's REST docs; "
         "use absolute https URLs only when they stay under that integration's allowed API base.",
+        "For self-hosted or tenant-specific APIs (WordPress, WooCommerce, Mailchimp, Zendesk, Shopify), "
+        "set api_base_url or site_url on the connection when connecting.",
         "Confirm destructive actions with the user when reasonable; then execute when they ask.",
     ]
     if connected:
@@ -184,6 +187,27 @@ def _auth_headers(provider_slug: str, credentials: dict[str, Any]) -> dict[str, 
     }
     if slug == "stripe":
         headers["Authorization"] = f"Bearer {token}"
+    elif slug == "sendgrid":
+        headers["Authorization"] = f"Bearer {token}"
+    elif slug == "postmark":
+        headers["X-Postmark-Server-Token"] = token
+    elif slug == "mailchimp":
+        headers["Authorization"] = f"Bearer {token}"
+        if token.count("-") >= 1 and not token.startswith("Bearer "):
+            headers["Authorization"] = (
+                "Basic " + base64.b64encode(f"anystring:{token}".encode()).decode()
+            )
+    elif slug == "twilio":
+        account_sid = credentials.get("account_sid") or credentials.get("site_url") or ""
+        if isinstance(account_sid, str) and account_sid.strip():
+            sid = account_sid.strip().rstrip("/").split("/")[-1]
+            headers["Authorization"] = (
+                "Basic " + base64.b64encode(f"{sid}:{token}".encode()).decode()
+            )
+        else:
+            headers["Authorization"] = (
+                "Basic " + base64.b64encode(f"{token}:{token}".encode()).decode()
+            )
     elif slug == "linear":
         headers["Authorization"] = token if token.startswith("Bearer ") else token
     elif slug == "github":
@@ -194,6 +218,18 @@ def _auth_headers(provider_slug: str, credentials: dict[str, Any]) -> dict[str, 
         headers["Notion-Version"] = "2022-06-28"
     elif slug == "slack":
         headers["Authorization"] = f"Bearer {token}"
+    elif slug == "shopify":
+        headers["X-Shopify-Access-Token"] = token
+    elif slug == "woocommerce":
+        key = credentials.get("consumer_key") or token
+        secret = credentials.get("consumer_secret") or credentials.get("api_secret") or ""
+        if isinstance(key, str) and isinstance(secret, str) and secret.strip():
+            headers["Authorization"] = (
+                "Basic "
+                + base64.b64encode(f"{key.strip()}:{secret.strip()}".encode()).decode()
+            )
+        else:
+            headers["Authorization"] = f"Bearer {token}"
     else:
         headers["Authorization"] = f"Bearer {token}"
     return headers

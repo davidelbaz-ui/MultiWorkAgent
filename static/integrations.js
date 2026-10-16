@@ -82,14 +82,23 @@ async function saveApiKeyConnect(ctx) {
   if (!trimmed) {
     throw new Error("Enter an API key.");
   }
+  const payload = {
+    provider_slug: ctx.slug,
+    auth_type: "api_key",
+    api_key: trimmed,
+  };
+  const apiBase = (ctx.apiBaseUrl || "").trim();
+  const siteUrl = (ctx.siteUrl || "").trim();
+  if (apiBase) {
+    payload.api_base_url = apiBase;
+  }
+  if (siteUrl) {
+    payload.site_url = siteUrl;
+  }
   await integrationApiJson(`/api/businesses/${ctx.businessId}/integrations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      provider_slug: ctx.slug,
-      auth_type: "api_key",
-      api_key: trimmed,
-    }),
+    body: JSON.stringify(payload),
   });
   window.location.reload();
 }
@@ -204,6 +213,25 @@ function buildIntegrationWizardConfig(ctx) {
           c.apiKey = input.value;
         });
         container.appendChild(field);
+        const baseField = document.createElement("div");
+        baseField.className = "app-wizard-field";
+        baseField.innerHTML = `
+          <label for="integration-wizard-api-base">API base URL (optional)</label>
+          <input type="url" id="integration-wizard-api-base" autocomplete="off" spellcheck="false" placeholder="https://us1.api.mailchimp.com/3.0/">
+          <p class="app-wizard-hint">For tenant-specific APIs: Mailchimp datacenter, your WordPress/WooCommerce site, Zendesk subdomain, etc.</p>
+          <label for="integration-wizard-site-url">Site URL (optional)</label>
+          <input type="url" id="integration-wizard-site-url" autocomplete="off" spellcheck="false" placeholder="https://yourstore.com">`;
+        const baseInput = baseField.querySelector("#integration-wizard-api-base");
+        const siteInput = baseField.querySelector("#integration-wizard-site-url");
+        baseInput.value = c.apiBaseUrl || "";
+        siteInput.value = c.siteUrl || "";
+        baseInput.addEventListener("input", () => {
+          c.apiBaseUrl = baseInput.value;
+        });
+        siteInput.addEventListener("input", () => {
+          c.siteUrl = siteInput.value;
+        });
+        container.appendChild(baseField);
       } else {
         const p = document.createElement("p");
         p.className = "app-wizard-copy";

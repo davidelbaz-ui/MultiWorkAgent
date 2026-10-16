@@ -386,6 +386,56 @@ _register("xero", lambda t, _c: _generic_bearer_get(
 _register("clickup", lambda t, _c: _clickup_user(t))
 
 
+def _generic_catalog_probe(
+    provider_slug: str,
+    token: str,
+    credentials: dict[str, Any],
+) -> IntegrationTestResult:
+    import agent_operation_tools
+    import integration_api_allowlist
+    import integration_api_defaults
+
+    prefixes = integration_api_allowlist.allowed_prefixes_for(provider_slug, credentials)
+    if not prefixes:
+        return IntegrationTestResult(
+            ok=False,
+            probe="api_base",
+            message="No API base URL is configured for this provider.",
+            detail=(
+                "Add api_base_url or site_url on the connection (for example your Mailchimp "
+                "https://us1.api.mailchimp.com/3.0/ or WordPress site URL)."
+            ),
+        )
+    rel = integration_api_defaults.INTEGRATION_DEFAULT_PROBE_PATHS.get(provider_slug, "")
+    base = prefixes[0].rstrip("/")
+    url = base + (rel if rel.startswith("/") else f"/{rel}" if rel else "")
+    headers = agent_operation_tools._auth_headers(provider_slug, credentials)
+    if not headers.get("Authorization") and not headers.get("X-Postmark-Server-Token"):
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        status, _data = _json_request(url, headers=headers)
+    except ValueError as exc:
+        return IntegrationTestResult(
+            ok=False,
+            probe=f"{provider_slug}_generic",
+            message=str(exc),
+        )
+    if status in (401, 403):
+        return IntegrationTestResult(
+            ok=False,
+            probe=f"{provider_slug}_generic",
+            message=f"Provider rejected the credential ({status}).",
+            http_status=status,
+        )
+    return IntegrationTestResult(
+        ok=True,
+        probe=f"{provider_slug}_generic",
+        message="Provider API accepted the credential.",
+        detail=f"HTTP {status} from {url[:80]}…" if len(url) > 80 else f"HTTP {status} from {url}.",
+        http_status=status,
+    )
+
+
 def test_integration_connection(
     *,
     provider_slug: str,
@@ -416,19 +466,11 @@ def test_integration_connection(
         )
 
     probe_fn = _PROBE_BY_SLUG.get(provider_slug)
-    if not probe_fn:
-        return IntegrationTestResult(
-            ok=False,
-            probe="unsupported",
-            message="No automated API test is configured for this provider yet.",
-            detail=(
-                "Your credential is stored. We will add a read-only health check for this "
-                "integration in a future update."
-            ),
-        )
 
     try:
-        return probe_fn(token, credentials)
+        if probe_fn:
+            return probe_fn(token, credentials)
+        return _generic_catalog_probe(provider_slug, token, credentials)
     except ValueError as exc:
         return IntegrationTestResult(
             ok=False,

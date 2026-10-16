@@ -46,25 +46,20 @@ Details: [AGENT_GEMINI.md](AGENT_GEMINI.md). Optional Claude-only chat: [AGENT_C
 
 ## 3. Square billing (subscriptions)
 
-Square bills **your customers** for MultiWorkAgent plans. This is **not** the Square **integration** on Data (merchant OAuth).
+Stripe bills **your customers** for MultiWorkAgent plans. This is **not** the Stripe **integration** on Data (merchant OAuth).
 
 ### 3.1 Credentials
 
-[Square Developer](https://developer.squareup.com/apps) → your app:
+[Stripe Dashboard](https://dashboard.stripe.com/) → Developers:
 
 | Variable | Notes |
 |----------|--------|
-| `SQUARE_ACCESS_TOKEN` | Sandbox token for testing; production token when live |
-| `SQUARE_ENVIRONMENT` | `sandbox` or `production` |
-| `SQUARE_LOCATION_ID` | Square Dashboard → Locations |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Developer → Webhooks → signature key |
-| `SQUARE_WEBHOOK_NOTIFICATION_URL` | `https://multiworkagent.com/webhooks/square` (must match Square dashboard **exactly**) |
-
-Optional: `SQUARE_SUPPORT_EMAIL` for checkout receipts.
+| `STRIPE_SECRET_KEY` | Test or live secret key |
+| `STRIPE_WEBHOOK_SECRET` | Webhooks → signing secret for `/webhooks/stripe` |
 
 ### 3.2 Plans (match `subscription_plans.py`)
 
-Create **Subscriptions** in Square at these prices (monthly + annual per tier):
+Create **Products** with recurring **Prices** (monthly + annual per tier):
 
 | Plan | Monthly | Annual (20% off 12× monthly) | Runs/mo |
 |------|---------|--------------------------------|---------|
@@ -73,40 +68,40 @@ Create **Subscriptions** in Square at these prices (monthly + annual per tier):
 | Max | $2,199.00 | $21,134.40/yr | 2,000 |
 | Enterprise | $4,999.00 | $47,990.40/yr | 5,000 |
 
-Copy each plan **variation ID** into Vercel:
+Copy each **Price ID** (`price_…`) into Vercel:
 
 ```env
-SQUARE_STARTER_PLAN_VARIATION_ID=
-SQUARE_STARTER_ANNUAL_PLAN_VARIATION_ID=
-SQUARE_PRO_PLAN_VARIATION_ID=
-SQUARE_PRO_ANNUAL_PLAN_VARIATION_ID=
-SQUARE_MAX_PLAN_VARIATION_ID=
-SQUARE_MAX_ANNUAL_PLAN_VARIATION_ID=
-SQUARE_ENTERPRISE_PLAN_VARIATION_ID=
-SQUARE_ENTERPRISE_ANNUAL_PLAN_VARIATION_ID=
+STRIPE_STARTER_MONTHLY_PRICE_ID=
+STRIPE_STARTER_ANNUAL_PRICE_ID=
+STRIPE_PRO_MONTHLY_PRICE_ID=
+STRIPE_PRO_ANNUAL_PRICE_ID=
+STRIPE_MAX_MONTHLY_PRICE_ID=
+STRIPE_MAX_ANNUAL_PRICE_ID=
+STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=
+STRIPE_ENTERPRISE_ANNUAL_PRICE_ID=
 ```
 
-**Or** use pre-built payment links instead of variation IDs (see [SQUARE_BILLING.md](SQUARE_BILLING.md)).
+**Or** use hosted Checkout links (see [STRIPE_BILLING.md](STRIPE_BILLING.md)).
 
 Do **not** set `BILLING_DEV_MOCK=1` on production.
 
 ### 3.3 Webhooks
 
-Developer → Webhooks → notification URL:
+Developers → Webhooks → endpoint:
 
 ```text
-https://multiworkagent.com/webhooks/square
+https://multiworkagent.com/webhooks/stripe
 ```
 
-Subscribe to subscription and invoice events (see [SQUARE_BILLING.md](SQUARE_BILLING.md)).
+Subscribe to checkout, subscription, invoice, and charge events (see [STRIPE_BILLING.md](STRIPE_BILLING.md)).
 
 ### 3.4 Verify
 
-1. **Billing** as account owner — no “Square is not configured”.
-2. **Subscribe** (sandbox card) → return to `/billing?checkout=done` → plan updates after webhook.
-3. `/health` → `deployment.billing.mode: "square"`.
+1. **Billing** as account owner — no “Stripe is not configured”.
+2. **Subscribe** (test card) → return to `/billing?checkout=done` → plan updates after webhook.
+3. `/health` → `deployment.billing.mode: "stripe"`.
 
-Full reference: [SQUARE_BILLING.md](SQUARE_BILLING.md)
+Full reference: [STRIPE_BILLING.md](STRIPE_BILLING.md)
 
 ---
 
@@ -115,7 +110,7 @@ Full reference: [SQUARE_BILLING.md](SQUARE_BILLING.md)
 ```json
 "deployment": {
   "agent": { "provider": "gemini", "ready": true, "mock": false, "model": "..." },
-  "billing": { "mode": "square", "access_token_set": true, ... }
+  "billing": { "mode": "stripe", "secret_key_set": true, ... }
 }
 ```
 

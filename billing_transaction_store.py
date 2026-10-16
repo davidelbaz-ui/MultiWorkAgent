@@ -1,4 +1,4 @@
-"""Square payments and refunds cached per account."""
+"""Payment provider charges cached per account (Stripe charge IDs in legacy square_* columns)."""
 
 from __future__ import annotations
 
@@ -206,6 +206,96 @@ def find_account_by_square_payment_id(square_payment_id: str) -> str | None:
             (square_payment_id, square_payment_id),
         ).fetchone()
     return row["account_id"] if row else None
+
+
+def upsert_stripe_charge(account_id: str, charge: dict[str, Any]) -> dict[str, Any]:
+    charge_id = str(charge.get("id") or "")
+    if not charge_id:
+        raise ValueError("stripe charge id is required")
+    amount_cents = int(charge.get("amount") or 0)
+    currency = str(charge.get("currency") or "usd").upper()
+    status = str(charge.get("status") or "unknown")
+    created_raw = charge.get("created")
+    if isinstance(created_raw, (int, float)):
+        created = datetime.fromtimestamp(int(created_raw), tz=timezone.utc).replace(microsecond=0).isoformat()
+    else:
+        created = str(created_raw or _utc_now())
+    customer_id = str(charge.get("customer") or "")
+    refunded = bool(charge.get("refunded"))
+    kind = "refund" if refunded and status == "succeeded" else "payment"
+    if refunded:
+        amount_cents = -abs(amount_cents)
+    payment_intent = str(charge.get("payment_intent") or "")
+    now = _utc_now()
+    with connect() as conn:
+        existing = conn.execute(
+            "SELECT id FROM billing_transactions WHERE square_payment_id = ?",
+            (charge_id,),
+        ).fetchone()
+        if existing:
+            conn.execute(
+                """
+                UPDATE billing_transactions
+                SET kind = ?, status = ?, amount_cents = ?, currency = ?, square_order_id = ?,
+                    square_customer_id = ?, occurred_at = ?, raw_json = ?, updated_at = ?
+                WHERE square_payment_id = ?
+                """,
+                (
+                    kind,
+                    status,
+                    amount_cents,
+                    currency,
+                    payment_intent or None,
+                    customer_id or None,
+                    created,
+                    json.dumps(charge, ensure_ascii=False, default=str),
+                    now,
+                    charge_id,
+                ),
+            )
+            row_id = existing["id"]
+        else:
+            row_id = str(uuid.uuid4())
+            conn.execute(
+                """
+                INSERT INTO billing_transactions (
+                    id, account_id, kind, square_payment_id, square_order_id,
+                    square_customer_id, status, amount_cents, currency,
+                    occurred_at, raw_json, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    row_id,
+                    account_id,
+                    kind,
+                    charge_id,
+                    payment_intent or None,
+                    customer_id or None,
+                    status,
+                    amount_cents,
+                    currency,
+                    created,
+                    json.dumps(charge, ensure_ascii=False, default=str),
+                    now,
+                    now,
+                ),
+            )
+        conn.commit()
+    return get_transaction(account_id, row_id) or {}
+
+
+def find_account_for_stripe_charge(charge: dict[str, Any]) -> str | None:
+    customer_id = str(charge.get("customer") or "")
+    if customer_id:
+        found = subscription_store.find_account_by_square_customer(customer_id)
+        if found:
+            return found
+    meta = charge.get("metadata")
+    if isinstance(meta, dict):
+        account_id = str(meta.get("account_id") or "").strip()
+        if account_id:
+            return account_id
+    return None
 
 
 def find_account_for_payment(payment: dict[str, Any]) -> str | None:

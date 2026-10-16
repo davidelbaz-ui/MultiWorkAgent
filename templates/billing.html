@@ -120,7 +120,7 @@
 <section class="card" style="margin-top: 1.25rem;">
   <div class="integration-catalog-head">
     <h2>Invoices</h2>
-    {% if billing_mode == 'square' and account_role == 'owner' %}
+    {% if billing_mode == 'stripe' and account_role == 'owner' %}
     <button type="button" class="btn btn-sm" id="billing-sync-invoices">Refresh invoices</button>
     {% endif %}
   </div>
@@ -140,7 +140,7 @@
     </tbody>
   </table>
   {% else %}
-  <p class="empty-state">No invoices yet{% if billing_mode == 'square' %} — complete checkout or refresh invoices{% elif billing_mode == 'mock' %} — subscribe in test mode to generate a sample invoice{% endif %}.</p>
+  <p class="empty-state">No invoices yet{% if billing_mode == 'stripe' %} — complete checkout or refresh invoices{% elif billing_mode == 'mock' %} — subscribe in test mode to generate a sample invoice{% endif %}.</p>
   {% endif %}
 </section>
 </div>

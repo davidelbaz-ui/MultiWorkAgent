@@ -7,46 +7,24 @@ import socket
 from typing import Any
 from urllib.parse import urlparse
 
-# Prefixes must be https:// and include trailing slash where path-scoped.
+import integration_api_defaults
+
+# Explicit overrides (merged with integration_api_defaults for every catalog slug).
 INTEGRATION_API_PREFIXES: dict[str, list[str]] = {
-    "github": ["https://api.github.com/"],
     "gitlab": ["https://gitlab.com/api/v4/", "https://gitlab.com/api/"],
     "bitbucket": ["https://api.bitbucket.org/"],
-    "netlify": ["https://api.netlify.com/"],
-    "vercel": ["https://api.vercel.com/"],
-    "slack": ["https://slack.com/api/"],
-    "notion": ["https://api.notion.com/"],
-    "linear": ["https://api.linear.app/"],
-    "asana": ["https://app.asana.com/api/"],
-    "discord": ["https://discord.com/api/"],
-    "hubspot": ["https://api.hubapi.com/"],
-    "stripe": ["https://api.stripe.com/"],
-    "airtable": ["https://api.airtable.com/"],
-    "zoom": ["https://api.zoom.us/"],
-    "xero": ["https://api.xero.com/"],
-    "clickup": ["https://api.clickup.com/"],
-    "jira": ["https://api.atlassian.com/"],
-    "confluence": ["https://api.atlassian.com/"],
-    "google-workspace-gmail-docs-drive-sheets-calendar": [
-        "https://www.googleapis.com/",
-        "https://gmail.googleapis.com/",
-        "https://drive.googleapis.com/",
-        "https://sheets.googleapis.com/",
-        "https://docs.googleapis.com/",
-        "https://calendar.googleapis.com/",
-    ],
-    "google-cloud-platform-gcp": ["https://www.googleapis.com/"],
     "google-bigquery": ["https://bigquery.googleapis.com/", "https://www.googleapis.com/"],
     "google-cloud-storage": ["https://storage.googleapis.com/", "https://www.googleapis.com/"],
     "google-meet": ["https://meet.googleapis.com/", "https://www.googleapis.com/"],
-    "microsoft-365-outlook-onedrive-sharepoint-excel": ["https://graph.microsoft.com/"],
-    "microsoft-teams": ["https://graph.microsoft.com/"],
     "microsoft-azure": ["https://management.azure.com/", "https://graph.microsoft.com/"],
-    "dynamics-365": ["https://graph.microsoft.com/"],
 }
 
-_GOOGLE_SLUG_PREFIX = INTEGRATION_API_PREFIXES["google-workspace-gmail-docs-drive-sheets-calendar"]
-_MICROSOFT_SLUG_PREFIX = INTEGRATION_API_PREFIXES["microsoft-365-outlook-onedrive-sharepoint-excel"]
+_GOOGLE_SLUG_PREFIX = integration_api_defaults.default_prefixes_for_slug(
+    "google-workspace-gmail-docs-drive-sheets-calendar"
+)
+_MICROSOFT_SLUG_PREFIX = integration_api_defaults.default_prefixes_for_slug(
+    "microsoft-365-outlook-onedrive-sharepoint-excel"
+)
 
 
 def _credential_url_prefixes(credentials: dict[str, Any]) -> list[str]:
@@ -68,11 +46,14 @@ def _credential_url_prefixes(credentials: dict[str, Any]) -> list[str]:
 def allowed_prefixes_for(provider_slug: str, credentials: dict[str, Any] | None) -> list[str]:
     slug = provider_slug.strip().lower()
     prefixes: list[str] = []
+    defaults = integration_api_defaults.default_prefixes_for_slug(slug)
+    if defaults:
+        prefixes.extend(defaults)
     if slug in INTEGRATION_API_PREFIXES:
         prefixes.extend(INTEGRATION_API_PREFIXES[slug])
-    elif slug.startswith("google-"):
+    elif slug.startswith("google-") and not defaults:
         prefixes.extend(_GOOGLE_SLUG_PREFIX)
-    elif slug in ("microsoft-teams", "microsoft-azure", "dynamics-365"):
+    elif slug in ("microsoft-teams", "microsoft-azure", "dynamics-365") and not defaults:
         prefixes.extend(_MICROSOFT_SLUG_PREFIX)
     if credentials:
         prefixes.extend(_credential_url_prefixes(credentials))

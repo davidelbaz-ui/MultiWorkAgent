@@ -52,7 +52,7 @@ Copy operator keys from `env.example` / [INTEGRATIONS_OAUTH.md](INTEGRATIONS_OAU
 | Gemini (default) | `GEMINI_API_KEY`, optional `AGENT_MODEL` |
 | Claude | `AGENT_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, optional `AGENT_MODEL` — see [docs/AGENT_CLAUDE.md](docs/AGENT_CLAUDE.md) |
 
-Square billing: [docs/SQUARE_BILLING.md](docs/SQUARE_BILLING.md) and [docs/PRODUCTION_GO_LIVE.md](docs/PRODUCTION_GO_LIVE.md).
+Stripe billing: [docs/STRIPE_BILLING.md](docs/STRIPE_BILLING.md) and [docs/PRODUCTION_GO_LIVE.md](docs/PRODUCTION_GO_LIVE.md).
 
 ## Verify
 

@@ -7,7 +7,7 @@ import unittest
 
 import business_store
 import invoice_store
-import square_billing
+import stripe_billing
 import subscription_store
 from tests.postgres_test_case import PostgresStoreTestCase
 
@@ -20,7 +20,7 @@ class InvoiceStoreTest(PostgresStoreTestCase):
         os.environ["BILLING_DEV_MOCK"] = "1"
 
     def test_mock_subscribe_creates_invoice(self) -> None:
-        square_billing.mock_activate(self.account_id, "starter")
+        stripe_billing.mock_activate(self.account_id, "starter")
         display = invoice_store.list_for_display(self.account_id)
         self.assertEqual(len(display), 1)
         self.assertEqual(display[0]["amount"], "$499.00")
@@ -29,37 +29,28 @@ class InvoiceStoreTest(PostgresStoreTestCase):
     def test_upsert_and_webhook(self) -> None:
         subscription_store.set_square_customer_id(self.account_id, "cust_sq_1")
         payload = {
-            "event_id": "evt-inv-1",
-            "type": "invoice.payment_made",
+            "id": "evt-inv-1",
+            "type": "invoice.paid",
             "data": {
                 "object": {
-                    "invoice": {
-                        "id": "inv_square_1",
-                        "invoice_number": "1042",
-                        "status": "PAID",
-                        "title": "Pro subscription",
-                        "created_at": "2026-10-01T12:00:00Z",
-                        "updated_at": "2026-10-01T12:05:00Z",
-                        "public_url": "https://square.example/inv/1",
-                        "primary_recipient": {"customer_id": "cust_sq_1"},
-                        "payment_requests": [
-                            {
-                                "computed_amount_money": {
-                                    "amount": 4900,
-                                    "currency": "USD",
-                                }
-                            }
-                        ],
-                    }
+                    "id": "inv_stripe_1",
+                    "number": "1042",
+                    "status": "paid",
+                    "customer": "cust_sq_1",
+                    "total": 4900,
+                    "currency": "usd",
+                    "hosted_invoice_url": "https://stripe.example/inv/1",
+                    "created": 1727784000,
+                    "description": "Pro subscription",
                 }
             },
         }
-        account_id = square_billing.handle_webhook_payload(payload)
+        account_id = stripe_billing.handle_webhook_payload(payload)
         self.assertEqual(account_id, self.account_id)
         rows = invoice_store.list_invoices(self.account_id)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["amount_cents"], 4900)
-        self.assertEqual(rows[0]["public_url"], "https://square.example/inv/1")
+        self.assertEqual(rows[0]["public_url"], "https://stripe.example/inv/1")
 
 
 if __name__ == "__main__":

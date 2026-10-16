@@ -49,14 +49,14 @@ from app_urls import (
     billing_checkout_return_url,
     integration_oauth_callback_url,
     login_oauth_callback_url,
-    square_webhook_notification_url,
+    stripe_webhook_notification_url,
 )
 import invoice_store
 import notification_store
 import settings_store
 import site_settings_store
 import support_store
-import square_billing
+import stripe_billing
 import subscription_plans
 import subscription_store
 import seo_public
@@ -99,7 +99,7 @@ AUTH_PUBLIC_ENDPOINTS = frozenset(
         "static",
         "health",
         "integrations_oauth_callback",
-        "square_webhook",
+        "stripe_webhook",
         "index",
         "favicon",
         "login_oauth_start",
@@ -826,7 +826,7 @@ def _billing_fields() -> dict:
         "subscription_status": summary["status"],
         "cancel_at_period_end": summary["cancel_at_period_end"],
         "unlimited_runs": summary.get("unlimited_runs", False),
-        "billing_mode": square_billing.billing_mode(),
+        "billing_mode": stripe_billing.billing_mode(),
         "invoices": invoice_store.list_for_display(account_id),
     }
 
@@ -1899,8 +1899,8 @@ def api_billing_invoices_sync():
         return jsonify({"error": str(exc)}), 403
     account_id = _ensure_account_id()
     try:
-        synced = square_billing.sync_invoices_from_square(account_id)
-    except square_billing.SquareBillingError as exc:
+        synced = stripe_billing.sync_invoices_from_stripe(account_id)
+    except stripe_billing.StripeBillingError as exc:
         return jsonify({"error": str(exc)}), 400
     return jsonify({"invoices": synced})
 
@@ -1924,11 +1924,11 @@ def api_billing_checkout():
     if not subscription_plans.is_valid_checkout(plan, billing_interval):
         return jsonify({"error": "plan must be starter, pro, or enterprise with monthly or annual billing"}), 400
 
-    mode = square_billing.billing_mode()
+    mode = stripe_billing.billing_mode()
     if mode == "mock":
         try:
-            square_billing.mock_activate(account_id, plan, billing_interval=billing_interval)
-        except square_billing.SquareBillingError as exc:
+            stripe_billing.mock_activate(account_id, plan, billing_interval=billing_interval)
+        except stripe_billing.StripeBillingError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify(
             {
@@ -1937,10 +1937,10 @@ def api_billing_checkout():
             }
         )
 
-    if mode != "square":
+    if mode != "stripe":
         return jsonify(
             {
-                "error": "Square billing is not configured. Set SQUARE_ACCESS_TOKEN and plan IDs, or BILLING_DEV_MOCK=1 for local testing.",
+                "error": "Stripe billing is not configured. Set STRIPE_SECRET_KEY and price IDs, or BILLING_DEV_MOCK=1 for local testing.",
             }
         ), 503
 
@@ -1949,17 +1949,17 @@ def api_billing_checkout():
     redirect_url = billing_checkout_return_url()
 
     try:
-        checkout_url = square_billing.create_checkout_url(
+        checkout_url = stripe_billing.create_checkout_url(
             account_id,
             plan,
             billing_interval=billing_interval,
             redirect_url=redirect_url,
             buyer_email=email,
         )
-    except square_billing.SquareBillingError as exc:
+    except stripe_billing.StripeBillingError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    return jsonify({"mode": "square", "checkout_url": checkout_url})
+    return jsonify({"mode": "stripe", "checkout_url": checkout_url})
 
 
 @app.post("/api/billing/cancel")
@@ -1976,28 +1976,25 @@ def api_billing_cancel():
     return jsonify({"subscription": subscription_store.subscription_to_api(account_id)})
 
 
-@app.post("/webhooks/square")
-def square_webhook():
+@app.post("/webhooks/stripe")
+def stripe_webhook():
     body = request.get_data()
-    signature = request.headers.get("X-Square-Hmacsha256-Signature", "")
-    notification_url = os.environ.get("SQUARE_WEBHOOK_NOTIFICATION_URL", "").strip()
-    if not notification_url:
-        notification_url = square_webhook_notification_url()
+    signature = request.headers.get("Stripe-Signature", "")
 
-    signature_key = os.environ.get("SQUARE_WEBHOOK_SIGNATURE_KEY", "").strip()
-    if signature_key:
-        if not square_billing.verify_webhook_signature(body, signature, notification_url):
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+    if webhook_secret:
+        if not stripe_billing.verify_webhook_signature(body, signature):
             return jsonify({"error": "invalid signature"}), 401
     elif os.environ.get("FLASK_ENV") == "production" or os.environ.get("APP_ENV") == "production":
-        return jsonify({"error": "webhook signature key required"}), 503
+        return jsonify({"error": "webhook signing secret required"}), 503
 
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "invalid payload"}), 400
 
     try:
-        square_billing.handle_webhook_payload(payload)
-    except square_billing.SquareBillingError as exc:
+        stripe_billing.handle_webhook_payload(payload)
+    except stripe_billing.StripeBillingError as exc:
         return jsonify({"error": str(exc)}), 400
 
     return jsonify({"ok": True})
