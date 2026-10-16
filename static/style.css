@@ -20,6 +20,7 @@
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --sidebar-width: 240px;
   --main-padding-x: 1.75rem;
+  --shell-inner-join: 10px;
 }
 
 [data-theme="light"] {
@@ -218,11 +219,17 @@ a:hover {
 
   .sidebar {
     gap: 0.1rem;
+    border-top-right-radius: var(--shell-inner-join);
   }
 
   .sidebar-nav {
     flex: none;
     overflow: visible;
+  }
+
+  .main,
+  .main.main--agent {
+    border-top-left-radius: var(--shell-inner-join);
   }
 
   /* Keep full header bottom rule; hide only the segment under the logo column. */
