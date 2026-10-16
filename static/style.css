@@ -225,22 +225,21 @@ a:hover {
     overflow: visible;
   }
 
-  /* Header rule only over main column; sidebar rail stays open to logo (no rule under brand). */
+  /* Keep full header bottom rule; hide only the segment under the logo column. */
   .topbar {
-    align-items: stretch;
-    border-bottom: none;
+    position: relative;
   }
 
-  .topbar-brand {
-    display: flex;
-    align-items: center;
-  }
-
-  .topbar-workspace,
-  .topbar-actions {
-    align-self: stretch;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
+  .topbar::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    left: 0.5rem;
+    bottom: -1px;
+    width: var(--sidebar-width);
+    height: 2px;
+    background: var(--surface);
+    pointer-events: none;
   }
 }
 
