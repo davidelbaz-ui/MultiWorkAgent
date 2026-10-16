@@ -44,7 +44,7 @@ Details: [AGENT_GEMINI.md](AGENT_GEMINI.md). Optional Claude-only chat: [AGENT_C
 
 ---
 
-## 3. Square billing (subscriptions)
+## 3. Stripe billing (subscriptions)
 
 Stripe bills **your customers** for MultiWorkAgent plans. This is **not** the Stripe **integration** on Data (merchant OAuth).
 
