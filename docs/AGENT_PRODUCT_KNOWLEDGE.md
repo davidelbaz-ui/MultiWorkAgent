@@ -201,7 +201,7 @@ Summarize accurately; do not invent company addresses or emails. Direct users to
 
 **“Why won’t my message send?”** — Check usage chip / banner (free tier exhausted, daily limit, or 2 runs already in progress). Viewer role cannot send. Database must be configured (`DATABASE_URL`). Agent API keys must be set on the server.
 
-**“Where do I connect Square for billing?”** — Billing page as account **owner**; SaaS billing uses Square env vars (`SQUARE_ACCESS_TOKEN`, plan variation IDs, webhooks). Connecting **Square as a business integration** (merchant API) is separate, on Data.
+**“Where do I connect Stripe for billing?”** — Billing page as account **owner**; SaaS billing uses Stripe env vars (`STRIPE_SECRET_KEY`, price IDs, `STRIPE_WEBHOOK_SECRET`). Connecting **Stripe as a business integration** (merchant API) is separate, on Data.
 
 **“Where do I upload SOPs for the agent?”** — Data & integrations → select business → Knowledge section.
 
@@ -216,7 +216,7 @@ Summarize accurately; do not invent company addresses or emails. Direct users to
 - Requires **PostgreSQL** in production.
 - Set **`GEMINI_API_KEY`** (or Anthropic) for agent replies.
 - Set **`APP_BASE_URL`** to the public HTTPS URL for OAuth redirects and Square webhooks.
-- See repo docs: `docs/SQUARE_BILLING.md`, `AUTH_LOGIN.md`, `VERCEL.md`.
+- See repo docs: `docs/STRIPE_BILLING.md`, `AUTH_LOGIN.md`, `VERCEL.md`.
 
 ---
 

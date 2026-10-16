@@ -3,7 +3,7 @@
 Status: **done**
 
 Registry uses **Stripe Connect** OAuth (`read_write` scope).  
-This is **not** the same as **Square** billing vars (`SQUARE_*`) for MultiWorkAgent subscriptions.
+This is **not** the same as **Stripe SaaS billing** vars (`STRIPE_SECRET_KEY`, price IDs, webhooks) for MultiWorkAgent subscriptions.
 
 ## Callback URL
 
@@ -59,7 +59,7 @@ Restart Flask.
 | redirect_uri mismatch | Redirect URI in Stripe Connect settings must match exactly |
 | No OAuth client secret on page | Normal — use **Secret API key** (`sk_test_` / `sk_live_`) as `STRIPE_OAUTH_CLIENT_SECRET` |
 | Test vs live | Test-mode Connect credentials only work in test mode |
-| Confused with Square | `SQUARE_*` = bill for MultiWorkAgent; `STRIPE_OAUTH_*` = connect a business’s Stripe |
+| Confused with SaaS billing | `STRIPE_SECRET_KEY` / price IDs = bill for MultiWorkAgent; `STRIPE_OAUTH_*` = connect a business’s Stripe |
 
 Doc: [Connect OAuth reference](https://docs.stripe.com/connect/oauth-reference)
 
