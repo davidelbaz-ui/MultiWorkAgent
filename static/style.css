@@ -234,10 +234,10 @@ a:hover {
     content: "";
     position: absolute;
     z-index: 1;
-    left: 0.5rem;
+    left: 0;
     bottom: -1px;
     width: var(--sidebar-width);
-    height: 2px;
+    height: 3px;
     background: var(--surface);
     pointer-events: none;
   }
