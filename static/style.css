@@ -224,6 +224,24 @@ a:hover {
     flex: none;
     overflow: visible;
   }
+
+  /* Header rule only over main column; sidebar rail stays open to logo (no rule under brand). */
+  .topbar {
+    align-items: stretch;
+    border-bottom: none;
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar-workspace,
+  .topbar-actions {
+    align-self: stretch;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 @media (max-width: 960px) {
