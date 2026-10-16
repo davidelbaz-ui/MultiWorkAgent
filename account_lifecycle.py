@@ -109,8 +109,8 @@ def purge_operational_data(account_id: str, *, user_id: str) -> dict[str, Any]:
                 plan_runs_consumed = 0,
                 current_period_start = NULL,
                 current_period_end = NULL,
-                square_customer_id = NULL,
-                square_subscription_id = NULL,
+                stripe_customer_id = NULL,
+                stripe_subscription_id = NULL,
                 cancel_at_period_end = 0,
                 updated_at = ?
             WHERE account_id = ?

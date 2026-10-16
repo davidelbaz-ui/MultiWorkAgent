@@ -89,8 +89,8 @@ def _stripe_request(
 
 def ensure_stripe_customer(account_id: str, *, email: str | None = None) -> str:
     sub = subscription_store.get_subscription(account_id)
-    if sub["square_customer_id"]:
-        return sub["square_customer_id"]
+    if sub["stripe_customer_id"]:
+        return sub["stripe_customer_id"]
 
     params: list[tuple[str, str]] = [
         ("metadata[account_id]", account_id),
@@ -101,7 +101,7 @@ def ensure_stripe_customer(account_id: str, *, email: str | None = None) -> str:
     customer_id = result.get("id")
     if not customer_id:
         raise StripeBillingError("Stripe did not return a customer id")
-    subscription_store.set_square_customer_id(account_id, str(customer_id))
+    subscription_store.set_stripe_customer_id(account_id, str(customer_id))
     return str(customer_id)
 
 
@@ -177,7 +177,7 @@ def mock_activate(
         status="active",
         period_start=now.isoformat(),
         period_end=period_end.isoformat(),
-        square_subscription_id=f"mock-sub-{uuid.uuid4()}",
+        stripe_subscription_id=f"mock-sub-{uuid.uuid4()}",
     )
     invoice_store.create_mock_subscription_invoice(
         account_id, plan_tier, billing_interval=interval
@@ -234,13 +234,13 @@ def _metadata_dict(obj: dict[str, Any]) -> dict[str, str]:
 def _resolve_account_id_from_subscription(subscription: dict[str, Any]) -> str | None:
     sub_id = subscription.get("id")
     if sub_id:
-        found = subscription_store.find_account_by_square_subscription(str(sub_id))
+        found = subscription_store.find_account_by_stripe_subscription(str(sub_id))
         if found:
             return found
 
     customer_id = subscription.get("customer")
     if customer_id:
-        found = subscription_store.find_account_by_square_customer(str(customer_id))
+        found = subscription_store.find_account_by_stripe_customer(str(customer_id))
         if found:
             return found
 
@@ -306,8 +306,8 @@ def apply_subscription_object(subscription: dict[str, Any]) -> str | None:
             billing_interval=billing_interval,
             status=status,
             period_end=_period_end_from_subscription(subscription),
-            square_customer_id=str(customer_id) if customer_id else None,
-            square_subscription_id=str(sub_id) if sub_id else None,
+            stripe_customer_id=str(customer_id) if customer_id else None,
+            stripe_subscription_id=str(sub_id) if sub_id else None,
         )
         if status == "past_due":
             import notification_events
@@ -322,12 +322,12 @@ def apply_subscription_object(subscription: dict[str, Any]) -> str | None:
             account_id,
             plan_tier=tier or subscription_store.get_subscription(account_id)["plan_tier"],
             status="canceled",
-            square_subscription_id=str(sub_id) if sub_id else None,
+            stripe_subscription_id=str(sub_id) if sub_id else None,
         )
     else:
         subscription_store.ensure_row(account_id)
         if customer_id:
-            subscription_store.set_square_customer_id(account_id, str(customer_id))
+            subscription_store.set_stripe_customer_id(account_id, str(customer_id))
 
     return account_id
 
@@ -335,13 +335,13 @@ def apply_subscription_object(subscription: dict[str, Any]) -> str | None:
 def _resolve_account_id_from_invoice(invoice: dict[str, Any]) -> str | None:
     stripe_id = str(invoice.get("id") or "")
     if stripe_id:
-        found = invoice_store.find_account_by_square_invoice_id(stripe_id)
+        found = invoice_store.find_account_by_stripe_invoice_id(stripe_id)
         if found:
             return found
 
     customer_id = invoice.get("customer")
     if customer_id:
-        found = subscription_store.find_account_by_square_customer(str(customer_id))
+        found = subscription_store.find_account_by_stripe_customer(str(customer_id))
         if found:
             return found
 
@@ -362,7 +362,7 @@ def sync_invoices_from_stripe(account_id: str) -> list[dict[str, Any]]:
     if not is_stripe_configured():
         raise StripeBillingError("Stripe is not configured")
     sub = subscription_store.get_subscription(account_id)
-    customer_id = sub.get("square_customer_id")
+    customer_id = sub.get("stripe_customer_id")
     if not customer_id:
         raise StripeBillingError("No Stripe customer linked to this account yet")
 
@@ -390,7 +390,7 @@ def _apply_checkout_session_completed(session: dict[str, Any]) -> str | None:
 
     customer_id = session.get("customer")
     if customer_id:
-        subscription_store.set_square_customer_id(account_id, str(customer_id))
+        subscription_store.set_stripe_customer_id(account_id, str(customer_id))
 
     subscription_id = session.get("subscription")
     if subscription_id:

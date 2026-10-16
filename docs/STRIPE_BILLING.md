@@ -51,9 +51,9 @@ Production (`APP_ENV=production`) requires `STRIPE_WEBHOOK_SECRET`.
 2. On success, webhooks activate the subscription and sync invoices.
 3. **Refresh invoices** calls Stripe list-invoices for the linked customer.
 
-Customer and subscription IDs are stored in legacy DB columns `square_customer_id` / `square_subscription_id` (historical names).
+Customer and subscription IDs are stored in `stripe_customer_id` / `stripe_subscription_id`.
 
-Webhook idempotency uses table `square_webhook_events` (Stripe `evt_…` ids).
+Webhook idempotency uses table `stripe_webhook_events` (Stripe `evt_…` ids).
 
 ## Troubleshooting
 

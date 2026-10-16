@@ -101,7 +101,7 @@ def build_timeline(account_id: str, *, limit: int = 400) -> list[dict[str, Any]]
             _timeline_item(
                 at=inv.get("invoice_date") or inv.get("created_at") or "",
                 category="billing",
-                title=f"Invoice {inv.get('invoice_number') or inv.get('square_invoice_id', '')[:8]}",
+                title=f"Invoice {inv.get('invoice_number') or inv.get('stripe_invoice_id', '')[:8]}",
                 detail=f"{inv.get('status')} · {amt} · {inv.get('description') or ''}",
                 source="invoice",
                 source_id=inv.get("id"),
@@ -116,7 +116,7 @@ def build_timeline(account_id: str, *, limit: int = 400) -> list[dict[str, Any]]
                 at=tx.get("occurred_at") or tx.get("created_at") or "",
                 category="billing",
                 title=f"{tx.get('kind', 'payment').capitalize()} · {tx.get('status')}",
-                detail=f"{sign}{amt} · Square {tx.get('square_payment_id', '')[:12]}…",
+                detail=f"{sign}{amt} · Stripe {tx.get('stripe_payment_id', '')[:12]}…",
                 source="transaction",
                 source_id=tx.get("id"),
             )
@@ -234,8 +234,8 @@ def build_user_profile(user_id: str) -> dict[str, Any] | None:
             "plan_runs_consumed": sub.get("plan_runs_consumed"),
             "top_up_balance_runs": sub.get("top_up_balance_runs"),
             "current_period_end": sub.get("current_period_end"),
-            "square_customer_id": sub.get("square_customer_id"),
-            "square_subscription_id": sub.get("square_subscription_id"),
+            "stripe_customer_id": sub.get("stripe_customer_id"),
+            "stripe_subscription_id": sub.get("stripe_subscription_id"),
             "unlimited_runs": bool(sub.get("unlimited_runs")),
         },
         "invoices": invoice_store.list_invoices(account_id, limit=50),

@@ -1,4 +1,4 @@
-"""Account subscription ledger (plan, quota, billing period — synced from Square)."""
+"""Account subscription ledger (plan, quota, billing period — synced from Stripe)."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def ensure_row(account_id: str) -> None:
             INSERT INTO account_subscriptions (
                 account_id, plan_tier, status, monthly_quota, top_up_balance_runs,
                 plan_runs_consumed, current_period_start, current_period_end,
-                square_customer_id, square_subscription_id, cancel_at_period_end,
+                stripe_customer_id, stripe_subscription_id, cancel_at_period_end,
                 created_at, updated_at
             ) VALUES (?, 'none', 'inactive', 0, 0, 0, NULL, NULL, NULL, NULL, 0, ?, ?)
             ON CONFLICT(account_id) DO NOTHING
@@ -68,8 +68,8 @@ def _row_to_sub(row: Any) -> dict[str, Any]:
         "plan_runs_consumed": float(row["plan_runs_consumed"]),
         "current_period_start": row["current_period_start"],
         "current_period_end": row["current_period_end"],
-        "square_customer_id": row["square_customer_id"],
-        "square_subscription_id": row["square_subscription_id"],
+        "stripe_customer_id": row["stripe_customer_id"],
+        "stripe_subscription_id": row["stripe_subscription_id"],
         "cancel_at_period_end": bool(row["cancel_at_period_end"]),
         "unlimited_runs": bool(row["unlimited_runs"]) if "unlimited_runs" in row.keys() else False,
         "created_at": row["created_at"],
@@ -85,7 +85,7 @@ def get_subscription(account_id: str) -> dict[str, Any]:
             SELECT
                 account_id, plan_tier, billing_interval, status, monthly_quota, top_up_balance_runs,
                 plan_runs_consumed, current_period_start, current_period_end,
-                square_customer_id, square_subscription_id, cancel_at_period_end,
+                stripe_customer_id, stripe_subscription_id, cancel_at_period_end,
                 unlimited_runs, created_at, updated_at
             FROM account_subscriptions
             WHERE account_id = ?
@@ -97,45 +97,45 @@ def get_subscription(account_id: str) -> dict[str, Any]:
     return _row_to_sub(row)
 
 
-def find_account_by_square_customer(square_customer_id: str) -> str | None:
-    if not square_customer_id:
+def find_account_by_stripe_customer(stripe_customer_id: str) -> str | None:
+    if not stripe_customer_id:
         return None
     with connect() as conn:
         row = conn.execute(
             """
             SELECT account_id FROM account_subscriptions
-            WHERE square_customer_id = ?
+            WHERE stripe_customer_id = ?
             """,
-            (square_customer_id,),
+            (stripe_customer_id,),
         ).fetchone()
     return row["account_id"] if row else None
 
 
-def find_account_by_square_subscription(square_subscription_id: str) -> str | None:
-    if not square_subscription_id:
+def find_account_by_stripe_subscription(stripe_subscription_id: str) -> str | None:
+    if not stripe_subscription_id:
         return None
     with connect() as conn:
         row = conn.execute(
             """
             SELECT account_id FROM account_subscriptions
-            WHERE square_subscription_id = ?
+            WHERE stripe_subscription_id = ?
             """,
-            (square_subscription_id,),
+            (stripe_subscription_id,),
         ).fetchone()
     return row["account_id"] if row else None
 
 
-def set_square_customer_id(account_id: str, square_customer_id: str) -> None:
+def set_stripe_customer_id(account_id: str, stripe_customer_id: str) -> None:
     ensure_row(account_id)
     now = _utc_now()
     with connect() as conn:
         conn.execute(
             """
             UPDATE account_subscriptions
-            SET square_customer_id = ?, updated_at = ?
+            SET stripe_customer_id = ?, updated_at = ?
             WHERE account_id = ?
             """,
-            (square_customer_id, now, account_id),
+            (stripe_customer_id, now, account_id),
         )
         conn.commit()
 
@@ -173,8 +173,8 @@ def activate_plan(
     billing_interval: str = "monthly",
     period_start: str | None = None,
     period_end: str | None = None,
-    square_customer_id: str | None = None,
-    square_subscription_id: str | None = None,
+    stripe_customer_id: str | None = None,
+    stripe_subscription_id: str | None = None,
     cancel_at_period_end: bool = False,
 ) -> dict[str, Any]:
     plan = subscription_plans.get_plan(plan_tier)
@@ -203,8 +203,8 @@ def activate_plan(
                 monthly_quota = ?,
                 current_period_start = ?,
                 current_period_end = ?,
-                square_customer_id = COALESCE(?, square_customer_id),
-                square_subscription_id = COALESCE(?, square_subscription_id),
+                stripe_customer_id = COALESCE(?, stripe_customer_id),
+                stripe_subscription_id = COALESCE(?, stripe_subscription_id),
                 cancel_at_period_end = ?,
                 plan_runs_consumed = CASE
                     WHEN ? IN ('active', 'pending') AND status NOT IN ('active', 'past_due')
@@ -221,8 +221,8 @@ def activate_plan(
                 plan.monthly_quota,
                 period_start,
                 period_end,
-                square_customer_id,
-                square_subscription_id,
+                stripe_customer_id,
+                stripe_subscription_id,
                 1 if cancel_at_period_end else 0,
                 status,
                 now,
@@ -323,8 +323,8 @@ def billing_summary(account_id: str) -> dict[str, Any]:
         "billing_period_end": _format_period_end(sub["current_period_end"]),
         "current_period_end": sub["current_period_end"],
         "cancel_at_period_end": sub["cancel_at_period_end"],
-        "square_customer_id": sub["square_customer_id"],
-        "square_subscription_id": sub["square_subscription_id"],
+        "stripe_customer_id": sub["stripe_customer_id"],
+        "stripe_subscription_id": sub["stripe_subscription_id"],
         "unlimited_runs": bool(sub.get("unlimited_runs")),
     }
 
@@ -355,14 +355,14 @@ def record_webhook_event(
     now = _utc_now()
     with connect() as conn:
         existing = conn.execute(
-            "SELECT 1 FROM square_webhook_events WHERE event_id = ?",
+            "SELECT 1 FROM stripe_webhook_events WHERE event_id = ?",
             (event_id,),
         ).fetchone()
         if existing:
             return False
         conn.execute(
             """
-            INSERT INTO square_webhook_events (
+            INSERT INTO stripe_webhook_events (
                 event_id, event_type, payload_json, account_id, received_at, processed_at
             ) VALUES (?, ?, ?, ?, ?, NULL)
             """,
@@ -377,7 +377,7 @@ def mark_webhook_processed(event_id: str, account_id: str | None = None) -> None
     with connect() as conn:
         conn.execute(
             """
-            UPDATE square_webhook_events
+            UPDATE stripe_webhook_events
             SET processed_at = ?, account_id = COALESCE(?, account_id)
             WHERE event_id = ?
             """,

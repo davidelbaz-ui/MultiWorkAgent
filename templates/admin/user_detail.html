@@ -97,7 +97,7 @@
         <td>{{ tx.occurred_at }}</td>
         <td>{{ tx.status }}</td>
         <td>${{ '%.2f'|format((tx.amount_cents or 0) / 100) }}</td>
-        <td><code>{{ tx.square_payment_id }}</code></td>
+        <td><code>{{ tx.stripe_payment_id }}</code></td>
       </tr>
       {% endfor %}
     </tbody>

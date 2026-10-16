@@ -1,4 +1,4 @@
-"""Billing invoices cached per account (Stripe IDs stored in legacy square_invoice_id column)."""
+"""Billing invoices cached per account (Stripe invoice IDs)."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def _row_to_invoice(row: Any) -> dict[str, Any]:
     return {
         "id": row["id"],
         "account_id": row["account_id"],
-        "square_invoice_id": row["square_invoice_id"],
+        "stripe_invoice_id": row["stripe_invoice_id"],
         "invoice_number": row["invoice_number"],
         "status": row["status"],
         "amount_cents": int(row["amount_cents"]),
@@ -51,13 +51,13 @@ def _row_to_invoice(row: Any) -> dict[str, Any]:
     }
 
 
-def find_account_by_square_invoice_id(square_invoice_id: str) -> str | None:
-    if not square_invoice_id:
+def find_account_by_stripe_invoice_id(stripe_invoice_id: str) -> str | None:
+    if not stripe_invoice_id:
         return None
     with connect() as conn:
         row = conn.execute(
-            "SELECT account_id FROM billing_invoices WHERE square_invoice_id = ?",
-            (square_invoice_id,),
+            "SELECT account_id FROM billing_invoices WHERE stripe_invoice_id = ?",
+            (stripe_invoice_id,),
         ).fetchone()
     return row["account_id"] if row else None
 
@@ -68,7 +68,7 @@ def list_invoices(account_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT
-                id, account_id, square_invoice_id, invoice_number, status,
+                id, account_id, stripe_invoice_id, invoice_number, status,
                 amount_cents, currency, invoice_date, pdf_url, public_url,
                 description, created_at, updated_at
             FROM billing_invoices
@@ -99,10 +99,10 @@ def list_for_display(account_id: str, *, limit: int = 50) -> list[dict[str, Any]
     return display
 
 
-def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str, Any]:
-    square_id = str(invoice.get("id") or "")
-    if not square_id:
-        raise ValueError("square invoice id is required")
+def _upsert_invoice_record(account_id: str, invoice: dict[str, Any]) -> dict[str, Any]:
+    external_id = str(invoice.get("id") or "")
+    if not external_id:
+        raise ValueError("invoice id is required")
 
     amount_cents, currency = _extract_amount(invoice)
     invoice_date = (
@@ -113,18 +113,18 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
     )
     public_url = str(invoice.get("public_url") or "")
     pdf_url = str(invoice.get("pdf_url") or public_url or "")
-    number = str(invoice.get("invoice_number") or invoice.get("title") or square_id[:8])
+    number = str(invoice.get("invoice_number") or invoice.get("title") or external_id[:8])
     status = str(invoice.get("status") or "UNKNOWN")
-    description = str(invoice.get("title") or invoice.get("description") or "Square invoice")
+    description = str(invoice.get("title") or invoice.get("description") or "Invoice")
 
     now = _utc_now()
     record_id = str(uuid.uuid4())
     with connect() as conn:
         existing = conn.execute(
             """
-            SELECT id FROM billing_invoices WHERE square_invoice_id = ?
+            SELECT id FROM billing_invoices WHERE stripe_invoice_id = ?
             """,
-            (square_id,),
+            (external_id,),
         ).fetchone()
         if existing:
             record_id = existing["id"]
@@ -141,7 +141,7 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
                     public_url = ?,
                     description = ?,
                     updated_at = ?
-                WHERE square_invoice_id = ?
+                WHERE stripe_invoice_id = ?
                 """,
                 (
                     number,
@@ -153,14 +153,14 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
                     public_url or None,
                     description,
                     now,
-                    square_id,
+                    external_id,
                 ),
             )
         else:
             conn.execute(
                 """
                 INSERT INTO billing_invoices (
-                    id, account_id, square_invoice_id, invoice_number, status,
+                    id, account_id, stripe_invoice_id, invoice_number, status,
                     amount_cents, currency, invoice_date, pdf_url, public_url,
                     description, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -168,7 +168,7 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
                 (
                     record_id,
                     account_id,
-                    square_id,
+                    external_id,
                     number,
                     status,
                     amount_cents,
@@ -185,7 +185,7 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
 
     rows = list_invoices(account_id, limit=100)
     for row in rows:
-        if row["square_invoice_id"] == square_id:
+        if row["stripe_invoice_id"] == external_id:
             try:
                 import account_activity_store
 
@@ -193,9 +193,9 @@ def upsert_square_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
                     account_id,
                     category="billing",
                     action="invoice_upsert",
-                    summary=f"Invoice {row.get('invoice_number') or square_id[:8]} · {row.get('status')}",
+                    summary=f"Invoice {row.get('invoice_number') or external_id[:8]} · {row.get('status')}",
                     detail={
-                        "square_invoice_id": square_id,
+                        "stripe_invoice_id": external_id,
                         "amount_cents": row.get("amount_cents"),
                         "status": row.get("status"),
                     },
@@ -242,7 +242,7 @@ def upsert_stripe_invoice(account_id: str, invoice: dict[str, Any]) -> dict[str,
             {"computed_amount_money": {"amount": amount_cents, "currency": currency}}
         ],
     }
-    return upsert_square_invoice(account_id, payload)
+    return _upsert_invoice_record(account_id, payload)
 
 
 def _extract_stripe_amount(invoice: dict[str, Any]) -> tuple[int, str]:
@@ -292,9 +292,9 @@ def create_mock_subscription_invoice(
     amount = subscription_plans.checkout_price_cents(plan_tier, interval)
     interval_label = subscription_plans.billing_interval_label(interval)
     now = _utc_now()
-    square_id = f"mock-invoice-{uuid.uuid4()}"
+    mock_id = f"mock-invoice-{uuid.uuid4()}"
     payload = {
-        "id": square_id,
+        "id": mock_id,
         "invoice_number": f"MOCK-{plan.tier.upper()}-{now[:10]}",
         "status": "PAID",
         "title": f"{plan.display_name} subscription ({interval_label})",
@@ -310,13 +310,13 @@ def create_mock_subscription_invoice(
             }
         ],
     }
-    return upsert_square_invoice(account_id, payload)
+    return _upsert_invoice_record(account_id, payload)
 
 
 def invoice_to_api(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": row["id"],
-        "square_invoice_id": row["square_invoice_id"],
+        "stripe_invoice_id": row["stripe_invoice_id"],
         "invoice_number": row["invoice_number"],
         "status": row["status"],
         "amount_cents": row["amount_cents"],

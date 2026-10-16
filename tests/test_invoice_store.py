@@ -27,7 +27,7 @@ class InvoiceStoreTest(PostgresStoreTestCase):
         self.assertIn("Starter", display[0]["description"])
 
     def test_upsert_and_webhook(self) -> None:
-        subscription_store.set_square_customer_id(self.account_id, "cust_sq_1")
+        subscription_store.set_stripe_customer_id(self.account_id, "cust_sq_1")
         payload = {
             "id": "evt-inv-1",
             "type": "invoice.paid",

@@ -39,7 +39,7 @@ class SubscriptionStoreTest(PostgresStoreTestCase):
                 }
             },
         }
-        subscription_store.set_square_customer_id(self.account_id, "cust_1")
+        subscription_store.set_stripe_customer_id(self.account_id, "cust_1")
         account_id = stripe_billing.apply_subscription_object(payload["data"]["object"])
         self.assertEqual(account_id, self.account_id)
         sub = subscription_store.get_subscription(self.account_id)

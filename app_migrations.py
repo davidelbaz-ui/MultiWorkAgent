@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 27
+APP_SCHEMA_VERSION = 28
 
 
 def _utc_now() -> str:
@@ -688,6 +688,61 @@ def migration_023_team_invites(conn: DBConnection) -> None:
     )
 
 
+def _rename_column_if_needed(
+    conn: DBConnection, table: str, old_name: str, new_name: str
+) -> None:
+    cols = _column_names(conn, table)
+    if old_name in cols and new_name not in cols:
+        conn.execute(f"ALTER TABLE {table} RENAME COLUMN {old_name} TO {new_name}")
+
+
+def migration_028_stripe_billing_column_names(conn: DBConnection) -> None:
+    """Rename Square-era billing columns/tables to Stripe naming."""
+    _rename_column_if_needed(
+        conn, "account_subscriptions", "square_customer_id", "stripe_customer_id"
+    )
+    _rename_column_if_needed(
+        conn, "account_subscriptions", "square_subscription_id", "stripe_subscription_id"
+    )
+    _rename_column_if_needed(conn, "billing_invoices", "square_invoice_id", "stripe_invoice_id")
+    _rename_column_if_needed(
+        conn, "billing_transactions", "square_payment_id", "stripe_payment_id"
+    )
+    _rename_column_if_needed(
+        conn, "billing_transactions", "square_order_id", "stripe_payment_intent_id"
+    )
+    _rename_column_if_needed(
+        conn, "billing_transactions", "square_customer_id", "stripe_customer_id"
+    )
+
+    if _table_exists(conn, "square_webhook_events") and not _table_exists(
+        conn, "stripe_webhook_events"
+    ):
+        conn.execute("ALTER TABLE square_webhook_events RENAME TO stripe_webhook_events")
+
+    conn.execute("DROP INDEX IF EXISTS idx_account_subscriptions_square_customer")
+    conn.execute("DROP INDEX IF EXISTS idx_account_subscriptions_square_subscription")
+    conn.execute("DROP INDEX IF EXISTS idx_square_webhook_events_received")
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_account_subscriptions_stripe_customer
+            ON account_subscriptions (stripe_customer_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_account_subscriptions_stripe_subscription
+            ON account_subscriptions (stripe_subscription_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_received
+            ON stripe_webhook_events (received_at DESC)
+        """
+    )
+
+
 def migration_027_remove_support_welcome_messages(conn: DBConnection) -> None:
     conn.execute(
         """
@@ -759,6 +814,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (25, "support_message_attachments", migration_025_support_message_attachments),
     (26, "account_unlimited_runs", migration_026_account_unlimited_runs),
     (27, "remove_support_welcome_messages", migration_027_remove_support_welcome_messages),
+    (28, "stripe_billing_column_names", migration_028_stripe_billing_column_names),
 ]
 
 
