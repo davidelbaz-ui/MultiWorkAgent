@@ -219,6 +219,7 @@ a:hover {
 
   .sidebar {
     gap: 0.1rem;
+    border-top-right-radius: var(--shell-inner-join);
   }
 
   .sidebar-nav {
@@ -229,7 +230,6 @@ a:hover {
   .main,
   .main.main--agent {
     border-top-left-radius: var(--shell-inner-join);
-    corner-shape: scoop;
   }
 
   /* Keep full header bottom rule; hide only the segment under the logo column. */
@@ -247,26 +247,6 @@ a:hover {
     height: 3px;
     background: var(--surface);
     pointer-events: none;
-  }
-
-  @supports not (corner-shape: scoop) {
-    .main,
-    .main.main--agent {
-      border-top-left-radius: 0;
-    }
-
-    .topbar::after {
-      content: "";
-      position: absolute;
-      z-index: 2;
-      left: var(--sidebar-width);
-      bottom: -1px;
-      width: var(--shell-inner-join);
-      height: var(--shell-inner-join);
-      background: var(--bg);
-      border-bottom-right-radius: var(--shell-inner-join);
-      pointer-events: none;
-    }
   }
 }
 
