@@ -138,6 +138,7 @@ def create_checkout_url(
         ("cancel_url", redirect_url),
         ("client_reference_id", account_id),
         ("customer", customer_id),
+        ("payment_method_types[0]", "card"),
         ("line_items[0][price]", price_id),
         ("line_items[0][quantity]", "1"),
         ("metadata[account_id]", account_id),
