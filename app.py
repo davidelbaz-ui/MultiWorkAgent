@@ -1922,7 +1922,7 @@ def api_billing_checkout():
         str(billing_interval) if billing_interval else "monthly"
     )
     if not subscription_plans.is_valid_checkout(plan, billing_interval):
-        return jsonify({"error": "plan must be starter, pro, or enterprise with monthly or annual billing"}), 400
+        return jsonify({"error": "plan must be starter, pro, max, or enterprise with monthly or annual billing"}), 400
 
     mode = stripe_billing.billing_mode()
     if mode == "mock":
@@ -1958,6 +1958,9 @@ def api_billing_checkout():
         )
     except stripe_billing.StripeBillingError as exc:
         return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        LOGGER.exception("billing checkout failed for account %s plan %s", account_id, plan)
+        return jsonify({"error": str(exc) or "checkout failed"}), 500
 
     return jsonify({"mode": "stripe", "checkout_url": checkout_url})
 

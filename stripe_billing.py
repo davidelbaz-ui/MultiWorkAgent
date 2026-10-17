@@ -147,9 +147,6 @@ def create_checkout_url(
         ("subscription_data[metadata][plan]", plan.tier),
         ("subscription_data[metadata][billing_interval]", interval),
     ]
-    if buyer_email:
-        params.append(("customer_email", buyer_email.strip()))
-
     session = _stripe_request("POST", "/checkout/sessions", params)
     url = session.get("url")
     if not url:

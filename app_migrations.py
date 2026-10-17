@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 28
+APP_SCHEMA_VERSION = 29
 
 
 def _utc_now() -> str:
@@ -696,6 +696,18 @@ def _rename_column_if_needed(
         conn.execute(f"ALTER TABLE {table} RENAME COLUMN {old_name} TO {new_name}")
 
 
+def migration_029_plan_tier_includes_max(conn: DBConnection) -> None:
+    conn.execute(
+        "ALTER TABLE account_subscriptions DROP CONSTRAINT IF EXISTS account_subscriptions_plan_tier_check"
+    )
+    conn.execute(
+        """
+        ALTER TABLE account_subscriptions ADD CONSTRAINT account_subscriptions_plan_tier_check
+        CHECK (plan_tier IN ('none', 'starter', 'pro', 'max', 'enterprise'))
+        """
+    )
+
+
 def migration_028_stripe_billing_column_names(conn: DBConnection) -> None:
     """Rename Square-era billing columns/tables to Stripe naming."""
     _rename_column_if_needed(
@@ -815,6 +827,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (26, "account_unlimited_runs", migration_026_account_unlimited_runs),
     (27, "remove_support_welcome_messages", migration_027_remove_support_welcome_messages),
     (28, "stripe_billing_column_names", migration_028_stripe_billing_column_names),
+    (29, "plan_tier_includes_max", migration_029_plan_tier_includes_max),
 ]
 
 
