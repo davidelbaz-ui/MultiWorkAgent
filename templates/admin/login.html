@@ -18,7 +18,7 @@
     <h1>Sign in</h1>
     <p class="meta-row">Admin console · <code>/admin</code></p>
     {% if error %}
-    <p class="admin-flash admin-flash--error">{{ error }}</p>
+    {{ dismissible_flash('err', error, 'alert') }}
     {% endif %}
     <form method="post" class="admin-form">
       <label class="admin-label">Email
