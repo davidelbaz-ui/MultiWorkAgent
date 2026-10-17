@@ -844,6 +844,7 @@ def _billing_fields() -> dict:
         "top_up_balance": summary["top_up_balance"],
         "billing_period_end": summary["billing_period_end"],
         "subscription_status": summary["status"],
+        "subscription_updated_at": summary.get("updated_at"),
         "cancel_at_period_end": summary["cancel_at_period_end"],
         "unlimited_runs": summary.get("unlimited_runs", False),
         "billing_mode": stripe_billing.billing_mode(),

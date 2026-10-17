@@ -4050,6 +4050,10 @@ table.data-table {
   outline-offset: 2px;
 }
 
+.hide-billing-pending-flash #billing-pending-flash {
+  display: none;
+}
+
 .integration-oauth-flash {
   margin: 0 0 1rem;
   padding: 0.65rem 2rem 0.65rem 0.85rem;

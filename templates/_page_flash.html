@@ -6,8 +6,10 @@
 </button>
 {% endmacro %}
 
-{% macro dismissible_flash(variant, message, role='status') %}
-<div class="page-flash integration-oauth-flash integration-oauth-flash--{{ variant }}" role="{{ role }}">
+{% macro dismissible_flash(variant, message, role='status', flash_id=none, persist_key=none, persist_id=none) %}
+<div class="page-flash integration-oauth-flash integration-oauth-flash--{{ variant }}" role="{{ role }}"
+  {%- if flash_id %} id="{{ flash_id }}"{% endif -%}
+  {%- if persist_key and persist_id %} data-flash-persist-key="{{ persist_key }}" data-flash-persist-id="{{ persist_id }}"{% endif %}>
   <p class="page-flash__text">{{ message }}</p>
   {{ flash_dismiss_button() }}
 </div>

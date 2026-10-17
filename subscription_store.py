@@ -355,6 +355,7 @@ def billing_summary(account_id: str) -> dict[str, Any]:
         "stripe_customer_id": sub["stripe_customer_id"],
         "stripe_subscription_id": sub["stripe_subscription_id"],
         "unlimited_runs": bool(sub.get("unlimited_runs")),
+        "updated_at": sub["updated_at"],
     }
 
 

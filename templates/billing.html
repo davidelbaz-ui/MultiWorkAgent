@@ -5,8 +5,9 @@
 <div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}" data-billing-interval="{{ billing_interval or 'monthly' }}">
 <h1 class="page-title">Billing & usage</h1>
 <p class="page-sub">Plans, usage, and subscription billing</p>
-{% if subscription_status == 'pending' %}
-{{ dismissible_flash('err', 'Checkout in progress — waiting for payment confirmation.', 'alert') }}
+{% if subscription_status == 'pending' and subscription_updated_at %}
+<script>try{if(localStorage.getItem("mwa.pageFlashDismissed.billing-pending")==={{ subscription_updated_at|tojson }}){document.documentElement.classList.add("hide-billing-pending-flash");}}catch(e){}</script>
+{{ dismissible_flash('err', 'Checkout in progress — waiting for payment confirmation.', 'alert', flash_id='billing-pending-flash', persist_key='billing-pending', persist_id=subscription_updated_at) }}
 {% elif request.args.get('checkout') == 'done' %}
 {{ dismissible_flash('ok', 'Checkout complete — your subscription will update when payment is confirmed.') }}
 {% endif %}
