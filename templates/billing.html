@@ -14,14 +14,11 @@
 
 <section class="card" style="margin-bottom: 1.25rem;">
   <h2>Current plan{% if plan %} — {{ plan }}{% elif unlimited_runs|default(false) %} — Free{% endif %}</h2>
-  {% if subscription_price and subscription_billed_every %}
-  <p class="billing-plan-line"><strong>{{ subscription_price }}</strong> · Billed every {{ subscription_billed_every }}</p>
-  {% endif %}
   {% if subscription_status == 'pending' %}
   <p class="meta-row">Checkout in progress — waiting for payment confirmation.</p>
   {% endif %}
   {% if cancel_at_period_end and plan %}
-  <p class="meta-row">Cancellation scheduled at end of billing period.</p>
+  <p class="meta-row">Cancellation scheduled — you keep this plan and run quota until {{ billing_period_end or 'the end of the billing period' }}.</p>
   {% endif %}
   {% if unlimited_runs|default(false) %}
   <p class="billing-unlimited-runs"><strong>Unlimited runs</strong></p>
@@ -44,14 +41,25 @@
   {% else %}
   <p class="empty-state">No active subscription. Choose a plan below.</p>
   {% endif %}
-  {% if not unlimited_runs|default(false) %}
+  {% if not unlimited_runs|default(false) and not subscription_has_plan %}
   <p class="meta-row">Annual billing saves 20% vs paying monthly for 12 months.</p>
-  {% endif %}
-  {% if plan and subscription_status == 'active' and account_role == 'owner' %}
-  <button type="button" class="btn btn-sm" id="billing-cancel-subscription">Cancel at period end</button>
   {% endif %}
 </section>
 
+{% if subscription_has_plan %}
+<section class="card billing-plans-section billing-plans-section--subscribed">
+  <h2>Subscription</h2>
+  <p class="billing-subscribed-line"><strong>{{ subscription_plan_name }}</strong></p>
+  <p class="billing-subscribed-line">{{ subscription_price }}</p>
+  <p class="billing-subscribed-line">Billed every {{ subscription_billed_every }}</p>
+  {% if account_role == 'owner' %}
+  <div class="billing-subscribed-actions">
+    <button type="button" class="btn btn-primary" id="billing-change-plan">Change plan</button>
+    <button type="button" class="btn" id="billing-cancel-plan"{% if cancel_at_period_end %} disabled{% endif %}>Cancel plan</button>
+  </div>
+  {% endif %}
+</section>
+{% else %}
 <section class="billing-plans-section">
   <div class="billing-interval-bar">
     <span class="billing-interval-bar-label">Billing cycle</span>
@@ -71,28 +79,67 @@
     </div>
   </div>
 
-<div class="pricing-grid pricing-grid--plans" id="pricing-grid">
-  {% for item in plan_catalog %}
-  <article
-    class="price-card price-card--plan{% if plan_tier == item.tier and plan %} price-card--current{% elif item.tier == 'max' %} price-card--recommended{% endif %}"
-    data-plan-tier="{{ item.tier }}"
-  >
-    <h3 class="price-card__title">{{ item.display_name }}<span class="billing-current-label" hidden> · current</span></h3>
-    <div class="billing-price-stack">
-      <div class="price billing-price-monthly">
-        <span class="price-card__amount">{{ item.monthly_price }}</span><span class="billing-price-suffix">/mo</span>
+  <div class="pricing-grid pricing-grid--plans" id="pricing-grid">
+    {% for item in plan_catalog %}
+    <article
+      class="price-card price-card--plan{% if item.tier == 'max' %} price-card--recommended{% endif %}"
+      data-plan-tier="{{ item.tier }}"
+    >
+      <header class="price-card__header">
+        <h3 class="price-card__title">{{ item.display_name }}</h3>
+        {% if item.tier == 'max' %}
+        <span class="price-card__pill">Popular</span>
+        {% endif %}
+      </header>
+      <div class="billing-price-stack">
+        <div class="price billing-price-monthly">
+          <span class="price-card__amount">{{ item.monthly_price }}</span><span class="billing-price-suffix">/mo</span>
+        </div>
+        <div class="price billing-price-annual">
+          <span class="price-card__amount">{{ item.annual_price }}</span><span class="billing-price-suffix">/yr</span>
+        </div>
       </div>
-      <div class="price billing-price-annual">
-        <span class="price-card__amount">{{ item.annual_price }}</span><span class="billing-price-suffix">/yr</span>
+      <p class="billing-price-caption billing-price-caption--monthly">Billed monthly</p>
+      <p class="billing-price-caption billing-price-caption--annual">{{ item.annual_monthly_equiv }}/mo equivalent · billed annually</p>
+      <p class="price-card__quota">{{ item.monthly_quota }} runs / month</p>
+      <p class="price-card__tagline">{% if item.tier == 'starter' %}Solopreneurs &amp; small teams{% elif item.tier == 'pro' %}Agencies &amp; growing teams{% elif item.tier == 'max' %}Scaling teams &amp; heavier automation{% else %}High-volume operations{% endif %}</p>
+      <button type="button" class="btn btn-primary price-card__cta" data-billing-plan="{{ item.tier }}">Subscribe</button>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<script type="application/json" id="billing-plan-catalog-data">{{ plan_catalog | tojson }}</script>
+
+<div class="app-dialog-root" id="billing-change-plan-root" hidden aria-hidden="true">
+  <div class="app-dialog-backdrop" id="billing-change-plan-backdrop" tabindex="-1"></div>
+  <div class="app-dialog billing-change-plan-dialog" role="dialog" aria-modal="true" aria-labelledby="billing-change-plan-title">
+    <h2 class="app-dialog-title" id="billing-change-plan-title">Change plan</h2>
+    <p class="app-dialog-message">Choose a different plan. Checkout opens in Stripe.</p>
+    <div class="billing-interval-bar billing-interval-bar--modal">
+      <span class="billing-interval-bar-label">Billing cycle</span>
+      <div class="billing-segmented billing-segmented--modal" role="radiogroup" aria-label="Billing frequency">
+        <span class="billing-segmented-thumb" aria-hidden="true"></span>
+        <label class="billing-segmented-option">
+          <input type="radio" name="billing-change-interval" value="monthly" checked>
+          <span class="billing-segmented-text">Monthly</span>
+        </label>
+        <label class="billing-segmented-option">
+          <input type="radio" name="billing-change-interval" value="annual">
+          <span class="billing-segmented-text">
+            <span>Annual</span>
+            <span class="billing-save-badge">Save 20%</span>
+          </span>
+        </label>
       </div>
     </div>
-    <p class="billing-price-caption billing-price-caption--monthly">Billed every month</p>
-    <p class="billing-price-caption billing-price-caption--annual">Billed every year</p>
-    <button type="button" class="btn btn-primary price-card__cta" data-billing-plan="{{ item.tier }}">Subscribe</button>
-  </article>
-  {% endfor %}
+    <div class="billing-change-plan-list" id="billing-change-plan-list"></div>
+    <div class="app-dialog-actions">
+      <button type="button" class="btn" id="billing-change-plan-close">Close</button>
+    </div>
+  </div>
 </div>
-</section>
 
 <div class="grid-2">
   <section class="card">

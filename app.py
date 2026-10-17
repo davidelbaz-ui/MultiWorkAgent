@@ -817,12 +817,14 @@ def _billing_fields() -> dict:
     summary = subscription_store.billing_summary(account_id)
     tier = summary.get("plan_tier") or "none"
     interval = summary.get("billing_interval") or "monthly"
-    status = summary.get("status") or "inactive"
+    subscription_has_plan = subscription_store.show_billing_plans_summary(account_id)
+    subscription_plan_name: str | None = None
     subscription_price: str | None = None
     subscription_billed_every: str | None = None
-    if tier != "none" and status in ("active", "pending", "past_due"):
+    if subscription_has_plan:
         plan_def = subscription_plans.get_plan(tier)
         if plan_def:
+            subscription_plan_name = plan_def.display_name
             subscription_price = subscription_plans.format_usd(
                 subscription_plans.checkout_price_cents(tier, interval)
             )
@@ -833,6 +835,8 @@ def _billing_fields() -> dict:
         "plan": summary["plan"],
         "plan_tier": tier,
         "billing_interval": interval,
+        "subscription_has_plan": subscription_has_plan,
+        "subscription_plan_name": subscription_plan_name,
         "subscription_price": subscription_price,
         "subscription_billed_every": subscription_billed_every,
         "usage_used": summary.get("usage_used", 0),
@@ -1050,6 +1054,10 @@ def _ctx(active: str, **extra):
         "billing_period_end": None,
         "subscription_status": "inactive",
         "cancel_at_period_end": False,
+        "subscription_has_plan": False,
+        "subscription_plan_name": None,
+        "subscription_price": None,
+        "subscription_billed_every": None,
         "billing_mode": "unconfigured",
         "businesses": selection["businesses"],
         "selected_business_id": selection["selected_business_id"],

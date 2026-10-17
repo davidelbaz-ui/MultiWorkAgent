@@ -268,9 +268,38 @@ def cancel_at_period_end(account_id: str) -> dict[str, Any]:
     return get_subscription(account_id)
 
 
+def _paid_period_remaining(sub: dict[str, Any]) -> bool:
+    if sub["plan_tier"] not in subscription_plans.PLANS:
+        return False
+    end = _parse_dt(sub.get("current_period_end"))
+    if not end:
+        return False
+    return end > datetime.now(timezone.utc)
+
+
 def is_subscription_active(account_id: str) -> bool:
     sub = get_subscription(account_id)
-    return sub["status"] in _ACTIVE_STATUSES and sub["plan_tier"] in subscription_plans.PLANS
+    if sub["plan_tier"] not in subscription_plans.PLANS:
+        return False
+    if sub["status"] in _ACTIVE_STATUSES:
+        return True
+    if sub["status"] == "canceled":
+        return _paid_period_remaining(sub)
+    return False
+
+
+def show_billing_plans_summary(account_id: str) -> bool:
+    """True when the billing page should show the compact subscribed plan block."""
+    sub = get_subscription(account_id)
+    tier = sub["plan_tier"]
+    if tier not in subscription_plans.PLANS:
+        return False
+    status = sub["status"]
+    if status in _ACTIVE_STATUSES | {"pending"}:
+        return True
+    if status == "canceled":
+        return _paid_period_remaining(sub)
+    return False
 
 
 def unlimited_runs_enabled(account_id: str) -> bool:

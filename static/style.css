@@ -3639,22 +3639,70 @@ table.data-table {
   margin-left: 0.15rem;
 }
 
-.billing-plan-line {
-  margin: 0.35rem 0 0.75rem;
-  font-size: 1rem;
-  color: var(--text);
-}
-
 .billing-price-caption {
   min-height: 1.25rem;
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.65rem;
   font-size: 0.85rem;
   color: var(--muted);
   transition: opacity 0.2s var(--motion-ease);
 }
 
-.price-card--plan .price-card__title {
-  margin: 0 0 0.35rem;
+.billing-plans-section--subscribed .billing-subscribed-line {
+  margin: 0.25rem 0;
+  font-size: 1.05rem;
+}
+
+.billing-subscribed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.billing-change-plan-dialog {
+  max-width: 32rem;
+  width: calc(100% - 2rem);
+}
+
+.billing-interval-bar--modal {
+  margin: 0.75rem 0 1rem;
+}
+
+.billing-change-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: min(50vh, 22rem);
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.billing-change-plan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-elevated, var(--surface));
+}
+
+.billing-change-plan-item__name {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.billing-change-plan-item__price {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.billing-change-plan-item__freq,
+.billing-change-plan-item__quota {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 #billing-page[data-billing-interval="monthly"] .billing-price-annual {
