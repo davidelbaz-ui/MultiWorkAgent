@@ -4,7 +4,9 @@
 <div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}" data-billing-interval="{{ billing_interval or 'monthly' }}">
 <h1 class="page-title">Billing & usage</h1>
 <p class="page-sub">Plans, usage, and subscription billing</p>
-{% if request.args.get('checkout') == 'done' %}
+{% if subscription_status == 'pending' %}
+<p class="integration-oauth-flash integration-oauth-flash--err" role="alert">Checkout in progress — waiting for payment confirmation.</p>
+{% elif request.args.get('checkout') == 'done' %}
 <p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Checkout complete — your subscription will update when payment is confirmed.</p>
 {% endif %}
 <p class="meta-row integration-scope-note" id="billing-mode-note" hidden>Test billing mode is on. Subscribe activates plans locally without charging a card.</p>
@@ -13,11 +15,8 @@
 {% endif %}
 
 <section class="card" style="margin-bottom: 1.25rem;">
-  <h2>Current plan{% if plan %} — {{ plan }}{% elif unlimited_runs|default(false) %} — Free{% endif %}</h2>
-  {% if subscription_status == 'pending' %}
-  <p class="meta-row">Checkout in progress — waiting for payment confirmation.</p>
-  {% endif %}
-  {% if cancel_at_period_end and plan %}
+  <h2>Current plan{% if plan and subscription_status != 'pending' %} — {{ plan }}{% elif unlimited_runs|default(false) %} — Free{% endif %}</h2>
+  {% if cancel_at_period_end and plan and subscription_status != 'pending' %}
   <p class="meta-row">Cancellation scheduled — you keep this plan and run quota until {{ billing_period_end or 'the end of the billing period' }}.</p>
   {% endif %}
   {% if unlimited_runs|default(false) %}
@@ -26,7 +25,7 @@
   {% if usage_used and usage_used > 0 %}
   <p class="meta-row">{{ usage_used }} runs recorded this period (informational only).</p>
   {% endif %}
-  {% elif plan and usage_quota %}
+  {% elif plan and usage_quota and subscription_status != 'pending' %}
   <div class="progress-bar"><div class="progress-fill" style="width: {{ (usage_used / usage_quota * 100)|int }}%;"></div></div>
   <p><strong>{{ usage_used }}</strong> of <strong>{{ usage_quota }}</strong> execution runs used this period</p>
   {% if billing_period_end %}

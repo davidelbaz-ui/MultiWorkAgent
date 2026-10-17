@@ -156,10 +156,10 @@ def set_pending_checkout(
         conn.execute(
             """
             UPDATE account_subscriptions
-            SET plan_tier = ?, billing_interval = ?, status = 'pending', monthly_quota = ?, updated_at = ?
+            SET plan_tier = ?, billing_interval = ?, status = 'pending', updated_at = ?
             WHERE account_id = ?
             """,
-            (plan.tier, interval, plan.monthly_quota, now, account_id),
+            (plan.tier, interval, now, account_id),
         )
         conn.commit()
     return get_subscription(account_id)
@@ -295,7 +295,7 @@ def show_billing_plans_summary(account_id: str) -> bool:
     if tier not in subscription_plans.PLANS:
         return False
     status = sub["status"]
-    if status in _ACTIVE_STATUSES | {"pending"}:
+    if status in _ACTIVE_STATUSES:
         return True
     if status == "canceled":
         return _paid_period_remaining(sub)
@@ -328,7 +328,7 @@ def billing_summary(account_id: str) -> dict[str, Any]:
     sub = get_subscription(account_id)
     usage = usage_metering.usage_snapshot(account_id)
     plan_def = subscription_plans.get_plan(sub["plan_tier"])
-    display_plan = plan_def.display_name if plan_def and sub["status"] in _ACTIVE_STATUSES | {"pending"} else None
+    display_plan = plan_def.display_name if plan_def and sub["status"] in _ACTIVE_STATUSES else None
     if display_plan and sub.get("billing_interval") == "annual":
         display_plan = f"{display_plan} (Annual)"
     if sub["status"] == "canceled" or sub["plan_tier"] == "none":

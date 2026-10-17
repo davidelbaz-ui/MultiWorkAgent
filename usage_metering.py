@@ -109,14 +109,19 @@ def usage_snapshot(account_id: str) -> dict[str, Any]:
     sub = subscription_store.get_subscription(account_id)
     unlimited = bool(sub.get("unlimited_runs"))
     active = subscription_store.is_subscription_active(account_id)
+    pending_checkout = sub.get("status") == "pending"
     consumed = float(sub.get("plan_runs_consumed") or 0.0)
     top_up = float(sub["top_up_balance_runs"])
-    if active:
+    if active and not pending_checkout:
         quota = float(sub["monthly_quota"])
         plan_remaining = max(0.0, quota - consumed)
         total_remaining = plan_remaining + top_up
     else:
-        quota = float(sub["monthly_quota"] or subscription_plans.free_tier_monthly_runs())
+        quota = float(
+            subscription_plans.free_tier_monthly_runs()
+            if pending_checkout
+            else (sub["monthly_quota"] or subscription_plans.free_tier_monthly_runs())
+        )
         plan_remaining = max(0.0, quota - consumed)
         total_remaining = plan_remaining
 
