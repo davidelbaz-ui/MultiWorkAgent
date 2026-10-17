@@ -815,10 +815,26 @@ def _billing_fields() -> dict:
     account_id = _ensure_account_id()
     subscription_store.ensure_row(account_id)
     summary = subscription_store.billing_summary(account_id)
+    tier = summary.get("plan_tier") or "none"
+    interval = summary.get("billing_interval") or "monthly"
+    status = summary.get("status") or "inactive"
+    subscription_price: str | None = None
+    subscription_billed_every: str | None = None
+    if tier != "none" and status in ("active", "pending", "past_due"):
+        plan_def = subscription_plans.get_plan(tier)
+        if plan_def:
+            subscription_price = subscription_plans.format_usd(
+                subscription_plans.checkout_price_cents(tier, interval)
+            )
+            subscription_billed_every = (
+                "year" if subscription_plans.normalize_billing_interval(interval) == "annual" else "month"
+            )
     return {
         "plan": summary["plan"],
-        "plan_tier": summary["plan_tier"],
-        "billing_interval": summary.get("billing_interval") or "monthly",
+        "plan_tier": tier,
+        "billing_interval": interval,
+        "subscription_price": subscription_price,
+        "subscription_billed_every": subscription_billed_every,
         "usage_used": summary.get("usage_used", 0),
         "usage_quota": summary["usage_quota"],
         "top_up_balance": summary["top_up_balance"],

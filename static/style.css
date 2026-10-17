@@ -3639,12 +3639,22 @@ table.data-table {
   margin-left: 0.15rem;
 }
 
+.billing-plan-line {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 1rem;
+  color: var(--text);
+}
+
 .billing-price-caption {
   min-height: 1.25rem;
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.85rem;
   font-size: 0.85rem;
   color: var(--muted);
   transition: opacity 0.2s var(--motion-ease);
+}
+
+.price-card--plan .price-card__title {
+  margin: 0 0 0.35rem;
 }
 
 #billing-page[data-billing-interval="monthly"] .billing-price-annual {

@@ -14,6 +14,9 @@
 
 <section class="card" style="margin-bottom: 1.25rem;">
   <h2>Current plan{% if plan %} — {{ plan }}{% elif unlimited_runs|default(false) %} — Free{% endif %}</h2>
+  {% if subscription_price and subscription_billed_every %}
+  <p class="billing-plan-line"><strong>{{ subscription_price }}</strong> · Billed every {{ subscription_billed_every }}</p>
+  {% endif %}
   {% if subscription_status == 'pending' %}
   <p class="meta-row">Checkout in progress — waiting for payment confirmation.</p>
   {% endif %}
@@ -74,12 +77,7 @@
     class="price-card price-card--plan{% if plan_tier == item.tier and plan %} price-card--current{% elif item.tier == 'max' %} price-card--recommended{% endif %}"
     data-plan-tier="{{ item.tier }}"
   >
-    <header class="price-card__header">
-      <h3 class="price-card__title">{{ item.display_name }}<span class="billing-current-label" hidden> · current</span></h3>
-      {% if item.tier == 'max' and not (plan_tier == 'max' and plan) %}
-      <span class="price-card__pill">Popular</span>
-      {% endif %}
-    </header>
+    <h3 class="price-card__title">{{ item.display_name }}<span class="billing-current-label" hidden> · current</span></h3>
     <div class="billing-price-stack">
       <div class="price billing-price-monthly">
         <span class="price-card__amount">{{ item.monthly_price }}</span><span class="billing-price-suffix">/mo</span>
@@ -88,10 +86,8 @@
         <span class="price-card__amount">{{ item.annual_price }}</span><span class="billing-price-suffix">/yr</span>
       </div>
     </div>
-    <p class="billing-price-caption billing-price-caption--monthly">Billed monthly</p>
-    <p class="billing-price-caption billing-price-caption--annual">{{ item.annual_monthly_equiv }}/mo equivalent · billed annually</p>
-    <p class="price-card__quota">{{ item.monthly_quota }} runs / month</p>
-    <p class="price-card__tagline">{% if item.tier == 'starter' %}Solopreneurs &amp; small teams{% elif item.tier == 'pro' %}Agencies &amp; growing teams{% elif item.tier == 'max' %}Scaling teams &amp; heavier automation{% else %}High-volume operations{% endif %}</p>
+    <p class="billing-price-caption billing-price-caption--monthly">Billed every month</p>
+    <p class="billing-price-caption billing-price-caption--annual">Billed every year</p>
     <button type="button" class="btn btn-primary price-card__cta" data-billing-plan="{{ item.tier }}">Subscribe</button>
   </article>
   {% endfor %}
