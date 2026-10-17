@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% from "_page_flash.html" import dismissible_flash %}
 {% block title %}Billing & usage — MultiWorkAgent{% endblock %}
 {% block content %}
 <div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}" data-billing-interval="{{ billing_interval or 'monthly' }}">
 <h1 class="page-title">Billing & usage</h1>
 <p class="page-sub">Plans, usage, and subscription billing</p>
 {% if subscription_status == 'pending' %}
-<p class="integration-oauth-flash integration-oauth-flash--err" role="alert">Checkout in progress — waiting for payment confirmation.</p>
+{{ dismissible_flash('err', 'Checkout in progress — waiting for payment confirmation.', 'alert') }}
 {% elif request.args.get('checkout') == 'done' %}
-<p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Checkout complete — your subscription will update when payment is confirmed.</p>
+{{ dismissible_flash('ok', 'Checkout complete — your subscription will update when payment is confirmed.') }}
 {% endif %}
 <p class="meta-row integration-scope-note" id="billing-mode-note" hidden>Test billing mode is on. Subscribe activates plans locally without charging a card.</p>
 {% if billing_mode == 'unconfigured' %}

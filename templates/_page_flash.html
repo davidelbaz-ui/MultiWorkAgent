@@ -1,0 +1,14 @@
+{% macro flash_dismiss_button() %}
+<button type="button" class="page-flash__dismiss" aria-label="Dismiss message">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </svg>
+</button>
+{% endmacro %}
+
+{% macro dismissible_flash(variant, message, role='status') %}
+<div class="page-flash integration-oauth-flash integration-oauth-flash--{{ variant }}" role="{{ role }}">
+  <p class="page-flash__text">{{ message }}</p>
+  {{ flash_dismiss_button() }}
+</div>
+{% endmacro %}

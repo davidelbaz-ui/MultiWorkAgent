@@ -1,4 +1,5 @@
 {% extends "auth_base.html" %}
+{% from "_page_flash.html" import dismissible_flash %}
 {% from "_auth_oauth.html" import auth_oauth_buttons with context %}
 {% from "_password_field.html" import password_field %}
 {% block title %}Create account — MultiWorkAgent{% endblock %}
@@ -7,7 +8,7 @@
   <h1 class="auth-title">Create account</h1>
   <p class="auth-sub">{{ auth_subtitle or 'One login for all your businesses. You’ll be the account owner.' }}</p>
   {% if error %}
-  <p class="auth-error" role="alert">{{ error }}</p>
+  {{ dismissible_flash('err', error, 'alert') }}
   {% endif %}
   {{ auth_oauth_buttons('') }}
   <form class="auth-form" method="post" action="{{ url_for('signup') }}">

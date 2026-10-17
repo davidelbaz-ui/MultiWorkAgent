@@ -1,5 +1,6 @@
 {% from "_nav_icon.html" import nav_icon %}
 {% from "_brand.html" import brand_lockup %}
+{% from "_page_flash.html" import flash_dismiss_button %}
 {% from "_favicon.html" import favicon_tags %}
 <!DOCTYPE html>
 <html lang="en">
@@ -105,9 +106,12 @@
     </header>
 
     {% if storage_warning %}
-    <div class="storage-warning-banner" role="alert">
-      <p class="storage-warning-message">{{ storage_warning.message }}</p>
-      <p class="storage-warning-detail">{{ storage_warning.detail }}</p>
+    <div class="page-flash storage-warning-banner" role="alert">
+      <div class="page-flash__body">
+        <p class="storage-warning-message">{{ storage_warning.message }}</p>
+        <p class="storage-warning-detail">{{ storage_warning.detail }}</p>
+      </div>
+      {{ flash_dismiss_button() }}
     </div>
     {% endif %}
 
@@ -218,6 +222,7 @@
   </div>
 
   <script src="{{ url_for('static', filename='ui-motion.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='flash-dismiss.js') }}" defer></script>
   <script src="{{ url_for('static', filename='app-wizard.js') }}" defer></script>
   <script src="{{ url_for('static', filename='copy-icon.js') }}" defer></script>
   <script src="{{ url_for('static', filename='msg-action-icons.js') }}" defer></script>

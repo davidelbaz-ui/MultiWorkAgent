@@ -847,6 +847,10 @@ body.admin-page .admin-back-link:hover {
   margin-bottom: 0.35rem;
 }
 
+.admin-flash.page-flash {
+  list-style: none;
+}
+
 .admin-flash--success {
   background: color-mix(in srgb, #16a34a 15%, transparent);
 }

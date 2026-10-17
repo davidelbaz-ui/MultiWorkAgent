@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_page_flash.html" import dismissible_flash %}
 {% block title %}Data & integrations — MultiWorkAgent{% endblock %}
 {% block content %}
 <h1 class="page-title">Data & integrations</h1>
@@ -7,9 +8,9 @@
   <strong>{{ integration_total }}</strong> supported providers.
 </p>
 {% if request.args.get('oauth') == 'connected' %}
-<p class="integration-oauth-flash integration-oauth-flash--ok" role="status">Integration connected successfully.</p>
+{{ dismissible_flash('ok', 'Integration connected successfully.') }}
 {% elif request.args.get('oauth') == 'error' %}
-<p class="integration-oauth-flash integration-oauth-flash--err" role="alert">OAuth failed: {{ request.args.get('oauth_message', 'Unknown error') }}</p>
+{{ dismissible_flash('err', 'OAuth failed: ' ~ request.args.get('oauth_message', 'Unknown error'), 'alert') }}
 {% endif %}
 {% if selected_business %}
 <p class="meta-row integration-scope-note">Connections target: <strong>{{ selected_business.name }}</strong> (change via header switcher).</p>

@@ -1,4 +1,5 @@
 {% from "_brand.html" import brand_lockup %}
+{% from "_page_flash.html" import flash_dismiss_button %}
 {% from "_favicon.html" import favicon_tags %}
 {% from "_admin_nav_icon.html" import admin_nav_icon %}
 <!DOCTYPE html>
@@ -66,7 +67,10 @@
           {% if messages %}
             <ul class="admin-flashes">
               {% for category, message in messages %}
-              <li class="admin-flash admin-flash--{{ category }}">{{ message }}</li>
+              <li class="page-flash admin-flash admin-flash--{{ category }}">
+                <span class="page-flash__text">{{ message }}</span>
+                {{ flash_dismiss_button() }}
+              </li>
               {% endfor %}
             </ul>
           {% endif %}
@@ -75,6 +79,7 @@
       </div>
     </main>
   </div>
+  <script src="{{ url_for('static', filename='flash-dismiss.js') }}" defer></script>
   <script src="{{ url_for('static', filename='admin-shell.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>

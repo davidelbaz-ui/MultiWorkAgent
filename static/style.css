@@ -3992,11 +3992,64 @@ table.data-table {
   margin-bottom: 1rem;
 }
 
+.page-flash {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.page-flash__text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.page-flash__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-flash__dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: -0.2rem -0.35rem 0 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.page-flash__dismiss:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .page-flash__dismiss:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.page-flash__dismiss:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .integration-oauth-flash {
   margin: 0 0 1rem;
   padding: 0.65rem 0.85rem;
   border-radius: var(--radius);
   font-size: 0.85rem;
+}
+
+.storage-warning-banner.page-flash {
+  align-items: center;
 }
 
 .integration-oauth-flash--ok {
