@@ -186,8 +186,8 @@
             <path d="M14.5 6.5L9 12l5.5 5.5"/>
           </svg>
         </button>
-        <div class="global-search-page-field global-search-field-wrap global-search-pill" id="global-search-wrap">
-          <input type="search" id="global-search" class="global-search global-search--page" placeholder="Search…" aria-label="Search" autocomplete="off" aria-controls="global-search-results-list" aria-expanded="true" aria-autocomplete="list">
+        <div class="global-search-wrap global-search-page-field global-search-field-wrap global-search-pill" id="global-search-wrap">
+          <input type="text" id="global-search" class="global-search global-search--page" placeholder="Search…" aria-label="Search" autocomplete="off" aria-controls="global-search-results-list" aria-expanded="true" aria-autocomplete="list" enterkeyhint="search">
           <button type="button" class="global-search-clear" id="global-search-clear" aria-label="Clear search" aria-hidden="true" tabindex="-1">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M8 8l8 8M16 8l-8 8"/>
@@ -195,7 +195,7 @@
           </button>
         </div>
       </header>
-      <div class="global-search-page-body" id="global-search-column">
+      <div class="global-search-page-body" id="global-search-overlay-body">
         <p class="global-search-status" id="global-search-status" hidden></p>
         <ul class="global-search-results-list global-search-results-list--page" id="global-search-results-list" role="listbox" aria-label="Search results"></ul>
         <p class="global-search-hint empty-state" id="global-search-hint">Search businesses, chats, runs, and more.</p>

@@ -1828,7 +1828,7 @@ function bindGlobalSearchSurface(mode) {
   );
   const statusEl = document.getElementById(isOverlay ? "global-search-status" : "global-search-status-desktop");
   const resultsPanel = isOverlay ? null : document.getElementById("global-search-results-desktop");
-  const column = isOverlay ? document.getElementById("global-search-column") : document.getElementById("global-search-column");
+  const column = isOverlay ? null : document.getElementById("global-search-column");
   const overlay = isOverlay ? document.getElementById("global-search-overlay") : null;
   const hintEl = isOverlay ? document.getElementById("global-search-hint") : null;
   const idPrefix = isOverlay ? "global-search-option" : "global-search-option-desktop";
