@@ -45,7 +45,7 @@ STRIPE_CHECKOUT_URL_STARTER_ANNUAL=
 
 Production (`APP_ENV=production`) requires `STRIPE_WEBHOOK_SECRET`.
 
-Checkout sessions use **automatic payment methods** (Dashboard settings), including **card**, **Apple Pay**, and **Google Pay** when Stripe considers the customer eligible (browser, device, currency). Card remains available as a fallback; wallets do not replace it.
+Checkout sessions do **not** pass `payment_method_types` or `automatic_payment_methods` (that parameter is for PaymentIntents only). Stripe uses your **Dashboard** payment-method settings instead, including **card**, **Apple Pay**, and **Google Pay** when the customer is eligible. Card stays available as a fallback.
 
 ## 3. Customer flow
 
