@@ -33,6 +33,16 @@ def _secret_key() -> str:
     return os.environ.get("STRIPE_SECRET_KEY", "").strip()
 
 
+def _checkout_session_payment_params() -> list[tuple[str, str]]:
+    """Checkout Session payment methods (not PaymentIntent automatic_payment_methods)."""
+    pmc = os.environ.get("STRIPE_PAYMENT_METHOD_CONFIGURATION", "").strip()
+    if pmc:
+        return [("payment_method_configuration", pmc)]
+    # Explicit card: required when Dashboard dynamic methods are empty for subscription Checkout.
+    # Apple Pay / Google Pay still appear on hosted Checkout when enabled in Dashboard (wallet UI on card).
+    return [("payment_method_types[0]", "card")]
+
+
 def is_stripe_configured() -> bool:
     if not _secret_key():
         return False
@@ -138,6 +148,7 @@ def create_checkout_url(
         ("cancel_url", redirect_url),
         ("client_reference_id", account_id),
         ("customer", customer_id),
+        *_checkout_session_payment_params(),
         ("line_items[0][price]", price_id),
         ("line_items[0][quantity]", "1"),
         ("metadata[account_id]", account_id),

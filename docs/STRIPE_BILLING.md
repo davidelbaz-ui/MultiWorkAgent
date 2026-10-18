@@ -45,7 +45,7 @@ STRIPE_CHECKOUT_URL_STARTER_ANNUAL=
 
 Production (`APP_ENV=production`) requires `STRIPE_WEBHOOK_SECRET`.
 
-Checkout sessions do **not** pass `payment_method_types` or `automatic_payment_methods` (that parameter is for PaymentIntents only). Stripe uses your **Dashboard** payment-method settings instead, including **card**, **Apple Pay**, and **Google Pay** when the customer is eligible. Card stays available as a fallback.
+Checkout sessions request **`payment_method_types: card`** (or optional `STRIPE_PAYMENT_METHOD_CONFIGURATION=pmc_…` from Dashboard). Do **not** use `automatic_payment_methods` on Checkout—that parameter is for PaymentIntents only. **Apple Pay** and **Google Pay** are not separate API types; they appear on hosted Checkout when enabled under [Payment methods](https://dashboard.stripe.com/settings/payment_methods) and the customer’s browser/device supports them.
 
 ## 3. Customer flow
 
@@ -61,6 +61,8 @@ Webhook idempotency uses table `stripe_webhook_events` (Stripe `evt_…` ids).
 
 | Symptom | Check |
 |---------|--------|
+| Checkout: no valid payment method types | Enable **Card** for your currency in Dashboard payment methods, or set `STRIPE_PAYMENT_METHOD_CONFIGURATION` |
+| Checkout: unknown `automatic_payment_methods` | Remove that param from Checkout; app uses `payment_method_types` / PMC instead |
 | Billing page 503 | `STRIPE_SECRET_KEY` + at least one price ID or checkout URL per tier |
 | Plan stays pending | Webhook secret; Vercel logs for `/webhooks/stripe` |
 | 401 on webhook | Wrong signing secret or proxy altered body |
