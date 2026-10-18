@@ -12,7 +12,7 @@ from db_connection import DBConnection, column_names, table_exists
 
 MigrationFn = Callable[[DBConnection], None]
 
-APP_SCHEMA_VERSION = 29
+APP_SCHEMA_VERSION = 30
 
 
 def _utc_now() -> str:
@@ -708,6 +708,33 @@ def migration_029_plan_tier_includes_max(conn: DBConnection) -> None:
     )
 
 
+_START_HERO_NOTE_PRICING = (
+    "Plans starting from $499/mo · Scoped credentials · No shared secrets across businesses"
+)
+
+
+def migration_030_start_hero_note_pricing(conn: DBConnection) -> None:
+    if not _table_exists(conn, "site_settings"):
+        return
+    row = conn.execute(
+        "SELECT value FROM site_settings WHERE page_key = ?",
+        ("page.start.hero_note",),
+    ).fetchone()
+    if not row:
+        return
+    value = str(row["value"])
+    if "$19" not in value:
+        return
+    conn.execute(
+        """
+        UPDATE site_settings
+        SET value = ?, updated_at = ?
+        WHERE page_key = ?
+        """,
+        (_START_HERO_NOTE_PRICING, _utc_now(), "page.start.hero_note"),
+    )
+
+
 def migration_028_stripe_billing_column_names(conn: DBConnection) -> None:
     """Rename Square-era billing columns/tables to Stripe naming."""
     _rename_column_if_needed(
@@ -828,6 +855,7 @@ MIGRATIONS: list[tuple[int, str, MigrationFn]] = [
     (27, "remove_support_welcome_messages", migration_027_remove_support_welcome_messages),
     (28, "stripe_billing_column_names", migration_028_stripe_billing_column_names),
     (29, "plan_tier_includes_max", migration_029_plan_tier_includes_max),
+    (30, "start_hero_note_pricing", migration_030_start_hero_note_pricing),
 ]
 
 
