@@ -7,6 +7,7 @@ This app bills **your customers** for MultiWorkAgent (Starter, Pro, Max, Enterpr
 | Item | Env / dashboard |
 |------|-----------------|
 | Secret API key | `STRIPE_SECRET_KEY` (test or live) |
+| Publishable key | `STRIPE_PUBLISHABLE_KEY` (for embedded checkout on Billing) |
 | Products & prices | Recurring prices per tier → `STRIPE_*_MONTHLY_PRICE_ID` / `STRIPE_*_ANNUAL_PRICE_ID` |
 | Webhook | `STRIPE_WEBHOOK_SECRET` + endpoint `https://your-domain/webhooks/stripe` |
 
@@ -14,7 +15,7 @@ Local testing without Stripe: `BILLING_DEV_MOCK=1` (or `STRIPE_MOCK=1`).
 
 ## 1. Stripe Dashboard
 
-1. [Stripe Dashboard](https://dashboard.stripe.com/) → **Developers** → API keys → copy **Secret key** → `STRIPE_SECRET_KEY`.
+1. [Stripe Dashboard](https://dashboard.stripe.com/) → **Developers** → API keys → copy **Publishable key** → `STRIPE_PUBLISHABLE_KEY` and **Secret key** → `STRIPE_SECRET_KEY`.
 2. **Products** → create one product per tier with **monthly** and **annual** recurring prices.
 3. Copy each **Price ID** (`price_…`) into env:
 
@@ -49,8 +50,8 @@ Checkout sessions request **`payment_method_types: card`** (or optional `STRIPE_
 
 ## 3. Customer flow
 
-1. Account **owner** opens **Billing & usage** → chooses plan → Stripe Checkout.
-2. On success, webhooks activate the subscription and sync invoices.
+1. Account **owner** opens **Billing & usage** → chooses plan → **embedded Checkout** opens in a modal on the same page (Stripe.js; requires price IDs + publishable key).
+2. On success, Stripe returns to `/billing?checkout=done`; webhooks activate the subscription and sync invoices.
 3. **Refresh invoices** calls Stripe list-invoices for the linked customer.
 
 Customer and subscription IDs are stored in `stripe_customer_id` / `stripe_subscription_id`.

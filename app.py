@@ -848,6 +848,9 @@ def _billing_fields() -> dict:
         "cancel_at_period_end": summary["cancel_at_period_end"],
         "unlimited_runs": summary.get("unlimited_runs", False),
         "billing_mode": stripe_billing.billing_mode(),
+        "stripe_publishable_key": stripe_billing.publishable_key()
+        if stripe_billing.billing_mode() == "stripe"
+        else "",
         "invoices": invoice_store.list_for_display(account_id),
     }
 
@@ -1973,13 +1976,22 @@ def api_billing_checkout():
     email = user.get("email") if user else None
     redirect_url = billing_checkout_return_url()
 
+    publishable = stripe_billing.publishable_key()
+    if not publishable:
+        return jsonify(
+            {
+                "error": "STRIPE_PUBLISHABLE_KEY is not set. Required for on-page checkout.",
+            }
+        ), 503
+
     try:
-        checkout_url = stripe_billing.create_checkout_url(
+        session_payload = stripe_billing.create_checkout_session(
             account_id,
             plan,
             billing_interval=billing_interval,
-            redirect_url=redirect_url,
+            return_url=redirect_url,
             buyer_email=email,
+            embedded=True,
         )
     except stripe_billing.StripeBillingError as exc:
         return jsonify({"error": str(exc)}), 400
@@ -1987,7 +1999,7 @@ def api_billing_checkout():
         LOGGER.exception("billing checkout failed for account %s plan %s", account_id, plan)
         return jsonify({"error": str(exc) or "checkout failed"}), 500
 
-    return jsonify({"mode": "stripe", "checkout_url": checkout_url})
+    return jsonify({"mode": "stripe", "publishable_key": publishable, **session_payload})
 
 
 @app.post("/api/billing/cancel")

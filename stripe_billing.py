@@ -33,6 +33,10 @@ def _secret_key() -> str:
     return os.environ.get("STRIPE_SECRET_KEY", "").strip()
 
 
+def publishable_key() -> str:
+    return os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
+
+
 def _checkout_session_payment_params() -> list[tuple[str, str]]:
     """Checkout Session payment methods (not PaymentIntent automatic_payment_methods)."""
     pmc = os.environ.get("STRIPE_PAYMENT_METHOD_CONFIGURATION", "").strip()
@@ -115,25 +119,35 @@ def ensure_stripe_customer(account_id: str, *, email: str | None = None) -> str:
     return str(customer_id)
 
 
-def create_checkout_url(
+def create_checkout_session(
     account_id: str,
     plan_tier: str,
     *,
     billing_interval: str = "monthly",
-    redirect_url: str,
+    return_url: str,
     buyer_email: str | None = None,
-) -> str:
+    embedded: bool = True,
+) -> dict[str, Any]:
+    """Create a Stripe Checkout Session (embedded on-site or hosted redirect)."""
     plan = subscription_plans.get_plan(plan_tier)
     if not plan:
         raise StripeBillingError("unknown plan")
     interval = subscription_plans.normalize_billing_interval(billing_interval)
 
-    static_url = subscription_plans.plan_checkout_url(plan_tier, interval)
-    if static_url and not subscription_plans.stripe_price_id(plan_tier, interval):
-        sep = "&" if "?" in static_url else "?"
-        return f"{static_url}{sep}client_reference_id={account_id}"
-
     price_id = subscription_plans.stripe_price_id(plan_tier, interval)
+    static_url = subscription_plans.plan_checkout_url(plan_tier, interval)
+    if not price_id and static_url:
+        if embedded:
+            raise StripeBillingError(
+                "On-page checkout requires Stripe price IDs (STRIPE_*_PRICE_ID). "
+                "Hosted checkout URLs cannot be embedded."
+            )
+        sep = "&" if "?" in static_url else "?"
+        return {
+            "embedded": False,
+            "checkout_url": f"{static_url}{sep}client_reference_id={account_id}",
+        }
+
     if not price_id:
         raise StripeBillingError(
             "Set STRIPE_*_PRICE_ID env vars for each tier/interval, or STRIPE_CHECKOUT_URL_* env URLs."
@@ -144,8 +158,6 @@ def create_checkout_url(
 
     params: list[tuple[str, str]] = [
         ("mode", "subscription"),
-        ("success_url", redirect_url),
-        ("cancel_url", redirect_url),
         ("client_reference_id", account_id),
         ("customer", customer_id),
         *_checkout_session_payment_params(),
@@ -158,11 +170,36 @@ def create_checkout_url(
         ("subscription_data[metadata][plan]", plan.tier),
         ("subscription_data[metadata][billing_interval]", interval),
     ]
+    if embedded:
+        params.extend(
+            [
+                ("ui_mode", "embedded"),
+                ("return_url", return_url),
+            ]
+        )
+    else:
+        params.extend(
+            [
+                ("success_url", return_url),
+                ("cancel_url", return_url),
+            ]
+        )
+
     session = _stripe_request("POST", "/checkout/sessions", params)
+    if embedded:
+        client_secret = session.get("client_secret")
+        if not client_secret:
+            raise StripeBillingError("Stripe did not return an embedded checkout client secret")
+        return {
+            "embedded": True,
+            "client_secret": str(client_secret),
+            "session_id": str(session.get("id") or ""),
+        }
+
     url = session.get("url")
     if not url:
         raise StripeBillingError("Stripe did not return a checkout URL")
-    return str(url)
+    return {"embedded": False, "checkout_url": str(url)}
 
 
 def mock_activate(

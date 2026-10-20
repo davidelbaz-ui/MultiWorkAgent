@@ -46,17 +46,137 @@ function applyBillingIntervalDisplay() {
   }
 }
 
-async function startCheckout(plan, billingInterval) {
+let stripeJsPromise = null;
+let embeddedCheckout = null;
+
+function loadStripeJs() {
+  if (window.Stripe) {
+    return Promise.resolve();
+  }
+  if (!stripeJsPromise) {
+    stripeJsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://js.stripe.com/v3/";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Could not load Stripe.js"));
+      document.head.appendChild(script);
+    });
+  }
+  return stripeJsPromise;
+}
+
+function planCatalogItem(tier) {
+  return readPlanCatalog().find((item) => item.tier === tier);
+}
+
+function formatCheckoutSummary(tier, interval) {
+  const item = planCatalogItem(tier);
+  if (!item) {
+    return "";
+  }
+  const price = interval === "annual" ? item.annual_price : item.monthly_price;
+  const suffix = interval === "annual" ? "/yr" : "/mo";
+  const freq = interval === "annual" ? "year" : "month";
+  return `${item.display_name} — ${price}${suffix}, billed every ${freq}`;
+}
+
+function closeCheckoutModal() {
+  const root = document.getElementById("billing-checkout-root");
+  const mount = document.getElementById("billing-stripe-checkout");
+  const loading = document.getElementById("billing-checkout-loading");
+  if (embeddedCheckout) {
+    try {
+      embeddedCheckout.destroy();
+    } catch (err) {
+      console.error(err);
+    }
+    embeddedCheckout = null;
+  }
+  if (mount) {
+    mount.innerHTML = "";
+  }
+  if (loading) {
+    loading.hidden = true;
+  }
+  if (root) {
+    void uiCloseOverlay(root, "is-open", root.querySelector(".app-dialog") || undefined);
+  }
+}
+
+async function openEmbeddedCheckout(plan, billingInterval) {
+  const card = document.getElementById("billing-page");
+  const root = document.getElementById("billing-checkout-root");
+  const mount = document.getElementById("billing-stripe-checkout");
+  const loading = document.getElementById("billing-checkout-loading");
+  const summary = document.getElementById("billing-checkout-summary");
+  const title = document.getElementById("billing-checkout-title");
+  if (!card || !root || !mount || !loading) {
+    return;
+  }
+
+  const publishableKey =
+    card.dataset.stripePublishableKey || "";
+  if (!publishableKey) {
+    throw new Error("Stripe publishable key is not configured.");
+  }
+
+  if (summary) {
+    summary.textContent = formatCheckoutSummary(plan, billingInterval);
+  }
+  if (title) {
+    title.textContent = planCatalogItem(plan)?.display_name
+      ? `Subscribe — ${planCatalogItem(plan).display_name}`
+      : "Subscribe";
+  }
+
+  mount.innerHTML = "";
+  loading.hidden = false;
+  await uiOpenOverlay(root, "is-open", root.querySelector(".app-dialog") || undefined);
+
   const data = await billingApiJson("/api/billing/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ plan, billing_interval: billingInterval }),
   });
-  if (data.checkout_url) {
+
+  if (data.checkout_url && !data.client_secret) {
     window.location.href = data.checkout_url;
     return;
   }
-  window.location.reload();
+
+  const clientSecret = data.client_secret;
+  const key = data.publishable_key || publishableKey;
+  if (!clientSecret) {
+    throw new Error("Checkout session did not return payment details.");
+  }
+
+  await loadStripeJs();
+  if (!window.Stripe) {
+    throw new Error("Stripe.js failed to initialize.");
+  }
+
+  const stripe = window.Stripe(key);
+  embeddedCheckout = await stripe.initEmbeddedCheckout({ clientSecret });
+  loading.hidden = true;
+  embeddedCheckout.mount(mount);
+}
+
+async function startCheckout(plan, billingInterval) {
+  const card = document.getElementById("billing-page");
+  const mode = card?.dataset.billingMode || "unconfigured";
+  if (mode === "mock") {
+    const data = await billingApiJson("/api/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, billing_interval: billingInterval }),
+    });
+    if (data.subscription) {
+      window.location.reload();
+    }
+    return;
+  }
+  await openEmbeddedCheckout(plan, billingInterval);
 }
 
 function planPriceForInterval(item, interval) {
@@ -108,10 +228,12 @@ function renderChangePlanList() {
       <button type="button" class="btn btn-primary btn-sm" data-change-plan-tier="${item.tier}">Select</button>`;
     row.querySelector("[data-change-plan-tier]")?.addEventListener("click", async () => {
       const tier = item.tier;
+      closeChangePlanModal();
       try {
         await startCheckout(tier, interval);
       } catch (err) {
         console.error(err);
+        closeCheckoutModal();
         await openAppConfirm({
           title: "Checkout failed",
           message: err.message || "Could not start checkout.",
@@ -149,6 +271,9 @@ function initBillingSubscribe() {
   const isOwner = card.dataset.accountRole === "owner";
   const subscribed = Boolean(document.querySelector(".billing-plans-section--subscribed"));
 
+  document.getElementById("billing-checkout-close")?.addEventListener("click", closeCheckoutModal);
+  document.getElementById("billing-checkout-backdrop")?.addEventListener("click", closeCheckoutModal);
+
   if (!subscribed) {
     document.querySelectorAll('input[name="billing-interval"]').forEach((input) => {
       input.addEventListener("change", applyBillingIntervalDisplay);
@@ -173,6 +298,7 @@ function initBillingSubscribe() {
           await startCheckout(plan, selectedBillingInterval());
         } catch (err) {
           console.error(err);
+          closeCheckoutModal();
           await openAppConfirm({
             title: "Checkout failed",
             message: err.message || "Could not start checkout.",

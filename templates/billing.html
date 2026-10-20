@@ -2,7 +2,7 @@
 {% from "_page_flash.html" import dismissible_flash %}
 {% block title %}Billing & usage — MultiWorkAgent{% endblock %}
 {% block content %}
-<div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}" data-billing-interval="{{ billing_interval or 'monthly' }}">
+<div id="billing-page" data-billing-mode="{{ billing_mode }}" data-account-role="{{ account_role or '' }}" data-current-plan="{{ plan or '' }}" data-current-tier="{{ plan_tier or '' }}" data-current-interval="{{ billing_interval or 'monthly' }}" data-billing-interval="{{ billing_interval or 'monthly' }}" data-stripe-publishable-key="{{ stripe_publishable_key or '' }}">
 <h1 class="page-title">Billing & usage</h1>
 <p class="page-sub">Plans, usage, and subscription billing</p>
 {% if subscription_status == 'pending' and subscription_updated_at %}
@@ -113,11 +113,24 @@
 
 <script type="application/json" id="billing-plan-catalog-data">{{ plan_catalog | tojson }}</script>
 
+<div class="app-dialog-root" id="billing-checkout-root" hidden aria-hidden="true">
+  <div class="app-dialog-backdrop" id="billing-checkout-backdrop" tabindex="-1"></div>
+  <div class="app-dialog billing-checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="billing-checkout-title">
+    <h2 class="app-dialog-title" id="billing-checkout-title">Subscribe</h2>
+    <p class="app-dialog-message" id="billing-checkout-summary"></p>
+    <div class="billing-checkout-mount" id="billing-stripe-checkout" aria-live="polite"></div>
+    <p class="meta-row billing-checkout-loading" id="billing-checkout-loading" hidden>Loading secure checkout…</p>
+    <div class="app-dialog-actions">
+      <button type="button" class="btn" id="billing-checkout-close">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="app-dialog-root" id="billing-change-plan-root" hidden aria-hidden="true">
   <div class="app-dialog-backdrop" id="billing-change-plan-backdrop" tabindex="-1"></div>
   <div class="app-dialog billing-change-plan-dialog" role="dialog" aria-modal="true" aria-labelledby="billing-change-plan-title">
     <h2 class="app-dialog-title" id="billing-change-plan-title">Change plan</h2>
-    <p class="app-dialog-message">Choose a different plan. Checkout opens in Stripe.</p>
+    <p class="app-dialog-message">Choose a different plan. Payment opens on this page.</p>
     <div class="billing-interval-bar billing-interval-bar--modal">
       <span class="billing-interval-bar-label">Billing cycle</span>
       <div class="billing-segmented billing-segmented--modal" role="radiogroup" aria-label="Billing frequency">

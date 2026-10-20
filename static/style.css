@@ -3690,6 +3690,29 @@ table.data-table {
   width: calc(100% - 2rem);
 }
 
+.billing-checkout-dialog {
+  max-width: 28rem;
+  width: calc(100% - 2rem);
+  max-height: min(92vh, 40rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.billing-checkout-mount {
+  flex: 1 1 auto;
+  min-height: 22rem;
+  margin: 0.5rem 0 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.billing-checkout-loading {
+  margin: 0.75rem 0 0;
+  text-align: center;
+}
+
 .billing-interval-bar--modal {
   margin: 0.75rem 0 1rem;
 }

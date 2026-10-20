@@ -27,6 +27,7 @@ def stripe_status() -> dict[str, Any]:
     from app_urls import stripe_webhook_notification_url
 
     secret = bool(os.environ.get("STRIPE_SECRET_KEY", "").strip())
+    publishable = bool(os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip())
     webhook_secret = bool(os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip())
     missing_plans: list[str] = []
     for tier in subscription_plans.PLAN_TIER_ORDER:
@@ -38,6 +39,7 @@ def stripe_status() -> dict[str, Any]:
     return {
         "mode": stripe_billing.billing_mode(),
         "secret_key_set": secret,
+        "publishable_key_set": publishable,
         "webhook_secret_set": webhook_secret,
         "webhook_notification_url": stripe_webhook_notification_url(),
         "plans_missing_price_or_checkout_url": missing_plans,

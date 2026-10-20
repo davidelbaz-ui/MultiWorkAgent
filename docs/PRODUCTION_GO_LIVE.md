@@ -55,6 +55,7 @@ Stripe bills **your customers** for MultiWorkAgent plans. This is **not** the St
 | Variable | Notes |
 |----------|--------|
 | `STRIPE_SECRET_KEY` | Test or live secret key |
+| `STRIPE_PUBLISHABLE_KEY` | Publishable key (embedded checkout on Billing) |
 | `STRIPE_WEBHOOK_SECRET` | Webhooks → signing secret for `/webhooks/stripe` |
 
 ### 3.2 Plans (match `subscription_plans.py`)
