@@ -1977,12 +1977,9 @@ def api_billing_checkout():
     redirect_url = billing_checkout_return_url()
 
     publishable = stripe_billing.publishable_key()
-    if not publishable:
-        return jsonify(
-            {
-                "error": "STRIPE_PUBLISHABLE_KEY is not set. Required for on-page checkout.",
-            }
-        ), 503
+    publishable_err = stripe_billing.validate_publishable_key_for_browser(publishable)
+    if publishable_err:
+        return jsonify({"error": publishable_err}), 503
 
     try:
         session_payload = stripe_billing.create_checkout_session(

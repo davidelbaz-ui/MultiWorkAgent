@@ -37,6 +37,21 @@ def publishable_key() -> str:
     return os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
 
 
+def validate_publishable_key_for_browser(key: str) -> str | None:
+    """Return an error message if key is missing or is a secret key."""
+    trimmed = (key or "").strip()
+    if not trimmed:
+        return "STRIPE_PUBLISHABLE_KEY is not set. Required for on-page checkout."
+    if trimmed.startswith("sk_"):
+        return (
+            "STRIPE_PUBLISHABLE_KEY must be your publishable key (pk_live_… or pk_test_…), "
+            "not the secret key (sk_…). In Stripe Dashboard → Developers → API keys, copy Publishable key."
+        )
+    if not trimmed.startswith("pk_"):
+        return "STRIPE_PUBLISHABLE_KEY should start with pk_live_ or pk_test_."
+    return None
+
+
 def _checkout_session_payment_params() -> list[tuple[str, str]]:
     """Checkout Session payment methods (not PaymentIntent automatic_payment_methods)."""
     pmc = os.environ.get("STRIPE_PAYMENT_METHOD_CONFIGURATION", "").strip()
